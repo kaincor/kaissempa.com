@@ -56,7 +56,9 @@ export default function RidgeLayer({
         preserveAspectRatio="none"
         width="100%"
         height={height}
-        style={{ display: "block" }}
+        // Same one-pixel drop as MountainRange: buries the sub-pixel seam
+        // where the path stops short of its viewBox floor.
+        style={{ display: "block", transform: "translateY(1px)" }}
         aria-hidden="true"
         focusable="false"
       >

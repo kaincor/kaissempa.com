@@ -70,6 +70,10 @@ export default function MountainRange({
           // The negative margin puts the ridge over the hero; without this the
           // transparent sky would swallow clicks meant for the 3D scene.
           pointerEvents: "none",
+          // Several paths stop a fraction short of their viewBox floor, and
+          // preserveAspectRatio="none" scales that shortfall up. Dropping the
+          // silhouette a pixel buries the seam under the section below.
+          transform: "translateY(1px)",
         }}
         aria-hidden="true"
         focusable="false"
