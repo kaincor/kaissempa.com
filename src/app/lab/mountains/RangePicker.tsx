@@ -6,102 +6,118 @@ import MountainRange from "@/components/MountainRange";
 import RidgeLayer from "@/components/RidgeLayer";
 import { MOUNTAIN_RANGES } from "@/data/mountainRanges";
 
-const HEIGHTS = ["clamp(60px, 7vw, 120px)", "clamp(70px, 10vw, 180px)", "clamp(110px, 16vw, 280px)"];
-const HEIGHT_LABELS = ["S", "M", "L"];
+const DEFAULTS = {
+  farId: 9,
+  nearId: 0,
+  sceneRise: -80,
+  farRise: 45,
+  nearRise: 150,
+  farH: 70,
+  nearH: 120,
+  showFar: true,
+};
 
 export default function RangePicker() {
-  const [near, setNear] = useState(0);
-  const [far, setFar] = useState(9);
-  const [h, setH] = useState(1);
-  const [showFar, setShowFar] = useState(true);
-  const [editing, setEditing] = useState<"near" | "far">("near");
+  const [s, setS] = useState(DEFAULTS);
+  const set = <K extends keyof typeof DEFAULTS>(k: K, v: (typeof DEFAULTS)[K]) =>
+    setS((p) => ({ ...p, [k]: v }));
 
-  const nearRange = MOUNTAIN_RANGES[near];
-  const farRange = MOUNTAIN_RANGES[far];
-  const active = editing === "near" ? near : far;
-  const setActive = editing === "near" ? setNear : setFar;
+  const farRange = MOUNTAIN_RANGES[s.farId];
+  const nearRange = MOUNTAIN_RANGES[s.nearId];
 
   return (
     <>
       <Hero
+        rise={s.sceneRise}
         behind={
-          showFar ? (
-            // Slower rise and a shorter silhouette read as further away.
-            <RidgeLayer range={farRange} height="clamp(50px, 7vw, 120px)" rise={45} />
+          s.showFar ? (
+            <RidgeLayer range={farRange} height={`${s.farH}px`} rise={s.farRise} />
           ) : null
         }
       />
 
-      <MountainRange range={nearRange} height={HEIGHTS[h]} rise={150}>
-        <div className="px-8 py-32 sm:px-16" style={{ minHeight: "70vh" }}>
+      <MountainRange range={nearRange} height={`${s.nearH}px`} rise={s.nearRise}>
+        <div className="px-8 py-32 sm:px-16" style={{ minHeight: "80vh" }}>
           <p className="display text-3xl sm:text-5xl" style={{ color: "#d4d4d4" }}>
             The section below
           </p>
         </div>
       </MountainRange>
 
-      <div
-        className="glass"
-        style={{
-          position: "fixed",
-          bottom: 16,
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 50,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "10px 14px",
-          borderRadius: 14,
-          background: "rgba(5, 5, 5, 0.62)",
-          color: "#fff",
-          fontSize: 12,
-          maxWidth: "94vw",
-          flexWrap: "wrap",
-          justifyContent: "center",
-        }}
-      >
-        <button onClick={() => setEditing("far")} style={{ ...btn, opacity: editing === "far" ? 1 : 0.4 }}>
-          far {farRange.id}
-        </button>
-        <button onClick={() => setEditing("near")} style={{ ...btn, opacity: editing === "near" ? 1 : 0.4 }}>
-          near {nearRange.id}
-        </button>
-        <button onClick={() => setShowFar((v) => !v)} style={{ ...btn, opacity: showFar ? 1 : 0.4 }}>
-          {showFar ? "far on" : "far off"}
-        </button>
+      <div style={panel} className="glass">
+        <Row label={`scene rise ${s.sceneRise}`}>
+          <input type="range" min={-300} max={300} step={10} value={s.sceneRise}
+            onChange={(e) => set("sceneRise", +e.target.value)} style={slider} />
+        </Row>
 
-        <span style={{ opacity: 0.4 }}>|</span>
+        <Row label={`far rise ${s.farRise}`}>
+          <input type="range" min={-200} max={300} step={5} value={s.farRise}
+            onChange={(e) => set("farRise", +e.target.value)} style={slider} />
+        </Row>
+        <Row label={`far height ${s.farH}`}>
+          <input type="range" min={30} max={260} step={5} value={s.farH}
+            onChange={(e) => set("farH", +e.target.value)} style={slider} />
+        </Row>
 
-        {MOUNTAIN_RANGES.map((r, idx) => (
-          <button
-            key={r.id}
-            onClick={() => setActive(idx)}
-            style={{ ...btn, opacity: idx === active ? 1 : 0.4, minWidth: 22 }}
-          >
-            {r.id}
+        <Row label={`near rise ${s.nearRise}`}>
+          <input type="range" min={-200} max={400} step={5} value={s.nearRise}
+            onChange={(e) => set("nearRise", +e.target.value)} style={slider} />
+        </Row>
+        <Row label={`near height ${s.nearH}`}>
+          <input type="range" min={40} max={320} step={5} value={s.nearH}
+            onChange={(e) => set("nearH", +e.target.value)} style={slider} />
+        </Row>
+
+        <Row label={`far range ${farRange.id}`}>
+          <Picker value={s.farId} onChange={(v) => set("farId", v)} />
+        </Row>
+        <Row label={`near range ${nearRange.id}`}>
+          <Picker value={s.nearId} onChange={(v) => set("nearId", v)} />
+        </Row>
+
+        <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
+          <button onClick={() => set("showFar", !s.showFar)}
+            style={{ ...btn, opacity: s.showFar ? 1 : 0.4 }}>
+            {s.showFar ? "far on" : "far off"}
           </button>
-        ))}
-
-        <span style={{ opacity: 0.4 }}>|</span>
-
-        {HEIGHT_LABELS.map((label, idx) => (
-          <button key={label} onClick={() => setH(idx)} style={{ ...btn, opacity: idx === h ? 1 : 0.4 }}>
-            {label}
-          </button>
-        ))}
+          <button onClick={() => setS(DEFAULTS)} style={btn}>reset</button>
+        </div>
       </div>
     </>
   );
 }
 
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label style={{ display: "grid", gridTemplateColumns: "116px 1fr", alignItems: "center", gap: 8 }}>
+      <span style={{ fontVariantNumeric: "tabular-nums", opacity: 0.85 }}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function Picker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+      {MOUNTAIN_RANGES.map((r, i) => (
+        <button key={r.id} onClick={() => onChange(i)}
+          style={{ ...btn, minWidth: 20, padding: "3px 5px", opacity: i === value ? 1 : 0.35 }}>
+          {r.id}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const panel: React.CSSProperties = {
+  position: "fixed", bottom: 16, left: 16, zIndex: 50,
+  display: "flex", flexDirection: "column", gap: 6,
+  padding: 14, borderRadius: 14,
+  background: "rgba(5,5,5,0.7)", color: "#fff",
+  fontSize: 11, width: 330, maxWidth: "92vw",
+};
+const slider: React.CSSProperties = { width: "100%", accentColor: "#fff" };
 const btn: React.CSSProperties = {
-  background: "rgba(255,255,255,0.12)",
-  border: "none",
-  color: "#fff",
-  borderRadius: 7,
-  padding: "5px 8px",
-  cursor: "pointer",
-  font: "inherit",
-  lineHeight: 1,
+  background: "rgba(255,255,255,0.14)", border: "none", color: "#fff",
+  borderRadius: 6, padding: "4px 8px", cursor: "pointer", font: "inherit", lineHeight: 1,
 };

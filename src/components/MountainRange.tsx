@@ -85,7 +85,7 @@ export default function MountainRange({
           marginTop: -1,
           // The whole block rides upward, so without this the lift would expose
           // page background below the last section.
-          paddingBottom: rise,
+          paddingBottom: Math.max(rise, 0),
         }}
       >
         {children}
