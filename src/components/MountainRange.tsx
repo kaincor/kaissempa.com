@@ -11,6 +11,8 @@ export type MountainRangeProps = {
   color?: string;
   /** Extra pixels the ridge lifts across one viewport of scrolling. */
   rise?: number;
+  /** Pixels to sink the ridge below the fold, so less of it shows at rest. */
+  drop?: number;
   /** Content for the solid section below the ridge. */
   children?: ReactNode;
 };
@@ -30,6 +32,7 @@ export default function MountainRange({
   height = "clamp(70px, 10vw, 180px)",
   color = "#000000",
   rise = 140,
+  drop = 28,
   children,
 }: MountainRangeProps) {
   const reduced = useReducedMotion();
@@ -62,8 +65,8 @@ export default function MountainRange({
         style={{
           display: "block",
           // Pulls the ridge up over the section above so its base lands on the
-          // bottom edge of the viewport at scroll 0.
-          marginTop: `calc(-1 * (${height}))`,
+          // bottom edge of the viewport at scroll 0, less `drop` to sink it.
+          marginTop: `calc(${drop}px - (${height}))`,
           // The negative margin puts the ridge over the hero; without this the
           // transparent sky would swallow clicks meant for the 3D scene.
           pointerEvents: "none",
