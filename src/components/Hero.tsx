@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
-/** Published Spline viewer. Standalone HTML bundle, embedded in an iframe. */
+/**
+ * Published Spline viewer. This build has its scene background set to
+ * transparent, and Spline emits `body { background: rgba(212,212,212, 0) }`
+ * in the viewer page, so the iframe composites over whatever sits behind it.
+ * Swapping back to an opaque scene build would silently hide the far layer.
+ */
 export const SPLINE_VIEWER_URL =
-  "https://my.spline.design/precipicemvp-GtnNKaB1IxQV7qHP95c03fpK/";
+  "https://my.spline.design/precipicetransparentbackground-UtEKIoigXLsoG55EWLMeWVh7/";
 
 export type HeroProps = {
   /** Heading for screen readers and crawlers. The visible wordmark is 3D
@@ -12,23 +17,19 @@ export type HeroProps = {
   heading?: string;
   subheading?: string;
   src?: string;
+  /** Rendered behind the transparent 3D canvas. */
+  behind?: ReactNode;
+  /** Rendered in front of it, inside the hero bounds. */
+  inFront?: ReactNode;
 };
 
 export default function Hero({
   heading = "Kai Ssempa",
   subheading = "Designer & Developer",
   src = SPLINE_VIEWER_URL,
+  behind,
+  inFront,
 }: HeroProps) {
-  const [covered, setCovered] = useState(true);
-
-  // The iframe can finish loading before React hydrates, in which case its
-  // load event is missed entirely and onLoad never fires. The cover must
-  // therefore clear on a timer too, or the hero stays blank forever.
-  useEffect(() => {
-    const t = setTimeout(() => setCovered(false), 6000);
-    return () => clearTimeout(t);
-  }, []);
-
   return (
     <section
       className="relative w-full overflow-hidden bg-background"
@@ -40,26 +41,19 @@ export default function Hero({
         {heading} — {subheading}
       </h1>
 
-      {/* Never opacity-gated. The cover below handles the blank-frame flash, so
-          a missed load event degrades to a slightly late fade, not a dead hero. */}
+      {behind ? <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>{behind}</div> : null}
+
+      {/* No loading cover: with a transparent scene the page background shows
+          through until the canvas paints, so there is nothing to mask. */}
       <iframe
         src={src}
         title={`${heading}, ${subheading} — interactive 3D scene`}
         className="absolute inset-0 h-full w-full border-0"
-        onLoad={() => setCovered(false)}
+        style={{ zIndex: 1, background: "transparent" }}
         allow="autoplay; fullscreen"
       />
 
-      {/* Spline paints its own background only once it boots. Without this the
-          reader gets a flash of empty iframe on a slow connection. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-background"
-        style={{
-          opacity: covered ? 1 : 0,
-          transition: "opacity 600ms ease-out",
-        }}
-      />
+      {inFront ? <div style={{ position: "absolute", inset: 0, zIndex: 2 }}>{inFront}</div> : null}
     </section>
   );
 }
