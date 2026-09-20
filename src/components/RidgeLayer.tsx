@@ -10,7 +10,11 @@ export type RidgeLayerProps = {
   color?: string;
   /** Pixels this layer lifts across one viewport of scrolling. */
   rise?: number;
-  /** Pixels to sink it below the container's bottom edge. */
+  /**
+   * Pixels to sink it below the container's bottom edge. Must stay well under
+   * the rendered height or the ridge disappears entirely — and `height` is
+   * usually a clamp(), so the effective height shrinks on narrow viewports.
+   */
   drop?: number;
 };
 

@@ -6,6 +6,12 @@ import { rangeById } from "@/data/mountainRanges";
 /**
  * Four depth planes. Perceived depth comes from the spread between rates, not
  * their size, so these are deliberately far apart: -120 / +15 / +60 / +220.
+ *
+ * Every plane is pure black, so a background ridge is only ever visible where
+ * it clears the outline of the ridge in front. Each one therefore has to peak
+ * HIGHER than the next one forward, not lower — sink them and they vanish
+ * behind the foreground entirely. Visible height is `height - drop`, and since
+ * height is a clamp() that shrinks on narrow viewports, drop has to stay small.
  */
 const HORIZON = rangeById(10);
 const FAR = rangeById(1);
@@ -20,15 +26,15 @@ export default function Home() {
           <>
             <RidgeLayer
               range={HORIZON}
-              height="clamp(38px, 5vw, 90px)"
+              height="clamp(110px, 18vw, 260px)"
               rise={15}
-              drop={74}
+              drop={20}
             />
             <RidgeLayer
               range={FAR}
-              height="clamp(55px, 8vw, 150px)"
+              height="clamp(90px, 14vw, 210px)"
               rise={60}
-              drop={56}
+              drop={25}
             />
           </>
         }
