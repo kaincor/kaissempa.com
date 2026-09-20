@@ -8,13 +8,15 @@ const LINKS = [
   { label: "About", href: "/about" },
 ];
 
-/**
- * Geometry. The current build is 263px wide because its logo forced a minimum
- * width; nothing here does, so the bar can be narrower.
- */
 const NAV_WIDTH = 220;
 const BAR_HEIGHT = 52;
 const MENU_GAP = 12;
+
+/** Hamburger bars. Open, both slide to the midpoint and overlap into one line. */
+const LINE_WIDTH = 13;
+const LINE_THICKNESS = 2;
+const LINE_GAP = 6;
+const LINE_SHIFT = (LINE_THICKNESS + LINE_GAP) / 2;
 
 /** Measured off the current build. */
 const BAR_TINT = "rgba(5, 5, 5, 0.15)";
@@ -37,6 +39,18 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
+
+  // pointerleave never arrives when the cursor crosses into a cross-origin
+  // iframe — the Spline hero swallows it, and the menu would hang open. The
+  // browser still keeps :hover accurate, so poll that as the source of truth.
+  useEffect(() => {
+    if (!open || !canHover) return;
+    const id = setInterval(() => {
+      const el = navRef.current;
+      if (el && !el.matches(":hover")) setOpen(false);
+    }, 150);
+    return () => clearInterval(id);
+  }, [open, canHover]);
 
   useEffect(() => {
     if (!open) return;
@@ -85,15 +99,17 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           height: BAR_HEIGHT,
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: logo ? "space-between" : "flex-end",
           padding: "0 16px",
           borderRadius: 10,
           background: BAR_TINT,
         }}
       >
-        <Link href="/" aria-label="Kai Ssempa, home" style={{ display: "flex" }}>
-          {logo ?? <Mark />}
-        </Link>
+        {logo ? (
+          <Link href="/" aria-label="Kai Ssempa, home" style={{ display: "flex" }}>
+            {logo}
+          </Link>
+        ) : null}
 
         <button
           type="button"
@@ -104,7 +120,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 6,
+            gap: LINE_GAP,
             padding: 8,
             margin: -8,
             color: "#fff",
@@ -119,8 +135,8 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
       </div>
 
       {/* Fills the gap so the pointer never lands on bare page between the two
-          panels. Inert-by-default via pointer-events, so a closed menu does not
-          leave an invisible hover target sitting over the hero. */}
+          panels. pointer-events: none while closed, so a collapsed menu does
+          not leave an invisible hover target sitting over the hero. */}
       <div
         aria-hidden="true"
         style={{
@@ -197,65 +213,73 @@ function MenuLink({
 }
 
 function Line({ open, which }: { open: boolean; which: "top" | "bottom" }) {
-  const shift = which === "top" ? 3.5 : -3.5;
-  const angle = which === "top" ? 45 : -45;
+  const shift = which === "top" ? LINE_SHIFT : -LINE_SHIFT;
   return (
     <span
       aria-hidden="true"
       style={{
         display: "block",
-        width: 13,
-        height: 1,
+        width: LINE_WIDTH,
+        height: LINE_THICKNESS,
+        borderRadius: LINE_THICKNESS,
         background: "currentColor",
-        transform: open ? `translateY(${shift}px) rotate(${angle}deg)` : "none",
+        // No rotation: the two bars meet in the middle and read as a minus.
+        transform: open ? `translateY(${shift}px)` : "none",
         transition: `transform 0.25s ${EASE}`,
       }}
     />
   );
 }
 
-/** Placeholder. Pass a `logo` prop to replace it without touching this file. */
-function Mark() {
-  return (
-    <svg width="16" height="20" viewBox="0 0 16 20" aria-hidden="true">
-      <path
-        d="M2 1 L2 19 M2 10 L13 1 M2 10 L13 19"
-        stroke="#fff"
-        strokeWidth="2.2"
-        fill="none"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 /**
- * Ported from the Framer HideOnScroll override: hides on scroll down, reveals
- * on scroll up, always visible within 10px of the top. Reads scroll inside a
- * rAF so a fast flick is one state update per frame, not one per event.
+ * Hides on scroll down, reveals on scroll up, always visible within 10px of the
+ * top. Reads scroll inside a rAF so a fast flick is one state update per frame.
+ *
+ * While `pinned` (the menu is open) scrolling never hides the bar, and when the
+ * menu closes the bar stays put until the reader scrolls *again* — otherwise it
+ * snaps away the instant the cursor leaves, which is not how the original
+ * behaves.
  */
-function useHideOnScroll(forceVisible: boolean) {
+function useHideOnScroll(pinned: boolean) {
   const [hidden, setHidden] = useState(false);
   const last = useRef(0);
   const ticking = useRef(false);
+  const pinnedRef = useRef(pinned);
+
+  useEffect(() => {
+    const was = pinnedRef.current;
+    pinnedRef.current = pinned;
+    if (was && !pinned) {
+      setHidden(false);
+      last.current = window.scrollY;
+    }
+  }, [pinned]);
 
   useEffect(() => {
     last.current = window.scrollY;
+
     const update = () => {
       const y = window.scrollY;
-      if (y <= 10) setHidden(false);
-      else setHidden(y > last.current);
+      if (pinnedRef.current) {
+        // Track position but never hide while the menu is open.
+      } else if (y <= 10) {
+        setHidden(false);
+      } else {
+        setHidden(y > last.current);
+      }
       last.current = y;
       ticking.current = false;
     };
+
     const onScroll = () => {
       if (ticking.current) return;
       ticking.current = true;
       requestAnimationFrame(update);
     };
+
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  return forceVisible ? false : hidden;
+  return pinned ? false : hidden;
 }

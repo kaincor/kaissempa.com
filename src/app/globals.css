@@ -47,15 +47,11 @@ body {
 }
 
 /* Frosted glass. Measured off the current build: a near-black tint over a 32px
-   blur, plus saturation and a specular top edge to push it further toward the
-   liquid-glass look. corner-shape gives true squircle corners where supported
-   and quietly degrades to a plain radius everywhere else. */
+   blur, nothing else. No saturation boost and no specular edge — the plain
+   blur is the look Kai wants. corner-shape gives true squircle corners where
+   supported and quietly degrades to a plain radius everywhere else. */
 @utility glass {
-  backdrop-filter: blur(32px) saturate(170%);
-  -webkit-backdrop-filter: blur(32px) saturate(170%);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
   corner-shape: superellipse(1.5);
-  box-shadow:
-    0 6px 24px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.07);
 }
