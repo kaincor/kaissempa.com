@@ -7,9 +7,9 @@ import RidgeLayer from "@/components/RidgeLayer";
 import { MOUNTAIN_RANGES } from "@/data/mountainRanges";
 
 export default function RangePicker() {
-  // Defaults mirror the live page: 7 behind, 1 in front.
-  const [far, setFar] = useState(6);
-  const [near, setNear] = useState(0);
+  // Defaults mirror the live page: 1 behind, 7 in front.
+  const [far, setFar] = useState(0);
+  const [near, setNear] = useState(6);
   const [showFar, setShowFar] = useState(true);
   const [editing, setEditing] = useState<"near" | "far">("near");
 
@@ -21,14 +21,15 @@ export default function RangePicker() {
   return (
     <>
       <Hero
+        rise={-60}
         behind={
           showFar ? (
-            <RidgeLayer range={farRange} height="clamp(60px, 9vw, 160px)" rise={45} />
+            <RidgeLayer range={farRange} height="clamp(55px, 8vw, 150px)" rise={40} drop={34} />
           ) : null
         }
       />
 
-      <MountainRange range={nearRange} height="clamp(70px, 10vw, 180px)" rise={140}>
+      <MountainRange range={nearRange} height="clamp(75px, 11vw, 190px)" rise={150}>
         <div style={{ minHeight: "70vh" }} />
       </MountainRange>
 
