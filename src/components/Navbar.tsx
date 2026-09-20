@@ -8,8 +8,8 @@ const LINKS = [
   { label: "About", href: "/about" },
 ];
 
-const NAV_WIDTH = 176;
-const BAR_HEIGHT = 52;
+const NAV_WIDTH = 220;
+const BAR_HEIGHT = 42;
 const MENU_GAP = 12;
 
 /** Hamburger bars. Open, both slide to the midpoint and overlap into one line. */
