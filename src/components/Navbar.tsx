@@ -8,7 +8,7 @@ const LINKS = [
   { label: "About", href: "/about" },
 ];
 
-const NAV_WIDTH = 220;
+const NAV_WIDTH = 176;
 const BAR_HEIGHT = 52;
 const MENU_GAP = 12;
 
