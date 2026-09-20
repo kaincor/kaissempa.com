@@ -14,7 +14,7 @@ import { rangeById } from "@/data/mountainRanges";
  * height is a clamp() that shrinks on narrow viewports, drop has to stay small.
  */
 const HORIZON = rangeById(10);
-const FAR = rangeById(1);
+const FAR = rangeById(15);
 const NEAR = rangeById(7);
 
 export default function Home() {
