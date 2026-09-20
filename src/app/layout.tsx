@@ -19,13 +19,28 @@ const geist = Geist({
   display: "swap",
 });
 
+const DESCRIPTION =
+  "Kai is a designer and engineer at Stanford. View his technical case studies, professional experience and even his Letterboxd reviews here.";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://kaissempa.com"),
   title: {
-    default: "Kai — Designer & Developer",
-    template: "%s — Kai",
+    default: "Kai Ssempa — Designer & Developer",
+    template: "%s — Kai Ssempa",
   },
-  description: "Portfolio of Kai, designer and developer.",
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    url: "https://kaissempa.com",
+    siteName: "Kai Ssempa",
+    title: "Kai Ssempa — Designer & Developer",
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kai Ssempa — Designer & Developer",
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
