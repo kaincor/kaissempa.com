@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Geist } from "next/font/google";
+import Navbar from "@/components/Navbar";
 import "./globals.css";
 
 // Display face. Limited glyph set (no @ # % [ ] * + = _, no en/em dash or
@@ -49,7 +50,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${kaicords.variable} ${geist.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Navbar />
+        {children}
+      </body>
     </html>
   );
 }

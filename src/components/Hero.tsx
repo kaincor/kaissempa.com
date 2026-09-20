@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /** Published Spline viewer. Standalone HTML bundle, embedded in an iframe. */
 export const SPLINE_VIEWER_URL =
@@ -19,7 +19,15 @@ export default function Hero({
   subheading = "Designer & Developer",
   src = SPLINE_VIEWER_URL,
 }: HeroProps) {
-  const [loaded, setLoaded] = useState(false);
+  const [covered, setCovered] = useState(true);
+
+  // The iframe can finish loading before React hydrates, in which case its
+  // load event is missed entirely and onLoad never fires. The cover must
+  // therefore clear on a timer too, or the hero stays blank forever.
+  useEffect(() => {
+    const t = setTimeout(() => setCovered(false), 6000);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <section
@@ -32,15 +40,13 @@ export default function Hero({
         {heading} — {subheading}
       </h1>
 
+      {/* Never opacity-gated. The cover below handles the blank-frame flash, so
+          a missed load event degrades to a slightly late fade, not a dead hero. */}
       <iframe
         src={src}
         title={`${heading}, ${subheading} — interactive 3D scene`}
         className="absolute inset-0 h-full w-full border-0"
-        style={{
-          opacity: loaded ? 1 : 0,
-          transition: "opacity 600ms ease-out",
-        }}
-        onLoad={() => setLoaded(true)}
+        onLoad={() => setCovered(false)}
         allow="autoplay; fullscreen"
       />
 
@@ -50,7 +56,7 @@ export default function Hero({
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-background"
         style={{
-          opacity: loaded ? 0 : 1,
+          opacity: covered ? 1 : 0,
           transition: "opacity 600ms ease-out",
         }}
       />
