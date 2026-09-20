@@ -64,11 +64,21 @@ export default function RidgeLayer({
       >
         <path d={range.d} fill={color} />
       </svg>
-      {/* Mass below the ridge so lifting it never exposes the layer behind.
-          Uses the magnitude of `rise`, since a negative rise sinks the layer
-          and still needs cover underneath. */}
+      {/* Mass below the ridge, hung out of flow. The layer is bottom-anchored,
+          so an in-flow filler would grow upward and shove the ridge off the top
+          instead of extending below it. A full viewport of cover means lifting
+          never drags its own bottom edge into view, which would otherwise show
+          as light gaps through the valleys of the ridge in front. */}
       <div
-        style={{ height: Math.abs(rise) + 120, background: color, marginTop: -1 }}
+        style={{
+          position: "absolute",
+          top: "100%",
+          left: 0,
+          right: 0,
+          height: "100vh",
+          marginTop: -1,
+          background: color,
+        }}
       />
     </motion.div>
   );

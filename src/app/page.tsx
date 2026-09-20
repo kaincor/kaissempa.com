@@ -18,30 +18,22 @@ export default function Home() {
         rise={-120}
         behind={
           <>
-            {/* Furthest plane. Barely moves, sits low, and is tinted rather
-                than black — atmospheric haze is a stronger distance cue than
-                motion alone, and every layer being pure #000 flattens them
-                into one plane no matter how differently they travel. */}
             <RidgeLayer
               range={HORIZON}
               height="clamp(38px, 5vw, 90px)"
               rise={15}
-              drop={52}
-              color="#6f6f6f"
+              drop={74}
             />
             <RidgeLayer
               range={FAR}
               height="clamp(55px, 8vw, 150px)"
               rise={60}
-              drop={34}
-              color="#2e2e2e"
+              drop={56}
             />
           </>
         }
       />
 
-      {/* Foreground stays pure black so it reads as one shape with the section
-          it carries. */}
       <MountainRange range={NEAR} height="clamp(75px, 11vw, 190px)" rise={220}>
         <div style={{ minHeight: "70vh" }} />
       </MountainRange>
