@@ -15,6 +15,12 @@ export type RidgeDividerProps = {
   rise?: number;
   /** Rotate the silhouette 180deg so the peaks point downward. */
   flip?: boolean;
+  /**
+   * Pixels to pull this whole block upward in flow. The section above reserves
+   * bottom padding to cover its own lift; without cancelling that here, the
+   * reserved space reads as dead air between the copy and the ridge.
+   */
+  pullUp?: number;
   children?: ReactNode;
 };
 
@@ -35,6 +41,7 @@ export default function RidgeDivider({
   sectionColor = "#d4d4d4",
   rise = 180,
   flip = true,
+  pullUp = 0,
   children,
 }: RidgeDividerProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -43,12 +50,24 @@ export default function RidgeDivider({
     target: ref,
     offset: ["start end", "end start"],
   });
-  const y = useTransform(scrollYProgress, [0, 1], [rise / 2, -rise / 2]);
+  // Travels from `rise` down to 0 rather than straddling zero. Lifting past
+  // its layout position would slide this ridge up over the copy above it,
+  // which is black on black and would simply swallow the last line.
+  const y = useTransform(scrollYProgress, [0, 1], [rise, 0]);
 
   return (
     <motion.div
       ref={ref}
-      style={{ position: "relative", y: reduced ? 0 : y, willChange: "transform" }}
+      style={{
+        position: "relative",
+        // Above MountainRange, which sets zIndex 1. pullUp slides this block
+        // over that one, and without winning the stack the ridge is painted
+        // behind it and the transition collapses to a straight edge.
+        zIndex: 2,
+        marginTop: -pullUp,
+        y: reduced ? 0 : y,
+        willChange: "transform",
+      }}
     >
       <div style={{ position: "relative" }}>
         {/* Out of flow, so it adds no height. Extends the ridge colour upward
@@ -65,7 +84,9 @@ export default function RidgeDivider({
             marginBottom: -8,
             left: 0,
             right: 0,
-            height: rise + 80,
+            // Must cover this block's own travel plus the lift of the section
+            // above it, since the two move in opposite directions.
+            height: rise * 2 + 160,
             background: ridgeColor,
           }}
         />

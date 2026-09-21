@@ -44,11 +44,24 @@ export default function Home() {
         height="clamp(75px, 11vw, 190px)"
         rise={180}
         drop={-24}
+        // The divider below extends black upward behind itself, so the default
+        // reserve here would only add dead space above the ridge.
+        padBottom={0}
       >
         <About />
       </MountainRange>
 
-      <RidgeDivider range={CLOSING} rise={180}>
+      {/* padBottom 0 + pullUp 180 sits this block flush against the bottom of
+          the black section. MountainRange's lift is saturated at -rise by the
+          time this is on screen, so a constant 180 cancels it.
+
+          It must meet that edge and never cross it: pulled over the black
+          section, the ridge's notches show black from behind instead of the
+          page grey, and the silhouette vanishes into a straight line.
+
+          rise is 70, not the 180 above. Both blocks parallax, so the gap is the
+          difference of two transforms; at 180 it swung by that much. */}
+      <RidgeDivider range={CLOSING} rise={70} pullUp={180}>
         <div style={{ minHeight: "80vh" }} />
       </RidgeDivider>
     </main>
