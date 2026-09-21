@@ -2,7 +2,10 @@
 
 import { useInView, useReducedMotion } from "motion/react";
 import { useRef } from "react";
-import FanDeck, { type FanDeckCard } from "@/components/FanDeck";
+import FanDeck, {
+  fanDeckIntroMs,
+  type FanDeckCard,
+} from "@/components/FanDeck";
 
 /**
  * Photos are served from /public rather than framerusercontent.com. Hotlinking
@@ -29,11 +32,8 @@ const HIGHLIGHT = "#D9D9D9";
 
 type Segment = { text: string; color?: string };
 
-/**
- * Must track FanDeck's intro: introDuration + introStagger * ceil((n-1)/2),
- * plus its settle margin. The copy waits this out so the two do not overlap.
- */
-const DECK_INTRO_MS = 1150 + 95 * 3 + 60;
+/** Read from FanDeck so retuning the fan cannot desynchronise the copy. */
+const DECK_INTRO_MS = fanDeckIntroMs(PHOTOS.length);
 const LINE_STAGGER_MS = 280;
 const LINE_FADE_MS = 620;
 
@@ -70,7 +70,7 @@ export default function About() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 76,
+        gap: 55,
         padding: "0 30px 140px",
       }}
     >
@@ -84,7 +84,7 @@ export default function About() {
           maxWidth: 560,
           color: BODY,
           textAlign: "center",
-          fontSize: "clamp(13px, 1.45vw, 18px)",
+          fontSize: "clamp(15px, 1.7vw, 21px)",
           lineHeight: 1.45,
           display: "flex",
           flexDirection: "column",

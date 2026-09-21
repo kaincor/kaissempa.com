@@ -75,6 +75,20 @@ const EASING = {
  * curve, so neighbours splay as well as slide. Both constants are lifted from
  * measurements of the reference deck.
  */
+/**
+ * Intro timing, exported so anything sequencing itself after the fan reads the
+ * real numbers instead of copying them. `fanDeckIntroMs` is the point at which
+ * the last card has settled.
+ */
+export const FAN_DECK_INTRO = { rise: 56, stagger: 120, duration: 1500 };
+
+export function fanDeckIntroMs(
+  cardCount: number,
+  o: typeof FAN_DECK_INTRO = FAN_DECK_INTRO,
+) {
+  return o.duration + o.stagger * Math.ceil((cardCount - 1) / 2) + 60;
+}
+
 const PUSH_FALLOFF = 0.6;
 const ROTATION_FALLOFF = 0.2;
 const ROTATION_PUSH_RATIO = 1 / 30;
@@ -95,9 +109,9 @@ export default function FanDeck({
   borderRadius = 10,
   shadow = 0.5,
   frameHeight,
-  introRise = 56,
-  introStagger = 95,
-  introDuration = 1150,
+  introRise = FAN_DECK_INTRO.rise,
+  introStagger = FAN_DECK_INTRO.stagger,
+  introDuration = FAN_DECK_INTRO.duration,
   transition = "smooth",
   className,
 }: FanDeckProps) {
