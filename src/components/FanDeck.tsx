@@ -210,6 +210,10 @@ export default function FanDeck({
                 alt={card.alt}
                 fill
                 sizes={`${cardWidth}px`}
+                // 85 rather than the default 75. In AVIF that is about 5 KB
+                // more per card at the size these render, which is cheap for
+                // photographs where 75 starts smearing skin tones and foliage.
+                quality={85}
                 style={{ objectFit: "cover" }}
                 draggable={false}
               />
