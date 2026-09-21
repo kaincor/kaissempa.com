@@ -1,3 +1,7 @@
+"use client";
+
+import { useInView, useReducedMotion } from "motion/react";
+import { useRef } from "react";
 import FanDeck, { type FanDeckCard } from "@/components/FanDeck";
 
 /**
@@ -26,6 +30,14 @@ const HIGHLIGHT = "#D9D9D9";
 type Segment = { text: string; color?: string };
 
 /**
+ * Must track FanDeck's intro: introDuration + introStagger * ceil((n-1)/2),
+ * plus its settle margin. The copy waits this out so the two do not overlap.
+ */
+const DECK_INTRO_MS = 1150 + 95 * 3 + 60;
+const LINE_STAGGER_MS = 280;
+const LINE_FADE_MS = 620;
+
+/**
  * Kaicords has no typographic apostrophe (U+2019) and no em dash, so this copy
  * uses straight quotes only. A curly one renders as tofu.
  */
@@ -46,6 +58,11 @@ const COPY: Segment[][] = [
 ];
 
 export default function About() {
+  const copyRef = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  const inView = useInView(copyRef, { once: true, amount: 0.4 });
+  const play = reduced ? true : inView;
+
   return (
     <section
       style={{
@@ -53,28 +70,42 @@ export default function About() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 30,
+        gap: 76,
         padding: "0 30px 140px",
       }}
     >
       <FanDeck cards={PHOTOS} frameHeight={460} />
 
       <div
+        ref={copyRef}
         className="display"
         style={{
           width: "100%",
-          maxWidth: 686,
+          maxWidth: 560,
           color: BODY,
           textAlign: "center",
-          fontSize: "clamp(17px, 2vw, 25px)",
+          fontSize: "clamp(13px, 1.45vw, 18px)",
           lineHeight: 1.45,
           display: "flex",
           flexDirection: "column",
-          gap: "1.1em",
+          gap: "0.45em",
         }}
       >
         {COPY.map((line, i) => (
-          <p key={i}>
+          <p
+            key={i}
+            style={{
+              opacity: play ? 1 : 0,
+              transform: play ? "translateY(0)" : "translateY(10px)",
+              transition: reduced
+                ? undefined
+                : `opacity ${LINE_FADE_MS}ms ease-out ${
+                    DECK_INTRO_MS + i * LINE_STAGGER_MS
+                  }ms, transform ${LINE_FADE_MS}ms cubic-bezier(0.22, 1, 0.36, 1) ${
+                    DECK_INTRO_MS + i * LINE_STAGGER_MS
+                  }ms`,
+            }}
+          >
             {line.map((seg, j) => (
               <span key={j} style={seg.color ? { color: seg.color } : undefined}>
                 {seg.text}

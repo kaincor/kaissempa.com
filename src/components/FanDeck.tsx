@@ -95,9 +95,9 @@ export default function FanDeck({
   borderRadius = 10,
   shadow = 0.5,
   frameHeight,
-  introRise = 48,
-  introStagger = 70,
-  introDuration = 780,
+  introRise = 56,
+  introStagger = 95,
+  introDuration = 1150,
   transition = "smooth",
   className,
 }: FanDeckProps) {
