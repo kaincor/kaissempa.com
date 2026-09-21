@@ -6,6 +6,9 @@
   --background: #d4d4d4;
   --foreground: #232323;
   --muted: #454545;
+  /* The case study boxes set the page's content boundary. Art (the hero, the
+     mountain ridges) stays full-bleed; everything else lines up to this. */
+  --content-max: 1120px;
 }
 
 @theme inline {

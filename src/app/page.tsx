@@ -1,9 +1,11 @@
 import About from "@/components/About";
 import Hero from "@/components/Hero";
+import MoreAboutMe from "@/components/MoreAboutMe";
 import ProjectsAndProducts from "@/components/ProjectsAndProducts";
 import MountainRange from "@/components/MountainRange";
 import RidgeDivider from "@/components/RidgeDivider";
 import RidgeLayer from "@/components/RidgeLayer";
+import RidgeRise from "@/components/RidgeRise";
 import { rangeById } from "@/data/mountainRanges";
 
 /**
@@ -25,6 +27,8 @@ const BACK = rangeById(15);
 const FRONT = rangeById(4);
 /** Flipped, so its peaks hang down out of the black section. */
 const CLOSING = rangeById(13);
+/** Opens the More About Me section, peaks upward into the grey. */
+const OPENING = rangeById(12);
 
 export default function Home() {
   return (
@@ -64,7 +68,30 @@ export default function Home() {
           difference of two transforms; at 180 it swung by that much. */}
       <RidgeDivider range={CLOSING} rise={70} pullUp={180}>
         <ProjectsAndProducts />
+        <SectionLabel>More about me</SectionLabel>
       </RidgeDivider>
+
+      <RidgeRise range={OPENING} rise={70}>
+        <MoreAboutMe />
+      </RidgeRise>
     </main>
+  );
+}
+
+/** Sits in the grey, just above the ridge that opens the next section. */
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      className="display"
+      style={{
+        margin: "0 auto",
+        paddingBottom: 18,
+        textAlign: "center",
+        color: "var(--foreground)",
+        fontSize: "clamp(13px, 1.5vw, 18px)",
+      }}
+    >
+      {children}
+    </p>
   );
 }
