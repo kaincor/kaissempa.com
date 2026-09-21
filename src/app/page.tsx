@@ -1,6 +1,7 @@
 import About from "@/components/About";
 import Hero from "@/components/Hero";
 import MountainRange from "@/components/MountainRange";
+import RidgeDivider from "@/components/RidgeDivider";
 import RidgeLayer from "@/components/RidgeLayer";
 import { rangeById } from "@/data/mountainRanges";
 
@@ -21,6 +22,8 @@ import { rangeById } from "@/data/mountainRanges";
  */
 const BACK = rangeById(15);
 const FRONT = rangeById(4);
+/** Flipped, so its peaks hang down out of the black section. */
+const CLOSING = rangeById(13);
 
 export default function Home() {
   return (
@@ -44,6 +47,10 @@ export default function Home() {
       >
         <About />
       </MountainRange>
+
+      <RidgeDivider range={CLOSING} rise={180}>
+        <div style={{ minHeight: "80vh" }} />
+      </RidgeDivider>
     </main>
   );
 }

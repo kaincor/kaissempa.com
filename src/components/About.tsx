@@ -71,7 +71,7 @@ export default function About() {
         flexDirection: "column",
         alignItems: "center",
         gap: 55,
-        padding: "0 30px 140px",
+        padding: "0 30px 90px",
       }}
     >
       <FanDeck cards={PHOTOS} frameHeight={460} />
