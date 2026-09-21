@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type FanDeckCard = {
   src: string;
@@ -14,7 +14,10 @@ export type FanDeckProps = {
   count?: number;
 
   // Layout
-  /** Horizontal gap between adjacent card centres, px. */
+  /**
+   * Horizontal gap between adjacent card centres, px. 65 comes from Kai's
+   * Framer frame: 630px wide holding 7 cards of 240 gives (630-240)/6.
+   */
   spacing?: number;
   /** Vertical arc depth. Each card drops `arcDepth * d²` px, d = steps from centre. */
   arcDepth?: number;
@@ -71,7 +74,7 @@ const ROTATION_PUSH_RATIO = 1 / 30;
 export default function FanDeck({
   cards,
   count = 7,
-  spacing = 120,
+  spacing = 65,
   arcDepth = 13,
   rotationStep = 10,
   sizeDecay = 0.07,
@@ -88,21 +91,52 @@ export default function FanDeck({
   className,
 }: FanDeckProps) {
   const [active, setActive] = useState<number | null>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
 
   const items = cards ?? Array.from({ length: count }, () => null);
   const n = items.length;
   const centre = (n - 1) / 2;
+  const frameH = frameHeight ?? cardHeight * 1.6;
+
+  // The fan is wider than its container on narrow screens, and the outer cards
+  // would simply be cut off. Scale the whole arrangement to fit instead of
+  // reflowing it, so the composition holds at every width. pushForce is added
+  // because a hovered end card shoves its neighbours further outward.
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const natural = spacing * (n - 1) + cardWidth + pushForce;
+    const measure = () =>
+      setFit(Math.min(1, el.clientWidth / natural));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [spacing, n, cardWidth, pushForce]);
 
   return (
     <div
+      ref={frameRef}
       className={className}
       style={{
         position: "relative",
         width: "100%",
-        height: frameHeight ?? cardHeight * 1.6,
+        height: Math.round(frameH * fit),
       }}
       onMouseLeave={() => setActive(null)}
     >
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: "50%",
+          height: frameH,
+          transform: `translateY(-50%) scale(${fit})`,
+          transformOrigin: "center",
+        }}
+      >
       {items.map((card, i) => {
         const d = i - centre;
         const away = Math.abs(d);
@@ -176,6 +210,7 @@ export default function FanDeck({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

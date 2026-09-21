@@ -3,12 +3,19 @@ import FanDeck, { type FanDeckCard } from "@/components/FanDeck";
 /**
  * Photos are served from /public rather than framerusercontent.com. Hotlinking
  * the Framer CDN would tie this page's images to a site we are replacing.
+ *
+ * Originals live in assets/Images at ~3000px; these are capped at 1400 on the
+ * long edge, which still covers a 240x360 card at 3x. Order here is the
+ * left-to-right order in the fan.
  */
 const PHOTOS: FanDeckCard[] = [
-  { src: "/photos/helmet-on-the-ski-lift.jpg", alt: "Kai in a helmet on a ski lift" },
-  { src: "/photos/red-stole-with-half-cyprien.jpg", alt: "Kai wearing a red stole" },
-  { src: "/photos/mountain-biking-breakfast.jpg", alt: "Breakfast on a mountain biking trip" },
-  { src: "/photos/biking-with-ben.jpg", alt: "Kai out biking with Ben" },
+  { src: "/photos/bay-to-breakers.jpg", alt: "Kai at Bay to Breakers" },
+  { src: "/photos/eating-breakfast-in-utah.jpg", alt: "Eating breakfast in Utah" },
+  { src: "/photos/irving-raghad-cyprien-kai.jpg", alt: "Irving, Raghad, Cyprien and Kai" },
+  { src: "/photos/kai-and-dia.jpg", alt: "Kai and Dia" },
+  { src: "/photos/kai-in-lake-lagunita.jpg", alt: "Kai in Lake Lagunita" },
+  { src: "/photos/kai-with-stick.jpg", alt: "Kai holding a stick" },
+  { src: "/photos/snowboarding-with-ben.jpg", alt: "Snowboarding with Ben" },
 ];
 
 /**
