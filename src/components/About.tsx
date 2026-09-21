@@ -31,17 +31,15 @@ type Segment = { text: string; color?: string };
  */
 const COPY: Segment[][] = [
   [
-    { text: "I'm currently studying " },
-    { text: "design", color: HIGHLIGHT },
-    { text: " & computer science at " },
+    { text: "I'm currently studying design & computer science at " },
     { text: "Stanford", color: CARDINAL },
     { text: "." },
   ],
   [
     { text: "I love using both " },
-    { text: "design", color: HIGHLIGHT },
-    { text: " & " },
-    { text: "development", color: HIGHLIGHT },
+    // Highlighted as one phrase, ampersand included, so the pairing reads as a
+    // unit rather than two white words with a grey join between them.
+    { text: "design & development", color: HIGHLIGHT },
     { text: " to make things that are fun & functional." },
   ],
   [{ text: "I also enjoy mountain biking & do it competitively." }],
@@ -67,6 +65,7 @@ export default function About() {
           width: "100%",
           maxWidth: 686,
           color: BODY,
+          textAlign: "center",
           fontSize: "clamp(17px, 2vw, 25px)",
           lineHeight: 1.45,
           display: "flex",
