@@ -15,6 +15,17 @@ const GAP = 75;
 /** Where the case studies point until the real pages exist. */
 const WIP = "/wip";
 
+/**
+ * Per-project shadow colours, taken from the Framer colour styles rather than
+ * sampled by eye: Zorzal Wine is the exact fill in zorzal-typography.svg, and
+ * Fortuna Green is that project's accent.
+ *
+ * Coloured shadows need more alpha than black to carry the same weight — a
+ * mid-tone at 0.45 reads considerably lighter than black at 0.45.
+ */
+const ZORZAL_WINE = { rgb: "152 60 68", alpha: 0.6 };
+const FORTUNA_GREEN = { rgb: "105 189 69", alpha: 0.62 };
+
 export default function ProjectsAndProducts() {
   return (
     <section
@@ -28,7 +39,7 @@ export default function ProjectsAndProducts() {
     >
       <SectionTitle>Projects &amp; Products</SectionTitle>
 
-      <Thumb label="Fortuna" href={null}>
+      <Thumb label="Fortuna" href={null} shadow={FORTUNA_GREEN}>
         <FortunaThumb
           src="https://my.spline.design/untitled-LJJusTxa5gWBBga8bpLjm42w-3v2/"
           href={WIP}
@@ -36,7 +47,7 @@ export default function ProjectsAndProducts() {
         />
       </Thumb>
 
-      <Thumb label="Zorzal" background="#ffffff">
+      <Thumb label="Zorzal" background="#ffffff" shadow={ZORZAL_WINE}>
         <CloudDrift
           layers={[
             { src: "/case-studies/cloud-1.svg", heightPct: 94.6, aspect: 2.452, duration: 26 },
@@ -145,6 +156,7 @@ function Thumb({
   label,
   href = WIP,
   background,
+  shadow,
   children,
 }: {
   label: string;
@@ -156,12 +168,20 @@ function Thumb({
    */
   href?: string | null;
   background?: string;
+  /** Overrides the default black shadow. */
+  shadow?: { rgb: string; alpha: number };
   children?: ReactNode;
 }) {
   const frame = (
     <div
       className="thumb-shadow"
       style={{
+        ...(shadow
+          ? ({
+              "--thumb-shadow-rgb": shadow.rgb,
+              "--thumb-shadow-alpha": String(shadow.alpha),
+            } as React.CSSProperties)
+          : null),
         position: "relative",
         width: "100%",
         aspectRatio: "2 / 1",
