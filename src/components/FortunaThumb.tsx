@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -25,6 +24,10 @@ import { useEffect, useRef, useState } from "react";
  *
  * tabIndex -1 keeps the iframe out of the tab order, so focus can only land on
  * it by being clicked. Without that, tabbing past this box would navigate.
+ *
+ * Trade-off worth knowing: with no visible chip there is no keyboard route to
+ * this case study. Acceptable while every box points at the same placeholder;
+ * revisit when the real pages exist.
  *
  * The corner chip stays as the visible affordance and the keyboard path, since
  * the focus trick is mouse-only.
@@ -115,27 +118,6 @@ export default function FortunaThumb({
         />
       ) : null}
 
-      <Link
-        href={href}
-        className="display"
-        style={{
-          position: "absolute",
-          right: 16,
-          bottom: 16,
-          zIndex: 30,
-          padding: "9px 14px",
-          borderRadius: 999,
-          background: "rgba(5, 5, 5, 0.62)",
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter: "blur(18px)",
-          color: "#fff",
-          fontSize: 13,
-          lineHeight: 1,
-          textDecoration: "none",
-        }}
-      >
-        {label}
-      </Link>
     </div>
   );
 }

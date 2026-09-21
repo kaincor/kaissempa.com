@@ -56,8 +56,12 @@ export default function ProjectsAndProducts() {
             right: "-5.36%",
             bottom: "-34.8%",
             width: "110.72%",
+            // Tailwind's preflight sets img { max-width: 100% }, which was
+            // clamping the 110.72% back to the container width. The art then
+            // sat 37px short of the right edge, which read as white space.
+            maxWidth: "none",
             height: "75.5%",
-            // Nudged right; the art is not centred within its own viewBox.
+            // Nudged right; the overhang is deliberately uneven.
             transform: "translateX(22px)",
             zIndex: 10,
           }}
@@ -171,12 +175,18 @@ function Thumb({
   return (
     <motion.div
       style={{ width: "100%", maxWidth: MAX_WIDTH }}
-      initial={{ opacity: 0, y: 26 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 72, scale: 0.9 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
       // once: the animation is a greeting, not a state. Replaying it on every
       // pass makes the page feel like it is reintroducing itself.
       viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      // Springs on the movement so it overshoots and settles; a plain tween on
+      // the fade, because a bouncing opacity flickers.
+      transition={{
+        y: { type: "spring", stiffness: 58, damping: 11, mass: 1.1 },
+        scale: { type: "spring", stiffness: 58, damping: 11, mass: 1.1 },
+        opacity: { duration: 0.75, ease: "easeOut" },
+      }}
     >
       {href ? (
         <Link href={href} aria-label={label} style={{ display: "block" }}>
