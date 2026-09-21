@@ -80,8 +80,11 @@ export default function About() {
         ref={copyRef}
         className="display"
         style={{
-          width: "100%",
-          maxWidth: 560,
+          // Sized to its longest line rather than a fixed width, so the
+          // "I love using both..." sentence stays on one line at any font size
+          // and only wraps once the viewport genuinely cannot fit it.
+          width: "fit-content",
+          maxWidth: "100%",
           color: BODY,
           textAlign: "center",
           fontSize: "clamp(15px, 1.7vw, 21px)",
