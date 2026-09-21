@@ -55,3 +55,21 @@ body {
   -webkit-backdrop-filter: blur(32px);
   corner-shape: superellipse(1.5);
 }
+
+/* Case study thumbnails. The shadow grows over three seconds on hover, from
+   nothing to something, even on all four sides — no offset, so it reads as the
+   card lifting off the page rather than being lit from above.
+
+   CSS :hover rather than React state deliberately: the Fortuna box is a
+   cross-origin iframe, which swallows pointerenter, so a JS hover would never
+   fire for it. The browser keeps :hover accurate regardless.
+
+   The global prefers-reduced-motion rule already collapses this transition. */
+.thumb-shadow {
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  transition: box-shadow 3s cubic-bezier(0.33, 0, 0.35, 1);
+}
+
+.thumb-shadow:hover {
+  box-shadow: 0 0 34px 5px rgba(0, 0, 0, 0.3);
+}

@@ -120,9 +120,12 @@ function SectionTitle({ children }: { children: ReactNode }) {
       ref={ref}
       className="display"
       initial={false}
-      animate={play ? { opacity: 1, y: 0 } : { opacity: 0, y: -28 }}
+      animate={play ? { opacity: 1, y: 0 } : { opacity: 0, y: -44 }}
       transition={
-        reduced ? { duration: 0 } : { duration: 0.7, ease: [0.22, 1, 0.36, 1] }
+        reduced
+          ? { duration: 0 }
+          : // Drawn out: at 0.7s it was over before it registered.
+            { duration: 1.9, ease: [0.16, 1, 0.3, 1] }
       }
       style={{
         margin: "0 auto",
@@ -157,6 +160,7 @@ function Thumb({
 }) {
   const frame = (
     <div
+      className="thumb-shadow"
       style={{
         position: "relative",
         width: "100%",
