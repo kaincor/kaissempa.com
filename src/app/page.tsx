@@ -1,5 +1,6 @@
 import About from "@/components/About";
 import Hero from "@/components/Hero";
+import ProjectsAndProducts from "@/components/ProjectsAndProducts";
 import MountainRange from "@/components/MountainRange";
 import RidgeDivider from "@/components/RidgeDivider";
 import RidgeLayer from "@/components/RidgeLayer";
@@ -62,7 +63,7 @@ export default function Home() {
           rise is 70, not the 180 above. Both blocks parallax, so the gap is the
           difference of two transforms; at 180 it swung by that much. */}
       <RidgeDivider range={CLOSING} rise={70} pullUp={180}>
-        <div style={{ minHeight: "80vh" }} />
+        <ProjectsAndProducts />
       </RidgeDivider>
     </main>
   );
