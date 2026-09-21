@@ -44,14 +44,21 @@ export default function CloudDrift({ layers }: { layers: CloudLayerSpec[] }) {
             style={{
               position: "absolute",
               bottom: 0,
-              // Offset by one tile so the row already covers the left edge
-              // before the drift begins.
-              left: `-${100 / TILE_COUNT}%`,
+              left: 0,
               display: "flex",
-              width: `${TILE_COUNT * 100}%`,
+              // max-content, not a percentage of the container. A percentage
+              // width makes the row a multiple of the CONTAINER, while a tile
+              // is height x aspect — the two only agree by accident, and the
+              // mismatch is what makes the loop jump.
+              width: "max-content",
               height: `${layer.heightPct}%`,
             }}
-            animate={reduced ? undefined : { x: [`0%`, `${100 / TILE_COUNT}%`] }}
+            // x as a percentage resolves against the element's own width. With
+            // the row sized to exactly TILE_COUNT tiles, 100/TILE_COUNT percent
+            // is exactly one tile, so the loop lands pixel-perfect at any size.
+            animate={
+              reduced ? undefined : { x: [`-${100 / TILE_COUNT}%`, "0%"] }
+            }
             transition={
               reduced
                 ? undefined
@@ -72,7 +79,10 @@ export default function CloudDrift({ layers }: { layers: CloudLayerSpec[] }) {
                 style={{
                   height: "100%",
                   aspectRatio: layer.aspect,
+                  // Without this the tiles squash to fit the row and the tile
+                  // width stops matching the travel distance.
                   flexShrink: 0,
+                  width: "auto",
                   display: "block",
                 }}
               />

@@ -27,11 +27,10 @@ export default function ProjectsAndProducts() {
     >
       <SectionTitle>Projects &amp; Products</SectionTitle>
 
-      <Thumb label="Fortuna">
-        {/* Kai's published Hana scene. pointer-events are off so the whole box
-            stays a single link target rather than the iframe swallowing clicks,
-            and it is lazy so a ~2.7MB scene below the fold is not fetched until
-            the reader is heading towards it. */}
+      {/* The scene keeps its pointer events, so this box is NOT a whole-box
+          link — a cross-origin iframe swallows the event and the parent never
+          sees the click. The corner chip carries the link instead. */}
+      <Thumb label="Fortuna" href={null} corner={{ label: "Fortuna", href: WIP }}>
         <iframe
           src="https://my.spline.design/untitled-LJJusTxa5gWBBga8bpLjm42w-3v2/"
           title="Fortuna — interactive scene"
@@ -43,7 +42,6 @@ export default function ProjectsAndProducts() {
             height: "100%",
             border: 0,
             display: "block",
-            pointerEvents: "none",
           }}
         />
       </Thumb>
@@ -69,6 +67,8 @@ export default function ProjectsAndProducts() {
             bottom: "-34.8%",
             width: "110.72%",
             height: "75.5%",
+            // Nudged right; the art is not centred within its own viewBox.
+            transform: "translateX(22px)",
             zIndex: 10,
           }}
         />
@@ -110,7 +110,7 @@ export default function ProjectsAndProducts() {
       </Thumb>
 
       {/* Placeholder for work still to come. */}
-      <Thumb label="More work coming" href={undefined} background="#8c8c8c" />
+      <Thumb label="More work coming" href={null} background="#8c8c8c" />
     </section>
   );
 }
@@ -148,11 +148,20 @@ function Thumb({
   label,
   href = WIP,
   background,
+  corner,
   children,
 }: {
   label: string;
-  href?: string;
+  /**
+   * null means "not a link". It cannot be undefined: a default parameter only
+   * applies to undefined, so `href={undefined}` silently falls back to WIP and
+   * wraps the box in an anchor — which nested the corner chip's anchor inside
+   * it and broke hydration.
+   */
+  href?: string | null;
   background?: string;
+  /** Link chip for boxes whose content needs its own pointer events. */
+  corner?: { label: string; href: string };
   children?: ReactNode;
 }) {
   const frame = (
@@ -169,6 +178,29 @@ function Thumb({
       }}
     >
       {children}
+      {corner ? (
+        <Link
+          href={corner.href}
+          className="display"
+          style={{
+            position: "absolute",
+            right: 16,
+            bottom: 16,
+            zIndex: 30,
+            padding: "9px 14px",
+            borderRadius: 999,
+            background: "rgba(5, 5, 5, 0.62)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            color: "#fff",
+            fontSize: 13,
+            lineHeight: 1,
+            textDecoration: "none",
+          }}
+        >
+          {corner.label}
+        </Link>
+      ) : null}
     </div>
   );
 

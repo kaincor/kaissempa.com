@@ -32,8 +32,12 @@ const HIGHLIGHT = "#D9D9D9";
 
 type Segment = { text: string; color?: string };
 
-/** Read from FanDeck so retuning the fan cannot desynchronise the copy. */
-const DECK_INTRO_MS = fanDeckIntroMs(PHOTOS.length);
+/**
+ * Read from FanDeck so retuning the fan cannot desynchronise the copy. Starts
+ * halfway through the fan rather than after it: waiting for the whole intro
+ * left too long a pause before the first line appeared.
+ */
+const DECK_INTRO_MS = Math.round(fanDeckIntroMs(PHOTOS.length) * 0.5);
 const LINE_STAGGER_MS = 280;
 const LINE_FADE_MS = 620;
 
