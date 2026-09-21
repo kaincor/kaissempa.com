@@ -82,3 +82,32 @@ body {
     rgb(var(--thumb-shadow-rgb) / var(--thumb-shadow-alpha));
   transition: box-shadow 2s cubic-bezier(0.33, 0, 0.35, 1);
 }
+
+/* Cloud drift. A CSS keyframe rather than a JS-driven transform: it runs on
+   the compositor, and animation-play-state can freeze it where it stands when
+   it scrolls out of view, which a JS animation cannot do without jumping.
+
+   The travel is one tile of six. Percentage transforms resolve against the
+   element's own width, and the row is sized to exactly six tiles, so this is
+   pixel-exact at any container width. */
+@keyframes cloud-drift {
+  from {
+    transform: translateX(-16.6667%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.cloud-row {
+  animation-name: cloud-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud-row {
+    animation: none !important;
+  }
+}

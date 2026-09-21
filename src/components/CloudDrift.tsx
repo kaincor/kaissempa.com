@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 
 export type CloudLayerSpec = {
   src: string;
@@ -12,24 +12,37 @@ export type CloudLayerSpec = {
   duration: number;
 };
 
+/** Must match the -16.6667% travel in the cloud-drift keyframe. */
 const TILE_COUNT = 6;
 
 /**
  * Two cloud layers drifting at different speeds behind the Zorzal art.
  *
- * Ported from the Framer component, with the sizing changed from fixed pixels
- * to percentages. The original's tiles were a fixed height regardless of the
- * container, so the clouds only lined up at one width.
- *
- * The loop translates by exactly one tile. With N identical tiles in a flex
- * row, that is 100/N percent of the row's own width, which avoids having to
- * measure anything in JavaScript.
+ * Ported from the Framer component with two changes. Sizing is percentage
+ * rather than fixed pixels — the original's tiles were a fixed height whatever
+ * the container, so the loop only lined up at one width. And the motion is a
+ * CSS keyframe rather than a JS-driven transform, so it runs on the compositor
+ * and can be frozen in place while the card is off screen.
  */
 export default function CloudDrift({ layers }: { layers: CloudLayerSpec[] }) {
-  const reduced = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const [running, setRunning] = useState(true);
+
+  // No reason to keep animating a card nobody is looking at.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => setRunning(entries.some((e) => e.isIntersecting)),
+      { rootMargin: "100px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
     <div
+      ref={ref}
       aria-hidden="true"
       style={{
         position: "absolute",
@@ -40,35 +53,20 @@ export default function CloudDrift({ layers }: { layers: CloudLayerSpec[] }) {
     >
       {layers.map((layer, i) => (
         <div key={i} style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-          <motion.div
+          <div
+            className="cloud-row"
             style={{
               position: "absolute",
               bottom: 0,
               left: 0,
               display: "flex",
-              // max-content, not a percentage of the container. A percentage
-              // width makes the row a multiple of the CONTAINER, while a tile
-              // is height x aspect — the two only agree by accident, and the
-              // mismatch is what makes the loop jump.
+              // max-content, not a percentage of the container: a tile is
+              // height x aspect, and the two only agree by accident otherwise.
               width: "max-content",
               height: `${layer.heightPct}%`,
+              animationDuration: `${layer.duration}s`,
+              animationPlayState: running ? "running" : "paused",
             }}
-            // x as a percentage resolves against the element's own width. With
-            // the row sized to exactly TILE_COUNT tiles, 100/TILE_COUNT percent
-            // is exactly one tile, so the loop lands pixel-perfect at any size.
-            animate={
-              reduced ? undefined : { x: [`-${100 / TILE_COUNT}%`, "0%"] }
-            }
-            transition={
-              reduced
-                ? undefined
-                : {
-                    duration: layer.duration,
-                    repeat: Infinity,
-                    repeatType: "loop",
-                    ease: "linear",
-                  }
-            }
           >
             {Array.from({ length: TILE_COUNT }).map((_, t) => (
               // eslint-disable-next-line @next/next/no-img-element
@@ -79,15 +77,16 @@ export default function CloudDrift({ layers }: { layers: CloudLayerSpec[] }) {
                 style={{
                   height: "100%",
                   aspectRatio: layer.aspect,
-                  // Without this the tiles squash to fit the row and the tile
-                  // width stops matching the travel distance.
+                  // Without this the tiles squash to fit and the tile width
+                  // stops matching the travel distance.
                   flexShrink: 0,
                   width: "auto",
+                  maxWidth: "none",
                   display: "block",
                 }}
               />
             ))}
-          </motion.div>
+          </div>
         </div>
       ))}
     </div>
