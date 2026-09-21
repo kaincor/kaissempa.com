@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "motion/react";
 import { useRef, type ReactNode } from "react";
 import CloudDrift from "@/components/CloudDrift";
+import FortunaThumb from "@/components/FortunaThumb";
 
 /** Every box is 2:1 and 1120 wide at most, matching the Framer build. */
 const MAX_WIDTH = 1120;
@@ -27,22 +28,11 @@ export default function ProjectsAndProducts() {
     >
       <SectionTitle>Projects &amp; Products</SectionTitle>
 
-      {/* The scene keeps its pointer events, so this box is NOT a whole-box
-          link — a cross-origin iframe swallows the event and the parent never
-          sees the click. The corner chip carries the link instead. */}
-      <Thumb label="Fortuna" href={null} corner={{ label: "Fortuna", href: WIP }}>
-        <iframe
+      <Thumb label="Fortuna" href={null}>
+        <FortunaThumb
           src="https://my.spline.design/untitled-LJJusTxa5gWBBga8bpLjm42w-3v2/"
-          title="Fortuna — interactive scene"
-          loading="lazy"
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            border: 0,
-            display: "block",
-          }}
+          href={WIP}
+          label="Fortuna"
         />
       </Thumb>
 
@@ -148,7 +138,6 @@ function Thumb({
   label,
   href = WIP,
   background,
-  corner,
   children,
 }: {
   label: string;
@@ -160,8 +149,6 @@ function Thumb({
    */
   href?: string | null;
   background?: string;
-  /** Link chip for boxes whose content needs its own pointer events. */
-  corner?: { label: string; href: string };
   children?: ReactNode;
 }) {
   const frame = (
@@ -178,34 +165,19 @@ function Thumb({
       }}
     >
       {children}
-      {corner ? (
-        <Link
-          href={corner.href}
-          className="display"
-          style={{
-            position: "absolute",
-            right: 16,
-            bottom: 16,
-            zIndex: 30,
-            padding: "9px 14px",
-            borderRadius: 999,
-            background: "rgba(5, 5, 5, 0.62)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-            color: "#fff",
-            fontSize: 13,
-            lineHeight: 1,
-            textDecoration: "none",
-          }}
-        >
-          {corner.label}
-        </Link>
-      ) : null}
     </div>
   );
 
   return (
-    <div style={{ width: "100%", maxWidth: MAX_WIDTH }}>
+    <motion.div
+      style={{ width: "100%", maxWidth: MAX_WIDTH }}
+      initial={{ opacity: 0, y: 26 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      // once: the animation is a greeting, not a state. Replaying it on every
+      // pass makes the page feel like it is reintroducing itself.
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+    >
       {href ? (
         <Link href={href} aria-label={label} style={{ display: "block" }}>
           {frame}
@@ -215,6 +187,6 @@ function Thumb({
           {frame}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
