@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useInView, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 export type FanDeckCard = {
@@ -119,11 +119,8 @@ export default function FanDeck({
   const frameRef = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState(1);
 
-  // The deck sits below the fold, so the intro waits until it is actually
-  // looked at rather than firing on load and being missed.
   const reduced = useReducedMotion();
-  const inView = useInView(frameRef, { once: true, amount: 0.3 });
-  const entered = reduced ? true : inView;
+  const [entered, setEntered] = useState(reduced ?? false);
 
   // Once the fan has arrived, hand the transition back to the hover timing.
   // Leaving the long intro easing in place would make hovering feel sluggish.
@@ -135,6 +132,42 @@ export default function FanDeck({
   const n = items.length;
   const centre = (n - 1) / 2;
   const frameH = frameHeight ?? cardHeight * 1.6;
+
+  /**
+   * The intro waits until the deck is genuinely being looked at.
+   *
+   * The observer is armed on a delay rather than at mount. During the first
+   * frames the hero has not taken its 100dvh yet, so the deck momentarily sits
+   * near the top of the page; a watcher running then sees it immediately and
+   * latches, and the fan has finished before the reader has scrolled anywhere
+   * near it. That is what made it look like the animation fired too early — it
+   * had in fact already played.
+   *
+   * threshold 0.55 with a negative bottom margin then holds it back until most
+   * of the deck is clear of the lower edge of the screen.
+   */
+  useEffect(() => {
+    if (reduced) return;
+    const el = frameRef.current;
+    if (!el) return;
+    let io: IntersectionObserver | undefined;
+    const arm = setTimeout(() => {
+      io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.intersectionRatio >= 0.55)) {
+            setEntered(true);
+            io?.disconnect();
+          }
+        },
+        { threshold: [0.55], rootMargin: "0px 0px -12% 0px" },
+      );
+      io.observe(el);
+    }, 250);
+    return () => {
+      clearTimeout(arm);
+      io?.disconnect();
+    };
+  }, [reduced]);
 
   useEffect(() => {
     if (!entered || reduced) return;
