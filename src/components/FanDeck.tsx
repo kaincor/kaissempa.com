@@ -15,8 +15,10 @@ export type FanDeckProps = {
 
   // Layout
   /**
-   * Horizontal gap between adjacent card centres, px. 65 comes from Kai's
-   * Framer frame: 630px wide holding 7 cards of 240 gives (630-240)/6.
+   * Horizontal gap between adjacent card centres, px. Kai's Framer frame is
+   * 630px, which would imply 65 for seven cards — but the live deck renders
+   * cards outside that frame, so the frame never bounded the fan and 65 reads
+   * far too tight. This is a spread the fan wears well at, scaled to fit.
    */
   spacing?: number;
   /** Vertical arc depth. Each card drops `arcDepth * d²` px, d = steps from centre. */
@@ -74,7 +76,7 @@ const ROTATION_PUSH_RATIO = 1 / 30;
 export default function FanDeck({
   cards,
   count = 7,
-  spacing = 65,
+  spacing = 118,
   arcDepth = 13,
   rotationStep = 10,
   sizeDecay = 0.07,
@@ -101,19 +103,24 @@ export default function FanDeck({
 
   // The fan is wider than its container on narrow screens, and the outer cards
   // would simply be cut off. Scale the whole arrangement to fit instead of
-  // reflowing it, so the composition holds at every width. pushForce is added
-  // because a hovered end card shoves its neighbours further outward.
+  // reflowing it, so the composition holds as the window narrows.
+  //
+  // Headroom covers the hovered card's growth plus a little slack. It
+  // deliberately does NOT reserve the full push distance: neighbours only
+  // splay while a card is hovered, and reserving for that permanently would
+  // shrink the resting fan to pay for a transient state. The overflow is not
+  // clipped, so a hover near the edge simply spills into the page margin.
   useEffect(() => {
     const el = frameRef.current;
     if (!el) return;
-    const natural = spacing * (n - 1) + cardWidth + pushForce;
-    const measure = () =>
-      setFit(Math.min(1, el.clientWidth / natural));
+    const headroom = (cardWidth * (hoverScale - 1)) / 2 + 24;
+    const natural = spacing * (n - 1) + cardWidth + headroom * 2;
+    const measure = () => setFit(Math.min(1, el.clientWidth / natural));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [spacing, n, cardWidth, pushForce]);
+  }, [spacing, n, cardWidth, hoverScale]);
 
   return (
     <div
