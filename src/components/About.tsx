@@ -18,7 +18,7 @@ const PHOTOS: FanDeckCard[] = [
   { src: "/photos/irving-raghad-cyprien-kai.jpg", alt: "Irving, Raghad, Cyprien and Kai" },
 ];
 
-const BODY = "#535353";
+const BODY = "#6E6E6E";
 /** Stanford cardinal. */
 const CARDINAL = "#8C1515";
 const HIGHLIGHT = "#D9D9D9";

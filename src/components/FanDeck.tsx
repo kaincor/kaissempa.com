@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 export type FanDeckCard = {
@@ -50,6 +51,11 @@ export type FanDeckProps = {
 
   /** Height of the deck's frame. Defaults to 1.6x the card height. */
   frameHeight?: number;
+  /** Pixels the stack sits below its resting position before the intro runs. */
+  introRise?: number;
+  /** Per-card delay outward from the centre, ms. 0 disables the stagger. */
+  introStagger?: number;
+  introDuration?: number;
   transition?: "bouncy" | "smooth";
   className?: string;
 };
@@ -89,6 +95,9 @@ export default function FanDeck({
   borderRadius = 10,
   shadow = 0.5,
   frameHeight,
+  introRise = 48,
+  introStagger = 70,
+  introDuration = 780,
   transition = "smooth",
   className,
 }: FanDeckProps) {
@@ -96,10 +105,29 @@ export default function FanDeck({
   const frameRef = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState(1);
 
+  // The deck sits below the fold, so the intro waits until it is actually
+  // looked at rather than firing on load and being missed.
+  const reduced = useReducedMotion();
+  const inView = useInView(frameRef, { once: true, amount: 0.3 });
+  const entered = reduced ? true : inView;
+
+  // Once the fan has arrived, hand the transition back to the hover timing.
+  // Leaving the long intro easing in place would make hovering feel sluggish.
+  // Derived rather than set in the effect, so reduced motion needs no render.
+  const [introDone, setIntroDone] = useState(false);
+  const settled = reduced || introDone;
+
   const items = cards ?? Array.from({ length: count }, () => null);
   const n = items.length;
   const centre = (n - 1) / 2;
   const frameH = frameHeight ?? cardHeight * 1.6;
+
+  useEffect(() => {
+    if (!entered || reduced) return;
+    const last = introStagger * Math.ceil((n - 1) / 2);
+    const t = setTimeout(() => setIntroDone(true), introDuration + last + 60);
+    return () => clearTimeout(t);
+  }, [entered, reduced, introStagger, introDuration, n]);
 
   // The fan is wider than its container on narrow screens, and the outer cards
   // would simply be cut off. Scale the whole arrangement to fit instead of
@@ -190,11 +218,24 @@ export default function FanDeck({
               overflow: "hidden",
               // Rounded to keep subpixel jitter out of the compositor.
               zIndex: Math.round(100 - away * 10),
-              transform: `translate(${x.toFixed(3)}px, ${y.toFixed(
-                3,
-              )}px) rotate(${rotate.toFixed(4)}deg) scale(${scale.toFixed(4)})`,
+              // Before the intro the cards are a single squared-up stack sitting
+              // low; entering fans them to their resting transforms.
+              transform: entered
+                ? `translate(${x.toFixed(3)}px, ${y.toFixed(
+                    3,
+                  )}px) rotate(${rotate.toFixed(4)}deg) scale(${scale.toFixed(
+                    4,
+                  )})`
+                : `translate(0px, ${introRise}px) rotate(0deg) scale(1)`,
+              opacity: entered ? 1 : 0,
               transformOrigin: "center",
-              transition: `transform 0.3s ${EASING[transition]}`,
+              transition: settled
+                ? `transform 0.3s ${EASING[transition]}`
+                : `transform ${introDuration}ms cubic-bezier(0.22, 1, 0.36, 1) ${
+                    away * introStagger
+                  }ms, opacity ${Math.round(introDuration * 0.55)}ms ease-out ${
+                    away * introStagger
+                  }ms`,
               willChange: "transform",
               boxShadow: `0 15px 35px rgba(0, 0, 0, ${shadow})`,
               background: card
