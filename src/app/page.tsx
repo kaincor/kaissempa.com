@@ -1,3 +1,4 @@
+import About from "@/components/About";
 import Hero from "@/components/Hero";
 import MountainRange from "@/components/MountainRange";
 import RidgeLayer from "@/components/RidgeLayer";
@@ -41,7 +42,7 @@ export default function Home() {
         rise={180}
         drop={-24}
       >
-        <div style={{ minHeight: "70vh" }} />
+        <About />
       </MountainRange>
     </main>
   );

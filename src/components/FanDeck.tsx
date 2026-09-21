@@ -43,10 +43,17 @@ export type FanDeckProps = {
   /** Shadow opacity, 0–1. */
   shadow?: number;
 
+  /** Height of the deck's frame. Defaults to 1.6x the card height. */
+  frameHeight?: number;
   transition?: "bouncy" | "smooth";
   className?: string;
 };
 
+/**
+ * Defaults match Kai's configured Framer instance (hoverBoost 1.15, hoverLift
+ * 30, pushForce 125, radius 10, shadow 0.5, smooth), not the marketplace demo
+ * the geometry was originally measured from.
+ */
 const EASING = {
   bouncy: "cubic-bezier(0.34, 1.56, 0.64, 1)",
   smooth: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -68,15 +75,16 @@ export default function FanDeck({
   arcDepth = 13,
   rotationStep = 10,
   sizeDecay = 0.07,
-  hoverScale = 1.05,
-  hoverLift = 10,
+  hoverScale = 1.15,
+  hoverLift = 30,
   recedeScale = 0.96,
-  pushForce = 150,
+  pushForce = 125,
   cardWidth = 240,
   cardHeight = 360,
-  borderRadius = 24,
-  shadow = 0.25,
-  transition = "bouncy",
+  borderRadius = 10,
+  shadow = 0.5,
+  frameHeight,
+  transition = "smooth",
   className,
 }: FanDeckProps) {
   const [active, setActive] = useState<number | null>(null);
@@ -88,7 +96,11 @@ export default function FanDeck({
   return (
     <div
       className={className}
-      style={{ position: "relative", width: "100%", height: cardHeight * 1.6 }}
+      style={{
+        position: "relative",
+        width: "100%",
+        height: frameHeight ?? cardHeight * 1.6,
+      }}
       onMouseLeave={() => setActive(null)}
     >
       {items.map((card, i) => {
