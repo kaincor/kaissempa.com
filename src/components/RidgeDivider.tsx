@@ -60,10 +60,13 @@ export default function RidgeDivider({
       ref={ref}
       style={{
         position: "relative",
-        // Above MountainRange, which sets zIndex 1. pullUp slides this block
-        // over that one, and without winning the stack the ridge is painted
-        // behind it and the transition collapses to a straight edge.
-        zIndex: 2,
+        // Deliberately behind MountainRange (zIndex 1). pullUp slides this
+        // block up so its black backing reaches into the section above; in
+        // front, that backing covers the deck and the copy. Behind, it is
+        // black on black where it overlaps and only shows in the gap it exists
+        // to fill. The ridge itself still reads because it stops at the black
+        // section's bottom edge rather than crossing it.
+        zIndex: 0,
         marginTop: -pullUp,
         y: reduced ? 0 : y,
         willChange: "transform",
