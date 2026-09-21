@@ -18,16 +18,33 @@ const PHOTOS: FanDeckCard[] = [
   { src: "/photos/irving-raghad-cyprien-kai.jpg", alt: "Irving, Raghad, Cyprien and Kai" },
 ];
 
+const BODY = "#535353";
+/** Stanford cardinal. */
+const CARDINAL = "#8C1515";
+const HIGHLIGHT = "#D9D9D9";
+
+type Segment = { text: string; color?: string };
+
 /**
  * Kaicords has no typographic apostrophe (U+2019) and no em dash, so this copy
  * uses straight quotes only. A curly one renders as tofu.
  */
-const PARAGRAPHS = [
-  "I grew up in rural Uganda.",
-  "My parents devoted their careers to public health work in remote villages & I grew up working alongside them.",
-  "At Stanford, I study design & computer science. I'm also on the leadership team for the Black Student Engineers Club.",
-  "I try to put a piece of myself into my work: assets from scratch. Illustrations. Custom fonts. I hand drew this font I'm using right now.",
-  "I enjoy bodybuilding, mountain biking & embroidery.",
+const COPY: Segment[][] = [
+  [
+    { text: "I'm currently studying " },
+    { text: "design", color: HIGHLIGHT },
+    { text: " & computer science at " },
+    { text: "Stanford", color: CARDINAL },
+    { text: "." },
+  ],
+  [
+    { text: "I love using both " },
+    { text: "design", color: HIGHLIGHT },
+    { text: " & " },
+    { text: "development", color: HIGHLIGHT },
+    { text: " to make things that are fun & functional." },
+  ],
+  [{ text: "I also enjoy mountain biking & do it competitively." }],
 ];
 
 export default function About() {
@@ -47,9 +64,9 @@ export default function About() {
       <div
         className="display"
         style={{
-          maxWidth: 686,
           width: "100%",
-          color: "#d4d4d4",
+          maxWidth: 686,
+          color: BODY,
           fontSize: "clamp(17px, 2vw, 25px)",
           lineHeight: 1.45,
           display: "flex",
@@ -57,8 +74,14 @@ export default function About() {
           gap: "1.1em",
         }}
       >
-        {PARAGRAPHS.map((text) => (
-          <p key={text}>{text}</p>
+        {COPY.map((line, i) => (
+          <p key={i}>
+            {line.map((seg, j) => (
+              <span key={j} style={seg.color ? { color: seg.color } : undefined}>
+                {seg.text}
+              </span>
+            ))}
+          </p>
         ))}
       </div>
     </section>
