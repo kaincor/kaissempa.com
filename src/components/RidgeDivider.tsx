@@ -21,6 +21,15 @@ export type RidgeDividerProps = {
    * reserved space reads as dead air between the copy and the ridge.
    */
   pullUp?: number;
+  /**
+   * Where the parallax starts and finishes, in useScroll's terms.
+   *
+   * The default suits a divider with page on both sides of it. The last block
+   * on the page needs "end end" instead: no scroll position exists that would
+   * carry its bottom edge past the top of the screen, so measured the default
+   * way its travel can never complete and it rests permanently offset.
+   */
+  scrollOffset?: ["start end" | "start start", "end start" | "end end"];
   children?: ReactNode;
 };
 
@@ -42,13 +51,14 @@ export default function RidgeDivider({
   rise = 180,
   flip = true,
   pullUp = 0,
+  scrollOffset = ["start end", "end start"],
   children,
 }: RidgeDividerProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start end", "end start"],
+    offset: scrollOffset,
   });
   // Travels from `rise` down to 0 rather than straddling zero. Lifting past
   // its layout position would slide this ridge up over the copy above it,

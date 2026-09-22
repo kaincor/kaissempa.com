@@ -4,6 +4,7 @@ import {
   motion,
   useMotionValue,
   useReducedMotion,
+  useScroll,
   useSpring,
   useTransform,
   type MotionValue,
@@ -66,6 +67,16 @@ const clamp = (v: number) => Math.max(-1, Math.min(1, v));
  */
 const MARK_DEPTH = 12;
 
+/**
+ * Pixels the row of chips trails behind the ridge above it before settling,
+ * giving the two some relative motion on the way in.
+ *
+ * The ridge block and the chips are measured against the same span of scroll
+ * but travel different distances, which is the whole of the effect: moving
+ * them together would just be one block sliding.
+ */
+const ICON_DRIFT = 46;
+
 const svg = (body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000">${body}</svg>`;
 
@@ -125,6 +136,18 @@ export default function SocialLinks() {
   const areaRef = useRef<HTMLElement>(null);
   const chipRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
+  // "end end" rather than the usual "end start": this is the last thing on the
+  // page, so the scroll position that would put its bottom edge past the top of
+  // the screen does not exist. Measured that way the travel could never
+  // complete and the chips would rest permanently short of where they belong.
+  // Ending when the block's bottom meets the bottom of the screen lands them
+  // exactly as the page runs out.
+  const { scrollYProgress } = useScroll({
+    target: areaRef,
+    offset: ["start end", "end end"],
+  });
+  const drift = useTransform(scrollYProgress, [0, 1], [ICON_DRIFT, 0]);
+
   // One pair per chip rather than one for the row. Sharing a single rotation
   // turned the row into a rigid plane: every chip tilted identically, nothing
   // moved relative to anything, and the effect read as nothing at all.
@@ -165,7 +188,7 @@ export default function SocialLinks() {
   }
 
   return (
-    <nav
+    <motion.nav
       ref={areaRef}
       aria-label="Elsewhere"
       onPointerMove={track}
@@ -182,7 +205,12 @@ export default function SocialLinks() {
         display: "flex",
         flexWrap: "wrap",
         justifyContent: "center",
-        gap: 34,
+        // Opens up as the screen does, rather than sitting at one fixed value.
+        // The floor keeps six chips on two tidy rows on a phone; the ceiling
+        // stops the row from drifting apart on a wide monitor.
+        gap: "clamp(30px, 4.6vw, 58px)",
+        y: reduced ? 0 : drift,
+        willChange: "transform",
       }}
     >
       {LINKS.map((s, i) => {
@@ -200,7 +228,7 @@ export default function SocialLinks() {
           />
         );
       })}
-    </nav>
+    </motion.nav>
   );
 }
 
@@ -267,7 +295,7 @@ const Chip = forwardRef<
         }}
       >
         <span
-          className="glass"
+          className="glass icon-plate"
           style={{
             position: "absolute",
             inset: 0,

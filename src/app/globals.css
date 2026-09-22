@@ -127,19 +127,33 @@ body {
 }
 
 /* Footer icons. Same idea as the thumbnail shadow but much quicker, and the
-   colour comes from each brand. */
+   colour comes from each brand.
+
+   The hover target and the thing that paints the shadow are deliberately two
+   different elements. The anchor is a flat, untransformed rectangle, which
+   makes it a reliable place to detect the pointer; the plate inside it is the
+   one that tilts. Painting the shadow on the anchor left it square while the
+   chip leaned away from it, opening a gap down whichever edge had receded.
+   Painting it on the plate means the glow turns with the chip and stays welded
+   to its outline at any angle.
+
+   --icon-shadow-rgb is set on the anchor and inherits down. */
 .icon-shadow {
   --icon-shadow-rgb: 0 0 0;
-  box-shadow: 0 0 0 0 rgb(var(--icon-shadow-rgb) / 0);
-  transition:
-    box-shadow 0.25s ease-out,
-    transform 0.25s ease-out;
+  transition: transform 0.25s ease-out;
 }
 
 .icon-shadow:hover {
-  box-shadow: 0 0 22px 3px rgb(var(--icon-shadow-rgb) / 0.75);
   transform: translateY(-2px);
-  transition:
-    box-shadow 0.7s cubic-bezier(0.33, 0, 0.35, 1),
-    transform 0.7s cubic-bezier(0.33, 0, 0.35, 1);
+  transition: transform 0.7s cubic-bezier(0.33, 0, 0.35, 1);
+}
+
+.icon-plate {
+  box-shadow: 0 0 0 0 rgb(var(--icon-shadow-rgb) / 0);
+  transition: box-shadow 0.25s ease-out;
+}
+
+.icon-shadow:hover .icon-plate {
+  box-shadow: 0 0 22px 3px rgb(var(--icon-shadow-rgb) / 0.75);
+  transition: box-shadow 0.7s cubic-bezier(0.33, 0, 0.35, 1);
 }

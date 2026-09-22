@@ -81,7 +81,15 @@ export default function Home() {
         <MoreAboutMe />
       </RidgeRise>
 
-      <RidgeDivider range={FOOTER_RIDGE} rise={70} sectionColor="#d4d4d4">
+      {/* The chips inside carry a drift of their own, on a shorter throw than
+          this block's, so the ridge and the row arrive at different rates
+          rather than sliding in as one piece. */}
+      <RidgeDivider
+        range={FOOTER_RIDGE}
+        rise={110}
+        sectionColor="#d4d4d4"
+        scrollOffset={["start end", "end end"]}
+      >
         <SocialLinks />
       </RidgeDivider>
     </main>
