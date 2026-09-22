@@ -10,6 +10,17 @@ export type RidgeRiseProps = {
   /** Colour of the ridge and the section below it. */
   color?: string;
   rise?: number;
+  /**
+   * Where the parallax starts and finishes, in useScroll's terms.
+   *
+   * The default assumes there is a page's worth of scrolling left below this
+   * block. Near the bottom there is not: "end start" asks for the scroll
+   * position that carries this block's bottom edge past the TOP of the screen,
+   * and if everything below it is shorter than one viewport, that position does
+   * not exist. The travel then stops partway and the block rests permanently
+   * offset — which drags whatever is welded to its base out of alignment.
+   */
+  scrollOffset?: ["start end" | "start start", "end start" | "end end"];
   children?: ReactNode;
 };
 
@@ -26,13 +37,14 @@ export default function RidgeRise({
   height = "clamp(75px, 11vw, 190px)",
   color = "#000000",
   rise = 70,
+  scrollOffset = ["start end", "end start"],
   children,
 }: RidgeRiseProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start end", "end start"],
+    offset: scrollOffset,
   });
   const y = useTransform(scrollYProgress, [0, 1], [rise, 0]);
 

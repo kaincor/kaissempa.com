@@ -81,7 +81,22 @@ export default function Home() {
         </SectionHeading>
       </RidgeDivider>
 
-      <RidgeRise range={OPENING} rise={70}>
+      {/* "end end" because the footer below is shorter than a viewport, so the
+          scroll position that would carry this block's bottom past the top of
+          the screen does not exist. Left on the default the travel stalled with
+          21px still to go, and since the footer ridge is welded to this block's
+          base and does finish its own travel, the ridge ended up 21px ABOVE the
+          black section and flattened into a line — worst on a phone, where the
+          page is shortest, but measurable at every width.
+
+          Finishing here rather than at the page bottom is deliberate: this
+          block settles before the footer does, so the ridge can only ever sit
+          below the edge it hangs from, never across it. */}
+      <RidgeRise
+        range={OPENING}
+        rise={70}
+        scrollOffset={["start end", "end end"]}
+      >
         <MoreAboutMe />
       </RidgeRise>
 
