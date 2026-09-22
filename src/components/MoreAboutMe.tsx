@@ -14,7 +14,7 @@ import { useRef, type PointerEvent } from "react";
  *  subtle rather than fish-eyed. */
 const PERSPECTIVE = 1500;
 /** Degrees at the far edge of the section. */
-const MAX_TILT = 10;
+const MAX_TILT = 18;
 /** How far the wordmark floats in front of the photo. */
 const KAI_DEPTH = 70;
 

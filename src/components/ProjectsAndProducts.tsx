@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useInView, useReducedMotion } from "motion/react";
-import { useRef, type ReactNode } from "react";
+import { motion } from "motion/react";
+import type { ReactNode } from "react";
 import CloudDrift from "@/components/CloudDrift";
+import SectionHeading from "@/components/SectionHeading";
 import FortunaThumb from "@/components/FortunaThumb";
 
 /** Every box is 2:1 and 1120 wide at most, matching the Framer build. */
@@ -37,7 +38,7 @@ export default function ProjectsAndProducts() {
         gap: GAP,
       }}
     >
-      <SectionTitle>Projects &amp; Products</SectionTitle>
+      <SectionHeading paddingTop={40}>Projects &amp; Products</SectionHeading>
 
       <Thumb label="Fortuna" href={null} shadow={FORTUNA_GREEN}>
         <FortunaThumb
@@ -117,38 +118,6 @@ export default function ProjectsAndProducts() {
       {/* Placeholder for work still to come. */}
       <Thumb label="More work coming" href={null} background="#8c8c8c" />
     </section>
-  );
-}
-
-function SectionTitle({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLHeadingElement>(null);
-  const reduced = useReducedMotion();
-  const inView = useInView(ref, { once: true, amount: 0.6 });
-  const play = reduced ? true : inView;
-
-  return (
-    <motion.h2
-      ref={ref}
-      className="display"
-      initial={false}
-      animate={play ? { opacity: 1, y: 0 } : { opacity: 0, y: -44 }}
-      transition={
-        reduced
-          ? { duration: 0 }
-          : // Drawn out: at 0.7s it was over before it registered.
-            { duration: 1.9, ease: [0.16, 1, 0.3, 1] }
-      }
-      style={{
-        margin: "0 auto",
-        paddingTop: 40,
-        fontSize: "clamp(28px, 4.4vw, 56px)",
-        lineHeight: 1.05,
-        color: "var(--foreground)",
-        textAlign: "center",
-      }}
-    >
-      {children}
-    </motion.h2>
   );
 }
 
