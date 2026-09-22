@@ -192,6 +192,11 @@ export default function MoreAboutMe({
       ref={track}
       style={{
         position: "relative",
+        // Above the ridge that closes this section. That ridge extends its
+        // black upward behind itself, far enough to reach into this one, and
+        // it comes later in the document — left level with it, the backing
+        // block paints straight over the copy and the pile.
+        zIndex: 1,
         // Tall enough to scrub through. The sticky child is what stays on
         // screen; reduced motion gets neither, just the settled pile.
         height: reduced ? "auto" : `${(1 + n * SCROLL_PER) * 100}svh`,
