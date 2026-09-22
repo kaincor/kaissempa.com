@@ -17,11 +17,14 @@ export default function SectionHeading({
   color = "var(--foreground)",
   paddingTop = 0,
   paddingBottom = 0,
+  /** Negative values pull whatever follows upward. */
+  marginBottom = 0,
 }: {
   children: ReactNode;
   color?: string;
   paddingTop?: number;
   paddingBottom?: number;
+  marginBottom?: number;
 }) {
   const ref = useRef<HTMLHeadingElement>(null);
   const reduced = useReducedMotion();
@@ -39,6 +42,7 @@ export default function SectionHeading({
       }
       style={{
         margin: "0 auto",
+        marginBottom,
         paddingTop,
         paddingBottom,
         fontSize: HEADING_SIZE,

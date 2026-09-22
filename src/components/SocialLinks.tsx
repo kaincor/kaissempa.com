@@ -6,8 +6,9 @@ import {
   useReducedMotion,
   useSpring,
   useTransform,
+  type MotionValue,
 } from "motion/react";
-import { useRef, type PointerEvent } from "react";
+import { forwardRef, useRef, type PointerEvent } from "react";
 
 /**
  * Footer links as glass chips, matching the navbar exactly: rgba(5,5,5,0.15)
@@ -27,7 +28,18 @@ type Social = { name: string; href: string; rgb: string; mark: string };
 const CHIP = 58;
 const MARK = 34;
 /** Deliberately gentler than the More About Me card's 10deg. */
-const MAX_TILT = 4;
+const MAX_TILT = 6;
+/**
+ * Applied per chip, not to the row.
+ *
+ * Perspective is an absolute distance, so 1500px — right for a 380px card —
+ * flattens a 58px chip almost entirely: foreshortening scales with the element,
+ * and at that ratio the tilt was mathematically present but invisible. A short
+ * perspective restores real depth at a small size.
+ */
+const CHIP_PERSPECTIVE = 260;
+/** Distance, in chip widths, over which a chip stops reacting to the cursor. */
+const FALLOFF = 3.2;
 
 const svg = (body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000">${body}</svg>`;
@@ -86,21 +98,40 @@ const LINKS: Social[] = [
 export default function SocialLinks() {
   const reduced = useReducedMotion();
   const areaRef = useRef<HTMLElement>(null);
+  const chipRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  const px = useMotionValue(0);
-  const py = useMotionValue(0);
-  const sx = useSpring(px, { stiffness: 110, damping: 18, mass: 0.6 });
-  const sy = useSpring(py, { stiffness: 110, damping: 18, mass: 0.6 });
-  const rotateY = useTransform(sx, [-1, 1], [-MAX_TILT, MAX_TILT]);
-  const rotateX = useTransform(sy, [-1, 1], [MAX_TILT, -MAX_TILT]);
+  // One pair per chip rather than one for the row. Sharing a single rotation
+  // turned the row into a rigid plane: every chip tilted identically, nothing
+  // moved relative to anything, and the effect read as nothing at all.
+  const tilts = LINKS.map(() => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const x = useMotionValue(0);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const y = useMotionValue(0);
+    return { x, y };
+  });
 
   function track(e: PointerEvent<HTMLElement>) {
     if (reduced) return;
-    const el = areaRef.current;
-    if (!el) return;
-    const b = el.getBoundingClientRect();
-    px.set(((e.clientX - b.left) / b.width) * 2 - 1);
-    py.set(((e.clientY - b.top) / b.height) * 2 - 1);
+    chipRefs.current.forEach((chip, i) => {
+      if (!chip) return;
+      const b = chip.getBoundingClientRect();
+      const reach = b.width * FALLOFF;
+      const dx = (e.clientX - (b.left + b.width / 2)) / reach;
+      const dy = (e.clientY - (b.top + b.height / 2)) / reach;
+      const dist = Math.hypot(dx, dy);
+
+      // Direction and strength are separated on purpose. Feeding the raw offset
+      // straight in inverted the effect: chips furthest from the cursor hit the
+      // clamp and leaned hardest while the one under it barely moved. Strength
+      // now falls off with distance and the direction is a unit vector, so the
+      // nearest chips react and the far ones sit still.
+      const strength = Math.max(0, 1 - dist);
+      const ux = dist > 0 ? dx / dist : 0;
+      const uy = dist > 0 ? dy / dist : 0;
+      tilts[i].x.set(ux * strength);
+      tilts[i].y.set(uy * strength);
+    });
   }
 
   return (
@@ -109,8 +140,10 @@ export default function SocialLinks() {
       aria-label="Elsewhere"
       onPointerMove={track}
       onPointerLeave={() => {
-        px.set(0);
-        py.set(0);
+        tilts.forEach((t) => {
+          t.x.set(0);
+          t.y.set(0);
+        });
       }}
       style={{
         maxWidth: "var(--content-max)",
@@ -120,46 +153,74 @@ export default function SocialLinks() {
         flexWrap: "wrap",
         justifyContent: "center",
         gap: 34,
-        perspective: 1500,
       }}
     >
-      {LINKS.map((s) => {
+      {LINKS.map((s, i) => {
         const mask = `url("data:image/svg+xml,${encodeURIComponent(s.mark)}")`;
         return (
-          <motion.a
+          <Chip
             key={s.name}
-            href={s.href}
-            target="_blank"
-            rel="noreferrer noopener"
-            aria-label={s.name}
-            className="glass icon-shadow"
-            style={
-              {
-                "--icon-shadow-rgb": s.rgb,
-                width: CHIP,
-                height: CHIP,
-                borderRadius: 14,
-                background: "rgba(5, 5, 5, 0.15)",
-                display: "block",
-                rotateX: reduced ? 0 : rotateX,
-                rotateY: reduced ? 0 : rotateY,
-                // The mark layer sits above the solid one and is subtracted
-                // from it, leaving the logo as a hole through the chip.
-                maskImage: `${mask}, linear-gradient(#000, #000)`,
-                WebkitMaskImage: `${mask}, linear-gradient(#000, #000)`,
-                maskSize: `${MARK}px ${MARK}px, 100% 100%`,
-                WebkitMaskSize: `${MARK}px ${MARK}px, 100% 100%`,
-                maskPosition: "center, center",
-                WebkitMaskPosition: "center, center",
-                maskRepeat: "no-repeat, no-repeat",
-                WebkitMaskRepeat: "no-repeat, no-repeat",
-                maskComposite: "exclude",
-                WebkitMaskComposite: "xor",
-              } as React.CSSProperties
-            }
+            ref={(el) => {
+              chipRefs.current[i] = el;
+            }}
+            social={s}
+            mask={mask}
+            tilt={tilts[i]}
+            reduced={!!reduced}
           />
         );
       })}
     </nav>
   );
 }
+
+const Chip = forwardRef<
+  HTMLAnchorElement,
+  {
+    social: Social;
+    mask: string;
+    tilt: { x: MotionValue<number>; y: MotionValue<number> };
+    reduced: boolean;
+  }
+>(function Chip({ social, mask, tilt, reduced }, ref) {
+  const sx = useSpring(tilt.x, { stiffness: 140, damping: 16, mass: 0.5 });
+  const sy = useSpring(tilt.y, { stiffness: 140, damping: 16, mass: 0.5 });
+  const rotateY = useTransform(sx, [-1, 1], [-MAX_TILT, MAX_TILT]);
+  const rotateX = useTransform(sy, [-1, 1], [MAX_TILT, -MAX_TILT]);
+
+  return (
+    <motion.a
+      ref={ref}
+      href={social.href}
+      target="_blank"
+      rel="noreferrer noopener"
+      aria-label={social.name}
+      className="glass icon-shadow"
+      style={
+        {
+          "--icon-shadow-rgb": social.rgb,
+          width: CHIP,
+          height: CHIP,
+          borderRadius: 14,
+          background: "rgba(5, 5, 5, 0.15)",
+          display: "block",
+          transformPerspective: CHIP_PERSPECTIVE,
+          rotateX: reduced ? 0 : rotateX,
+          rotateY: reduced ? 0 : rotateY,
+          // The mark layer sits above the solid one and is subtracted from it,
+          // leaving the logo as a hole through the chip.
+          maskImage: `${mask}, linear-gradient(#000, #000)`,
+          WebkitMaskImage: `${mask}, linear-gradient(#000, #000)`,
+          maskSize: `${MARK}px ${MARK}px, 100% 100%`,
+          WebkitMaskSize: `${MARK}px ${MARK}px, 100% 100%`,
+          maskPosition: "center, center",
+          WebkitMaskPosition: "center, center",
+          maskRepeat: "no-repeat, no-repeat",
+          WebkitMaskRepeat: "no-repeat, no-repeat",
+          maskComposite: "exclude",
+          WebkitMaskComposite: "xor",
+        } as React.CSSProperties
+      }
+    />
+  );
+});
