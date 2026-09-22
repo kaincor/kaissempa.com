@@ -141,7 +141,7 @@ export default function Home() {
         followLift={INTRO_LIFT_TOTAL}
         scrollOffset={["start end", "end end"]}
       >
-        <MoreAboutMe />
+        <MoreAboutMe lift={INTRO_LIFT_TOTAL} />
       </RidgeRise>
 
       {/* The chips inside carry a drift of their own, on a shorter throw than
