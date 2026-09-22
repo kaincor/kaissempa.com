@@ -34,6 +34,49 @@ const OPENING = rangeById(1);
 /** Flipped, closing More About Me back out into the page grey. */
 const FOOTER_RIDGE = rangeById(4);
 
+/**
+ * How far the intro's mountain range lifts, and therefore how much every block
+ * below it owes.
+ *
+ * MountainRange lifts its own block without reserving layout for it, so the
+ * next block has to move up by the same amount to keep the seam closed. That
+ * used to stop at the first divider, which left its whole 180px sitting as
+ * grey between "More about me" and the ridge underneath it — a fixed gap in a
+ * layout where the ridges and the type are fluid, so it read as merely roomy on
+ * a wide screen and as a chasm on a tablet, where the ridge is half the height
+ * and the heading two thirds the size.
+ *
+ * The debt is now passed along the whole chain and discharged once, with
+ * trimBottom on the last block, so it never lands in the middle of the page.
+ */
+const INTRO_LIFT_TOTAL = 180;
+
+/**
+ * Travel of the ridge that closes the intro.
+ *
+ * Halved from 70. Most of the black the reader actually saw under that copy was
+ * this value still in flight: settled the gap was 35px, but the copy is only on
+ * screen while the ridge is partway through its rise, so what showed was closer
+ * to 85. Shortening the throw cuts what is visible rather than what is left at
+ * the end, which is the part that was too big.
+ */
+const INTRO_LIFT = 36;
+
+/**
+ * Travel of the ridge that opens More About Me. Shortened from 70 for the same
+ * reason as INTRO_LIFT: with the structural 180 removed, what was left under
+ * the heading was almost entirely this value still travelling.
+ */
+const ABOUT_RISE = 30;
+
+/**
+ * Travel of the footer ridge. Kept short because trimBottom shortens the
+ * document by the inherited lift, which puts the "end end" scroll position a
+ * little out of reach — whatever travel has not run by the true bottom of the
+ * page simply never runs. A small throw keeps that remainder small.
+ */
+const FOOTER_RISE = 45;
+
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col">
@@ -74,9 +117,9 @@ export default function Home() {
 
           rise is 70, not the 180 above. Both blocks parallax, so the gap is the
           difference of two transforms; at 180 it swung by that much. */}
-      <RidgeDivider range={CLOSING} rise={70} followLift={180}>
+      <RidgeDivider range={CLOSING} rise={INTRO_LIFT} followLift={INTRO_LIFT_TOTAL}>
         <ProjectsAndProducts />
-        <SectionHeading paddingBottom={0} marginBottom={-26}>
+        <SectionHeading paddingBottom={0} marginBottom={6}>
           More about me
         </SectionHeading>
       </RidgeDivider>
@@ -94,7 +137,8 @@ export default function Home() {
           below the edge it hangs from, never across it. */}
       <RidgeRise
         range={OPENING}
-        rise={70}
+        rise={ABOUT_RISE}
+        followLift={INTRO_LIFT_TOTAL}
         scrollOffset={["start end", "end end"]}
       >
         <MoreAboutMe />
@@ -105,8 +149,10 @@ export default function Home() {
           rather than sliding in as one piece. */}
       <RidgeDivider
         range={FOOTER_RIDGE}
-        rise={110}
+        rise={FOOTER_RISE}
         sectionColor="#d4d4d4"
+        followLift={INTRO_LIFT_TOTAL}
+        trimBottom={INTRO_LIFT_TOTAL}
         scrollOffset={["start end", "end end"]}
       >
         <SocialLinks />

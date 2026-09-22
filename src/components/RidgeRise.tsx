@@ -3,6 +3,7 @@
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useRef, type ReactNode } from "react";
 import type { MountainRange as Range } from "@/data/mountainRanges";
+import { useRangeLift } from "@/components/MountainRange";
 
 export type RidgeRiseProps = {
   range: Range;
@@ -10,6 +11,15 @@ export type RidgeRiseProps = {
   /** Colour of the ridge and the section below it. */
   color?: string;
   rise?: number;
+  /**
+   * The `rise` of the MountainRange whose lift this block has to inherit.
+   *
+   * A MountainRange lifts its own block without reserving layout for it, so
+   * every block after it has to move up by the same amount or a gap opens. The
+   * debt is paid forward: each block carries it, and the last one discharges it
+   * with a negative margin so the page does not end in dead space.
+   */
+  followLift?: number;
   /**
    * Where the parallax starts and finishes, in useScroll's terms.
    *
@@ -37,6 +47,7 @@ export default function RidgeRise({
   height = "clamp(75px, 11vw, 190px)",
   color = "#000000",
   rise = 70,
+  followLift = 0,
   scrollOffset = ["start end", "end start"],
   children,
 }: RidgeRiseProps) {
@@ -46,7 +57,9 @@ export default function RidgeRise({
     target: ref,
     offset: scrollOffset,
   });
-  const y = useTransform(scrollYProgress, [0, 1], [rise, 0]);
+  const own = useTransform(scrollYProgress, [0, 1], [rise, 0]);
+  const lift = useRangeLift(followLift);
+  const y = useTransform([own, lift], ([a, b]: number[]) => a + b);
 
   return (
     <motion.div

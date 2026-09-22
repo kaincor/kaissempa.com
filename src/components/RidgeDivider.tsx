@@ -48,6 +48,17 @@ export type RidgeDividerProps = {
    * way its travel can never complete and it rests permanently offset.
    */
   scrollOffset?: ["start end" | "start start", "end start" | "end end"];
+  /**
+   * Pixels to shave off the bottom of this block in flow.
+   *
+   * For the last block on the page, carrying an inherited lift means it renders
+   * that many pixels above its layout box, leaving the document scrollable into
+   * empty space below it. This takes those pixels back out of the document. It
+   * is safe as a constant where pullUp is not: the only thing it can get wrong
+   * is the total scroll length before the lift has saturated, which happens in
+   * the first viewport, nowhere near the bottom of the page.
+   */
+  trimBottom?: number;
   children?: ReactNode;
 };
 
@@ -71,6 +82,7 @@ export default function RidgeDivider({
   pullUp = 0,
   followLift = 0,
   scrollOffset = ["start end", "end start"],
+  trimBottom = 0,
   children,
 }: RidgeDividerProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -99,6 +111,7 @@ export default function RidgeDivider({
         // section's bottom edge rather than crossing it.
         zIndex: 0,
         marginTop: -pullUp,
+        marginBottom: -trimBottom,
         y: reduced ? 0 : y,
         willChange: "transform",
       }}
