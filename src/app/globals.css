@@ -6,6 +6,9 @@
   --background: #d4d4d4;
   --foreground: #232323;
   --muted: #454545;
+  /* The case study boxes set the page's content boundary. Art (the hero, the
+     mountain ridges) stays full-bleed; everything else lines up to this. */
+  --content-max: 1120px;
 }
 
 @theme inline {
@@ -50,8 +53,107 @@ body {
    blur, nothing else. No saturation boost and no specular edge — the plain
    blur is the look Kai wants. corner-shape gives true squircle corners where
    supported and quietly degrades to a plain radius everywhere else. */
-@utility glass {
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
+/* corner-shape gives true squircle corners where supported. */
+.glass {
   corner-shape: superellipse(1.5);
+}
+
+/* The blur is declared inside a feature query on purpose.
+   Written plainly, the CSS transformer rewrote it for older targets and
+   emitted ONLY -webkit-backdrop-filter, dropping the standard property. No
+   current browser recognises the prefixed form on its own, so the blur never
+   rendered anywhere .glass was used — including the navbar, for its whole
+   life. Inside @supports the declaration is passed through untouched. */
+@supports (backdrop-filter: blur(1px)) {
+  .glass {
+    backdrop-filter: blur(32px);
+  }
+}
+
+/* Case study thumbnails. The shadow grows over two seconds on hover, from
+   nothing to something, even on all four sides — no offset, so it reads as the
+   card lifting off the page rather than being lit from above.
+
+   The timing is deliberately asymmetric. A transition is declared on both
+   rules: the one on :hover governs arriving, the one on the base rule governs
+   leaving. Slow to build, quick to drop.
+
+   CSS :hover rather than React state deliberately: the Fortuna box is a
+   cross-origin iframe, which swallows pointerenter, so a JS hover would never
+   fire for it. The browser keeps :hover accurate regardless.
+
+   The global prefers-reduced-motion rule already collapses both transitions. */
+.thumb-shadow {
+  /* Space-separated rgb channels so the alpha can vary independently. */
+  --thumb-shadow-rgb: 0 0 0;
+  --thumb-shadow-alpha: 0.45;
+  box-shadow: 0 0 0 0 rgb(var(--thumb-shadow-rgb) / 0);
+  transition: box-shadow 0.35s ease-out;
+}
+
+.thumb-shadow:hover {
+  box-shadow: 0 0 34px 5px
+    rgb(var(--thumb-shadow-rgb) / var(--thumb-shadow-alpha));
+  transition: box-shadow 2s cubic-bezier(0.33, 0, 0.35, 1);
+}
+
+/* Cloud drift. A CSS keyframe rather than a JS-driven transform: it runs on
+   the compositor, and animation-play-state can freeze it where it stands when
+   it scrolls out of view, which a JS animation cannot do without jumping.
+
+   The travel is one tile of six. Percentage transforms resolve against the
+   element's own width, and the row is sized to exactly six tiles, so this is
+   pixel-exact at any container width. */
+@keyframes cloud-drift {
+  from {
+    transform: translateX(-16.6667%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.cloud-row {
+  animation-name: cloud-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud-row {
+    animation: none !important;
+  }
+}
+
+/* Footer icons. Same idea as the thumbnail shadow but much quicker, and the
+   colour comes from each brand.
+
+   The hover target and the thing that paints the shadow are deliberately two
+   different elements. The anchor is a flat, untransformed rectangle, which
+   makes it a reliable place to detect the pointer; the plate inside it is the
+   one that tilts. Painting the shadow on the anchor left it square while the
+   chip leaned away from it, opening a gap down whichever edge had receded.
+   Painting it on the plate means the glow turns with the chip and stays welded
+   to its outline at any angle.
+
+   --icon-shadow-rgb is set on the anchor and inherits down. */
+.icon-shadow {
+  --icon-shadow-rgb: 0 0 0;
+  transition: transform 0.25s ease-out;
+}
+
+.icon-shadow:hover {
+  transform: translateY(-2px);
+  transition: transform 0.7s cubic-bezier(0.33, 0, 0.35, 1);
+}
+
+.icon-plate {
+  box-shadow: 0 0 0 0 rgb(var(--icon-shadow-rgb) / 0);
+  transition: box-shadow 0.25s ease-out;
+}
+
+.icon-shadow:hover .icon-plate {
+  box-shadow: 0 0 22px 3px rgb(var(--icon-shadow-rgb) / 0.75);
+  transition: box-shadow 0.7s cubic-bezier(0.33, 0, 0.35, 1);
 }

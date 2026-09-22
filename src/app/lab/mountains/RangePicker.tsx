@@ -21,7 +21,6 @@ export default function RangePicker() {
   return (
     <>
       <Hero
-        rise={-60}
         behind={
           showFar ? (
             <RidgeLayer range={farRange} height="clamp(55px, 8vw, 150px)" rise={40} drop={34} />

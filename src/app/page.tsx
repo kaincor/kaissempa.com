@@ -1,48 +1,97 @@
+import About from "@/components/About";
 import Hero from "@/components/Hero";
+import MoreAboutMe from "@/components/MoreAboutMe";
+import SectionHeading from "@/components/SectionHeading";
+import SocialLinks from "@/components/SocialLinks";
+import ProjectsAndProducts from "@/components/ProjectsAndProducts";
 import MountainRange from "@/components/MountainRange";
+import RidgeDivider from "@/components/RidgeDivider";
 import RidgeLayer from "@/components/RidgeLayer";
+import RidgeRise from "@/components/RidgeRise";
 import { rangeById } from "@/data/mountainRanges";
 
 /**
- * Four depth planes. Perceived depth comes from the spread between rates, not
- * their size, so these are deliberately far apart: -120 / +15 / +60 / +220.
+ * Two depth planes around the transparent Spline scene.
  *
- * Every plane is pure black, so a background ridge is only ever visible where
- * it clears the outline of the ridge in front. Each one therefore has to peak
- * HIGHER than the next one forward, not lower — sink them and they vanish
- * behind the foreground entirely. Visible height is `height - drop`, and since
- * height is a clamp() that shrinks on narrow viewports, drop has to stay small.
+ * `drop` is negative on both, which lifts each baseline ABOVE the fold. That
+ * matters: every range tapers to roughly zero height at x=0 and x=640, so with
+ * the baseline sitting below the fold the bottom corners of the screen carry no
+ * black at all and the ridge looks like it stops short of the edges. Lifting it
+ * puts the solid fill under the whole width.
+ *
+ * Both planes are pure black, so the back ridge only shows where it clears the
+ * front one's outline. It gets the taller clamp of the two despite being the
+ * more distant layer — sink it and it vanishes behind the foreground.
+ *
+ * Depth reads from the gap between the rates, not their size: 45 against 180.
  */
-const HORIZON = rangeById(10);
-const FAR = rangeById(15);
-const NEAR = rangeById(7);
+const BACK = rangeById(15);
+const FRONT = rangeById(4);
+/** Flipped, so its peaks hang down out of the black section. */
+const CLOSING = rangeById(13);
+/** Opens the More About Me section, peaks upward into the grey. */
+const OPENING = rangeById(1);
+/** Flipped, closing More About Me back out into the page grey. */
+const FOOTER_RIDGE = rangeById(4);
 
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col">
       <Hero
-        rise={-120}
         behind={
-          <>
-            <RidgeLayer
-              range={HORIZON}
-              height="clamp(110px, 18vw, 260px)"
-              rise={15}
-              drop={20}
-            />
-            <RidgeLayer
-              range={FAR}
-              height="clamp(90px, 14vw, 210px)"
-              rise={60}
-              drop={25}
-            />
-          </>
+          <RidgeLayer
+            range={BACK}
+            height="clamp(105px, 16vw, 240px)"
+            rise={45}
+            drop={-10}
+          />
         }
       />
 
-      <MountainRange range={NEAR} height="clamp(75px, 11vw, 190px)" rise={220}>
-        <div style={{ minHeight: "70vh" }} />
+      <MountainRange
+        range={FRONT}
+        height="clamp(75px, 11vw, 190px)"
+        rise={180}
+        drop={-24}
+        // The divider below extends black upward behind itself, so the default
+        // reserve here would only add dead space above the ridge.
+        padBottom={0}
+      >
+        <About />
       </MountainRange>
+
+      {/* padBottom 0 + pullUp 180 sits this block flush against the bottom of
+          the black section. MountainRange's lift is saturated at -rise by the
+          time this is on screen, so a constant 180 cancels it.
+
+          It must meet that edge and never cross it: pulled over the black
+          section, the ridge's notches show black from behind instead of the
+          page grey, and the silhouette vanishes into a straight line.
+
+          rise is 70, not the 180 above. Both blocks parallax, so the gap is the
+          difference of two transforms; at 180 it swung by that much. */}
+      <RidgeDivider range={CLOSING} rise={70} pullUp={180}>
+        <ProjectsAndProducts />
+        <SectionHeading paddingBottom={0} marginBottom={-26}>
+          More about me
+        </SectionHeading>
+      </RidgeDivider>
+
+      <RidgeRise range={OPENING} rise={70}>
+        <MoreAboutMe />
+      </RidgeRise>
+
+      {/* The chips inside carry a drift of their own, on a shorter throw than
+          this block's, so the ridge and the row arrive at different rates
+          rather than sliding in as one piece. */}
+      <RidgeDivider
+        range={FOOTER_RIDGE}
+        rise={110}
+        sectionColor="#d4d4d4"
+        scrollOffset={["start end", "end end"]}
+      >
+        <SocialLinks />
+      </RidgeDivider>
     </main>
   );
 }

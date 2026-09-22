@@ -13,6 +13,12 @@ export type MountainRangeProps = {
   rise?: number;
   /** Pixels to sink the ridge below the fold, so less of it shows at rest. */
   drop?: number;
+  /**
+   * Padding under the section's content. Defaults to `rise`, which stops the
+   * lift exposing page background when nothing follows. Pass 0 when the next
+   * section already extends this colour upward behind itself.
+   */
+  padBottom?: number;
   /** Content for the solid section below the ridge. */
   children?: ReactNode;
 };
@@ -33,6 +39,7 @@ export default function MountainRange({
   color = "#000000",
   rise = 140,
   drop = 28,
+  padBottom,
   children,
 }: MountainRangeProps) {
   const reduced = useReducedMotion();
@@ -89,7 +96,7 @@ export default function MountainRange({
           marginTop: -1,
           // The whole block rides upward, so without this the lift would expose
           // page background below the last section.
-          paddingBottom: Math.max(rise, 0),
+          paddingBottom: Math.max(padBottom ?? rise, 0),
         }}
       >
         {children}
