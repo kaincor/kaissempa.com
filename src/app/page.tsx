@@ -2,6 +2,7 @@ import About from "@/components/About";
 import Hero from "@/components/Hero";
 import MoreAboutMe from "@/components/MoreAboutMe";
 import SectionHeading from "@/components/SectionHeading";
+import SocialLinks from "@/components/SocialLinks";
 import ProjectsAndProducts from "@/components/ProjectsAndProducts";
 import MountainRange from "@/components/MountainRange";
 import RidgeDivider from "@/components/RidgeDivider";
@@ -30,6 +31,8 @@ const FRONT = rangeById(4);
 const CLOSING = rangeById(13);
 /** Opens the More About Me section, peaks upward into the grey. */
 const OPENING = rangeById(1);
+/** Flipped, closing More About Me back out into the page grey. */
+const FOOTER_RIDGE = rangeById(4);
 
 export default function Home() {
   return (
@@ -75,6 +78,10 @@ export default function Home() {
       <RidgeRise range={OPENING} rise={70}>
         <MoreAboutMe />
       </RidgeRise>
+
+      <RidgeDivider range={FOOTER_RIDGE} rise={70} sectionColor="#d4d4d4">
+        <SocialLinks />
+      </RidgeDivider>
     </main>
   );
 }

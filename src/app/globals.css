@@ -53,10 +53,21 @@ body {
    blur, nothing else. No saturation boost and no specular edge — the plain
    blur is the look Kai wants. corner-shape gives true squircle corners where
    supported and quietly degrades to a plain radius everywhere else. */
-@utility glass {
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
+/* corner-shape gives true squircle corners where supported. */
+.glass {
   corner-shape: superellipse(1.5);
+}
+
+/* The blur is declared inside a feature query on purpose.
+   Written plainly, the CSS transformer rewrote it for older targets and
+   emitted ONLY -webkit-backdrop-filter, dropping the standard property. No
+   current browser recognises the prefixed form on its own, so the blur never
+   rendered anywhere .glass was used — including the navbar, for its whole
+   life. Inside @supports the declaration is passed through untouched. */
+@supports (backdrop-filter: blur(1px)) {
+  .glass {
+    backdrop-filter: blur(32px);
+  }
 }
 
 /* Case study thumbnails. The shadow grows over two seconds on hover, from
@@ -113,4 +124,22 @@ body {
   .cloud-row {
     animation: none !important;
   }
+}
+
+/* Footer icons. Same idea as the thumbnail shadow but much quicker, and the
+   colour comes from each brand. */
+.icon-shadow {
+  --icon-shadow-rgb: 0 0 0;
+  box-shadow: 0 0 0 0 rgb(var(--icon-shadow-rgb) / 0);
+  transition:
+    box-shadow 0.25s ease-out,
+    transform 0.25s ease-out;
+}
+
+.icon-shadow:hover {
+  box-shadow: 0 0 22px 3px rgb(var(--icon-shadow-rgb) / 0.75);
+  transform: translateY(-2px);
+  transition:
+    box-shadow 0.7s cubic-bezier(0.33, 0, 0.35, 1),
+    transform 0.7s cubic-bezier(0.33, 0, 0.35, 1);
 }
