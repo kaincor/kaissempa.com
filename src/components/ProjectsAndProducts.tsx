@@ -11,7 +11,15 @@ import FortunaThumb from "@/components/FortunaThumb";
 /** Every box is 2:1 and 1120 wide at most, matching the Framer build. */
 const MAX_WIDTH = 1120;
 const RADIUS = 20;
-const GAP = 75;
+/**
+ * Space between the boxes, and between the heading and the first of them.
+ *
+ * Responsive rather than fixed: 75px is right beside a 560px-tall box and far
+ * too much beside the 160px one a phone renders, where it left the column
+ * reading as five unrelated items rather than a set. The ceiling keeps the
+ * desktop spacing exactly where it was.
+ */
+const GAP = "clamp(30px, 6.7vw, 75px)";
 
 /** Where the case studies point until the real pages exist. */
 const WIP = "/wip";

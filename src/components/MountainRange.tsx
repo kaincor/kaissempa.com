@@ -24,6 +24,32 @@ export type MountainRangeProps = {
 };
 
 /**
+ * The lift MountainRange applies, as a motion value.
+ *
+ * Exported because anything that has to stay welded to the bottom of a
+ * MountainRange has to move by exactly this, and a hard-coded number will not
+ * do it. The lift saturates after one viewport of scrolling, so on a tall
+ * screen a block further down the page can assume it has already finished and
+ * cancel it with a constant. On a short screen the section above is short too,
+ * the next block reaches the viewport after a couple of hundred pixels of
+ * scrolling, and that assumption is simply false — the constant overshoots by
+ * whatever the lift has not done yet.
+ */
+export function useRangeLift(rise: number) {
+  const { scrollY } = useScroll();
+  const [vh, setVh] = useState(0);
+
+  useEffect(() => {
+    const sync = () => setVh(window.innerHeight);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
+
+  return useTransform(scrollY, [0, vh || 1], [0, -rise]);
+}
+
+/**
  * A full-bleed ridge whose base rests on the bottom of the viewport at rest,
  * overlapping whatever sits above it, with a solid section of the same colour
  * running beneath. Scrolling lifts the pair faster than the page so the range
@@ -43,17 +69,7 @@ export default function MountainRange({
   children,
 }: MountainRangeProps) {
   const reduced = useReducedMotion();
-  const { scrollY } = useScroll();
-  const [vh, setVh] = useState(0);
-
-  useEffect(() => {
-    const sync = () => setVh(window.innerHeight);
-    sync();
-    window.addEventListener("resize", sync);
-    return () => window.removeEventListener("resize", sync);
-  }, []);
-
-  const y = useTransform(scrollY, [0, vh || 1], [0, -rise]);
+  const y = useRangeLift(rise);
 
   return (
     <motion.div

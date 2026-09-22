@@ -28,9 +28,20 @@ import { forwardRef, useRef, type PointerEvent } from "react";
  */
 type Social = { name: string; href: string; rgb: string; mark: string };
 
-/** Chip size, and how much of it the knocked-out mark occupies. */
-const CHIP = 58;
-const MARK = 34;
+/**
+ * Chip size, and how much of it the mark occupies.
+ *
+ * The chip is a CSS length rather than a number because all six have to hold
+ * one line at any width — wrapping a set of six onto two rows reads as an
+ * accident, not a layout. At the 10.4vw slope a 375px phone gets a 39px chip
+ * and the row lands inside its padding with room to spare; everything from
+ * about 560px up sits at the full 58.
+ *
+ * The mark is a percentage of the chip for the same reason: a fixed 34px would
+ * swell to fill the whole square as the chip shrank.
+ */
+const CHIP = "clamp(34px, 10.4vw, 58px)";
+const MARK_PCT = `${((34 / 58) * 100).toFixed(1)}%`;
 /**
  * Far steeper than the More About Me card's 10deg, and it still reads as the
  * gentler of the two. Degrees are the wrong unit to dampen in: what the eye
@@ -201,14 +212,17 @@ export default function SocialLinks() {
       style={{
         maxWidth: "var(--content-max)",
         margin: "0 auto",
-        padding: "72px 30px 96px",
+        padding: "72px clamp(16px, 4vw, 30px) 96px",
         display: "flex",
-        flexWrap: "wrap",
+        // Never two rows. Six is a set; split across lines it reads as an
+        // overflow rather than a choice. The chip and gap widths are sized in
+        // vw so one line always fits instead of merely usually fitting.
+        flexWrap: "nowrap",
         justifyContent: "center",
         // Opens up as the screen does, rather than sitting at one fixed value.
         // The floor keeps six chips on two tidy rows on a phone; the ceiling
         // stops the row from drifting apart on a wide monitor.
-        gap: "clamp(30px, 4.6vw, 58px)",
+        gap: "clamp(13px, 4.6vw, 58px)",
         y: reduced ? 0 : drift,
         willChange: "transform",
       }}
@@ -275,6 +289,9 @@ const Chip = forwardRef<
           "--icon-shadow-rgb": social.rgb,
           width: CHIP,
           height: CHIP,
+          // A fixed basis would let flexbox shrink the chips out of square on
+          // the narrowest screens; the widths above already guarantee the fit.
+          flex: "0 0 auto",
           borderRadius: 14,
           display: "block",
         } as React.CSSProperties
@@ -314,8 +331,8 @@ const Chip = forwardRef<
             background: "var(--background)",
             maskImage: mask,
             WebkitMaskImage: mask,
-            maskSize: `${MARK}px ${MARK}px`,
-            WebkitMaskSize: `${MARK}px ${MARK}px`,
+            maskSize: `${MARK_PCT} ${MARK_PCT}`,
+            WebkitMaskSize: `${MARK_PCT} ${MARK_PCT}`,
             maskPosition: "center",
             WebkitMaskPosition: "center",
             maskRepeat: "no-repeat",

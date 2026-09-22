@@ -3,6 +3,7 @@
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useRef, type ReactNode } from "react";
 import type { MountainRange as Range } from "@/data/mountainRanges";
+import { useRangeLift } from "@/components/MountainRange";
 
 export type RidgeDividerProps = {
   range: Range;
@@ -19,8 +20,25 @@ export type RidgeDividerProps = {
    * Pixels to pull this whole block upward in flow. The section above reserves
    * bottom padding to cover its own lift; without cancelling that here, the
    * reserved space reads as dead air between the copy and the ridge.
+   *
+   * Use this only to cancel reserved PADDING. To cancel a MountainRange's
+   * transform, reach for followLift instead — a constant cannot track it.
    */
   pullUp?: number;
+  /**
+   * The `rise` of the MountainRange directly above, if there is one.
+   *
+   * That block slides upward as the reader scrolls, and this one has to slide
+   * with it or the seam between them opens. A fixed offset only works once the
+   * lift has saturated, which it has by the time this block is on screen on a
+   * tall window — and has not, on a short one, where the section above is
+   * shorter too and this block arrives after a few hundred pixels of scrolling
+   * rather than a full viewport. Cancelling 180px of lift that has only done 30
+   * drags the ridge up into the black section above it, and a ridge that
+   * crosses that edge fills its own notches with black from behind and
+   * flattens into a straight line.
+   */
+  followLift?: number;
   /**
    * Where the parallax starts and finishes, in useScroll's terms.
    *
@@ -51,6 +69,7 @@ export default function RidgeDivider({
   rise = 180,
   flip = true,
   pullUp = 0,
+  followLift = 0,
   scrollOffset = ["start end", "end start"],
   children,
 }: RidgeDividerProps) {
@@ -63,7 +82,9 @@ export default function RidgeDivider({
   // Travels from `rise` down to 0 rather than straddling zero. Lifting past
   // its layout position would slide this ridge up over the copy above it,
   // which is black on black and would simply swallow the last line.
-  const y = useTransform(scrollYProgress, [0, 1], [rise, 0]);
+  const own = useTransform(scrollYProgress, [0, 1], [rise, 0]);
+  const lift = useRangeLift(followLift);
+  const y = useTransform([own, lift], ([a, b]: number[]) => a + b);
 
   return (
     <motion.div

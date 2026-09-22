@@ -60,9 +60,13 @@ export default function Home() {
         <About />
       </MountainRange>
 
-      {/* padBottom 0 + pullUp 180 sits this block flush against the bottom of
-          the black section. MountainRange's lift is saturated at -rise by the
-          time this is on screen, so a constant 180 cancels it.
+      {/* padBottom 0 above plus followLift here sits this block flush against
+          the bottom of the black section, at every scroll position rather than
+          only once the lift above has finished. It used to be a constant
+          pullUp, which held on a tall window and failed on a phone: the About
+          section collapses to about a third of its desktop height there, so
+          this block reaches the screen after ~150px of scrolling, when the
+          section above has lifted 30 of its 180.
 
           It must meet that edge and never cross it: pulled over the black
           section, the ridge's notches show black from behind instead of the
@@ -70,7 +74,7 @@ export default function Home() {
 
           rise is 70, not the 180 above. Both blocks parallax, so the gap is the
           difference of two transforms; at 180 it swung by that much. */}
-      <RidgeDivider range={CLOSING} rise={70} pullUp={180}>
+      <RidgeDivider range={CLOSING} rise={70} followLift={180}>
         <ProjectsAndProducts />
         <SectionHeading paddingBottom={0} marginBottom={-26}>
           More about me
