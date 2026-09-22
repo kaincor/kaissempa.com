@@ -72,7 +72,7 @@ export default function Home() {
           difference of two transforms; at 180 it swung by that much. */}
       <RidgeDivider range={CLOSING} rise={70} pullUp={180}>
         <ProjectsAndProducts />
-        <SectionHeading paddingBottom={18}>More about me</SectionHeading>
+        <SectionHeading paddingBottom={4}>More about me</SectionHeading>
       </RidgeDivider>
 
       <RidgeRise range={OPENING} rise={70}>

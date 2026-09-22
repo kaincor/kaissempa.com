@@ -39,7 +39,14 @@ export default function RidgeRise({
   return (
     <motion.div
       ref={ref}
-      style={{ position: "relative", y: reduced ? 0 : y, willChange: "transform" }}
+      style={{
+        position: "relative",
+        // Above the ridge that follows: its backing block reaches upward and
+        // would otherwise paint over this section's photo and copy.
+        zIndex: 1,
+        y: reduced ? 0 : y,
+        willChange: "transform",
+      }}
     >
       <svg
         viewBox={range.viewBox}
@@ -55,8 +62,10 @@ export default function RidgeRise({
       <section
         style={{
           background: color,
-          // Covers the few pixels these paths stop short of their viewBox floor.
-          marginTop: -1,
+          // Covers the few pixels these paths stop short of their viewBox
+          // floor. -1 left a hairline of page background showing through on
+          // range 1, whose path ends about 1.3px above the border at this size.
+          marginTop: -3,
           // The block rides upward; without this the lift exposes what is below.
           paddingBottom: rise + 40,
         }}
