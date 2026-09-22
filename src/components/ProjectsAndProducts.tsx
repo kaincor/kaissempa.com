@@ -26,6 +26,7 @@ const WIP = "/wip";
  */
 const ZORZAL_WINE = { rgb: "152 60 68", alpha: 0.6 };
 const FORTUNA_GREEN = { rgb: "105 189 69", alpha: 0.62 };
+const POND_MAGE_PURPLE = { rgb: "157 114 170", alpha: 0.62 };
 
 export default function ProjectsAndProducts() {
   return (
@@ -104,7 +105,7 @@ export default function ProjectsAndProducts() {
         />
       </Thumb>
 
-      <Thumb label="Pond Mage">
+      <Thumb label="Pond Mage" shadow={POND_MAGE_PURPLE}>
         <Image
           src="/case-studies/pond-mage.jpg"
           alt="Pond Mage"

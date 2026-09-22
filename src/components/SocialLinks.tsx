@@ -27,19 +27,30 @@ type Social = { name: string; href: string; rgb: string; mark: string };
 /** Chip size, and how much of it the knocked-out mark occupies. */
 const CHIP = 58;
 const MARK = 34;
-/** Deliberately gentler than the More About Me card's 10deg. */
-const MAX_TILT = 6;
 /**
- * Applied per chip, not to the row.
- *
- * Perspective is an absolute distance, so 1500px — right for a 380px card —
- * flattens a 58px chip almost entirely: foreshortening scales with the element,
- * and at that ratio the tilt was mathematically present but invisible. A short
- * perspective restores real depth at a small size.
+ * Far steeper than the More About Me card's 10deg, and it still reads as the
+ * gentler of the two. Degrees are the wrong unit to dampen in: what the eye
+ * catches is how many PIXELS an edge moves, which is roughly
+ * halfWidth * sin(angle) * (halfWidth / perspective). The card is 380px wide,
+ * the chip 58 — a sixth of it — so matching the card's angle produces about a
+ * tenth of its movement. At 6deg the near edge of a chip shifted by well under
+ * a pixel, which is why it looked like nothing was happening at all. These
+ * numbers put it at roughly 3px, about a third of the card's throw.
  */
-const CHIP_PERSPECTIVE = 260;
-/** Distance, in chip widths, over which a chip stops reacting to the cursor. */
-const FALLOFF = 3.2;
+const MAX_TILT = 16;
+/**
+ * Applied per chip, not to the row. Perspective is an absolute distance, so
+ * 1500px — right for a 380px card — flattens a 58px chip almost entirely.
+ */
+const CHIP_PERSPECTIVE = 160;
+/**
+ * Distance, in chip widths, over which a chip stops reacting to the cursor.
+ * Deliberately short: the row only reads as separate chips leaning if the one
+ * under the cursor clearly out-leans its neighbours.
+ */
+const FALLOFF = 2;
+
+const clamp = (v: number) => Math.max(-1, Math.min(1, v));
 
 const svg = (body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000">${body}</svg>`;
@@ -116,21 +127,26 @@ export default function SocialLinks() {
     chipRefs.current.forEach((chip, i) => {
       if (!chip) return;
       const b = chip.getBoundingClientRect();
-      const reach = b.width * FALLOFF;
-      const dx = (e.clientX - (b.left + b.width / 2)) / reach;
-      const dy = (e.clientY - (b.top + b.height / 2)) / reach;
-      const dist = Math.hypot(dx, dy);
+      const halfW = b.width / 2;
+      const halfH = b.height / 2;
+      const dx = e.clientX - (b.left + halfW);
+      const dy = e.clientY - (b.top + halfH);
 
-      // Direction and strength are separated on purpose. Feeding the raw offset
-      // straight in inverted the effect: chips furthest from the cursor hit the
-      // clamp and leaned hardest while the one under it barely moved. Strength
-      // now falls off with distance and the direction is a unit vector, so the
-      // nearest chips react and the far ones sit still.
-      const strength = Math.max(0, 1 - dist);
-      const ux = dist > 0 ? dx / dist : 0;
-      const uy = dist > 0 ? dy / dist : 0;
-      tilts[i].x.set(ux * strength);
-      tilts[i].y.set(uy * strength);
+      // Same shape as the More About Me card: the lean is the cursor's offset
+      // from the centre, normalised so the element's own edges are +/-1. An
+      // earlier version used a unit direction vector scaled by nearness, which
+      // reads well in the abstract and badly in practice — it means the chip
+      // the cursor is actually sitting on is the one chip that does not move.
+      //
+      // The envelope is the only addition: without it every chip outside its
+      // own bounds would sit permanently clamped at full tilt, and the row
+      // would look posed rather than responsive.
+      const envelope = Math.max(
+        0,
+        1 - Math.hypot(dx, dy) / (b.width * FALLOFF),
+      );
+      tilts[i].x.set(clamp(dx / halfW) * envelope);
+      tilts[i].y.set(clamp(dy / halfH) * envelope);
     });
   }
 
@@ -174,6 +190,21 @@ export default function SocialLinks() {
   );
 }
 
+/**
+ * Two elements, and they have to stay two.
+ *
+ * The mask that knocks the logo out of the chip clips everything the element
+ * paints — and a box-shadow is painted outside the border box, while the mask's
+ * solid layer only covers 100% of it. Put both on the same element and the
+ * shadow is computed, inspectable, and never drawn. That is exactly what was
+ * happening: the brand glow existed in the computed style and was being cut
+ * away before it reached the screen.
+ *
+ * So the anchor carries the shadow and the hover lift, unmasked, and the span
+ * inside carries the glass, the mask and the tilt. Keeping the tilt off the
+ * anchor also leaves .icon-shadow's translateY free to work — an inline motion
+ * transform on the anchor would have overridden it.
+ */
 const Chip = forwardRef<
   HTMLAnchorElement,
   {
@@ -189,38 +220,50 @@ const Chip = forwardRef<
   const rotateX = useTransform(sy, [-1, 1], [MAX_TILT, -MAX_TILT]);
 
   return (
-    <motion.a
+    <a
       ref={ref}
       href={social.href}
       target="_blank"
       rel="noreferrer noopener"
       aria-label={social.name}
-      className="glass icon-shadow"
+      className="icon-shadow"
       style={
         {
           "--icon-shadow-rgb": social.rgb,
           width: CHIP,
           height: CHIP,
           borderRadius: 14,
-          background: "rgba(5, 5, 5, 0.15)",
           display: "block",
-          transformPerspective: CHIP_PERSPECTIVE,
-          rotateX: reduced ? 0 : rotateX,
-          rotateY: reduced ? 0 : rotateY,
-          // The mark layer sits above the solid one and is subtracted from it,
-          // leaving the logo as a hole through the chip.
-          maskImage: `${mask}, linear-gradient(#000, #000)`,
-          WebkitMaskImage: `${mask}, linear-gradient(#000, #000)`,
-          maskSize: `${MARK}px ${MARK}px, 100% 100%`,
-          WebkitMaskSize: `${MARK}px ${MARK}px, 100% 100%`,
-          maskPosition: "center, center",
-          WebkitMaskPosition: "center, center",
-          maskRepeat: "no-repeat, no-repeat",
-          WebkitMaskRepeat: "no-repeat, no-repeat",
-          maskComposite: "exclude",
-          WebkitMaskComposite: "xor",
         } as React.CSSProperties
       }
-    />
+    >
+      <motion.span
+        className="glass"
+        style={
+          {
+            display: "block",
+            width: "100%",
+            height: "100%",
+            borderRadius: 14,
+            background: "rgba(5, 5, 5, 0.15)",
+            transformPerspective: CHIP_PERSPECTIVE,
+            rotateX: reduced ? 0 : rotateX,
+            rotateY: reduced ? 0 : rotateY,
+            // The mark layer sits above the solid one and is subtracted from
+            // it, leaving the logo as a hole through the chip.
+            maskImage: `${mask}, linear-gradient(#000, #000)`,
+            WebkitMaskImage: `${mask}, linear-gradient(#000, #000)`,
+            maskSize: `${MARK}px ${MARK}px, 100% 100%`,
+            WebkitMaskSize: `${MARK}px ${MARK}px, 100% 100%`,
+            maskPosition: "center, center",
+            WebkitMaskPosition: "center, center",
+            maskRepeat: "no-repeat, no-repeat",
+            WebkitMaskRepeat: "no-repeat, no-repeat",
+            maskComposite: "exclude",
+            WebkitMaskComposite: "xor",
+          } as React.CSSProperties
+        }
+      />
+    </a>
   );
 });
