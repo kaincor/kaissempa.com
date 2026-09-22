@@ -14,13 +14,16 @@ import { forwardRef, useRef, type PointerEvent } from "react";
  * Footer links as glass chips, matching the navbar exactly: rgba(5,5,5,0.15)
  * over a 32px blur with superellipse corners, via the shared .glass class.
  *
- * The marks are knocked OUT of the chip rather than drawn on top, so the page
- * shows through the logo. That means each one has to exist as an SVG string for
- * a CSS mask, not as JSX — the chip is masked with [mark, solid] composited to
- * exclude, which subtracts the mark from the filled square.
+ * Each mark is painted in the page colour and floated in FRONT of its chip at
+ * depth, the same arrangement as the wordmark over the photo in More About Me.
+ * It reads as a cutout while the chip is still and separates from it as the
+ * chip leans, which a real cutout cannot do — a hole moves with the surface it
+ * is cut into.
  *
- * The marks are hand-drawn approximations, not official brand assets, and are
- * meant to be swapped for Kai's own versions.
+ * The marks are still SVG strings rather than JSX because they are used as CSS
+ * masks: a plate of page colour with the logo masked out of it. They are
+ * hand-drawn approximations, not official brand assets, and are meant to be
+ * swapped for Kai's own versions.
  */
 type Social = { name: string; href: string; rgb: string; mark: string };
 
@@ -51,6 +54,17 @@ const CHIP_PERSPECTIVE = 160;
 const FALLOFF = 2;
 
 const clamp = (v: number) => Math.max(-1, Math.min(1, v));
+
+/**
+ * How far the mark floats in front of the chip face, px.
+ *
+ * What sells the float is the ratio to the perspective, not the number itself:
+ * at 12 against 160 the mark sits about 8% nearer the viewer, so it renders 8%
+ * larger than the chip and slides across it as the chip turns. More About Me
+ * runs 70 against 1500, a shallower 4.7% — this one is pushed further because
+ * a 58px chip has far less room to show the parallax.
+ */
+const MARK_DEPTH = 12;
 
 const svg = (body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000">${body}</svg>`;
@@ -191,19 +205,20 @@ export default function SocialLinks() {
 }
 
 /**
- * Two elements, and they have to stay two.
+ * Three elements, and the split is load-bearing.
  *
- * The mask that knocks the logo out of the chip clips everything the element
- * paints — and a box-shadow is painted outside the border box, while the mask's
- * solid layer only covers 100% of it. Put both on the same element and the
- * shadow is computed, inspectable, and never drawn. That is exactly what was
- * happening: the brand glow existed in the computed style and was being cut
- * away before it reached the screen.
+ * The anchor carries the shadow and the hover lift, and must stay unmasked: a
+ * mask clips everything an element paints, an outer box-shadow is painted
+ * outside the border box, and the mask's solid layer only covers 100% of it.
+ * With both on one element the brand glow was computed, inspectable, and never
+ * drawn. Keeping the tilt off the anchor also leaves .icon-shadow's translateY
+ * free to work rather than losing to an inline motion transform.
  *
- * So the anchor carries the shadow and the hover lift, unmasked, and the span
- * inside carries the glass, the mask and the tilt. Keeping the tilt off the
- * anchor also leaves .icon-shadow's translateY free to work — an inline motion
- * transform on the anchor would have overridden it.
+ * The middle div is the 3D space. It deliberately carries no background, mask,
+ * filter or opacity — any of those would collapse transform-style back to flat
+ * and take the mark's depth with it.
+ *
+ * Then the glass plate and the floating mark are siblings inside it.
  */
 const Chip = forwardRef<
   HTMLAnchorElement,
@@ -237,33 +252,51 @@ const Chip = forwardRef<
         } as React.CSSProperties
       }
     >
-      <motion.span
-        className="glass"
-        style={
-          {
-            display: "block",
-            width: "100%",
-            height: "100%",
+      <motion.div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          transformPerspective: CHIP_PERSPECTIVE,
+          rotateX: reduced ? 0 : rotateX,
+          rotateY: reduced ? 0 : rotateY,
+          // Children keep their own depth instead of being flattened into this
+          // element's plane — without it the mark would not parallax.
+          transformStyle: "preserve-3d",
+          willChange: "transform",
+        }}
+      >
+        <span
+          className="glass"
+          style={{
+            position: "absolute",
+            inset: 0,
             borderRadius: 14,
             background: "rgba(5, 5, 5, 0.15)",
-            transformPerspective: CHIP_PERSPECTIVE,
-            rotateX: reduced ? 0 : rotateX,
-            rotateY: reduced ? 0 : rotateY,
-            // The mark layer sits above the solid one and is subtracted from
-            // it, leaving the logo as a hole through the chip.
-            maskImage: `${mask}, linear-gradient(#000, #000)`,
-            WebkitMaskImage: `${mask}, linear-gradient(#000, #000)`,
-            maskSize: `${MARK}px ${MARK}px, 100% 100%`,
-            WebkitMaskSize: `${MARK}px ${MARK}px, 100% 100%`,
-            maskPosition: "center, center",
-            WebkitMaskPosition: "center, center",
-            maskRepeat: "no-repeat, no-repeat",
-            WebkitMaskRepeat: "no-repeat, no-repeat",
-            maskComposite: "exclude",
-            WebkitMaskComposite: "xor",
-          } as React.CSSProperties
-        }
-      />
+          }}
+        />
+
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            // Page colour rather than a fixed hex, so the mark keeps matching
+            // whatever the section behind it is painted.
+            background: "var(--background)",
+            maskImage: mask,
+            WebkitMaskImage: mask,
+            maskSize: `${MARK}px ${MARK}px`,
+            WebkitMaskSize: `${MARK}px ${MARK}px`,
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+            maskRepeat: "no-repeat",
+            WebkitMaskRepeat: "no-repeat",
+            transform: `translateZ(${MARK_DEPTH}px)`,
+            pointerEvents: "none",
+          }}
+        />
+      </motion.div>
     </a>
   );
 });
