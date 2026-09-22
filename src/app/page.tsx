@@ -1,13 +1,11 @@
 import About from "@/components/About";
 import Hero from "@/components/Hero";
 import MoreAboutMe from "@/components/MoreAboutMe";
-import SectionHeading from "@/components/SectionHeading";
 import SocialLinks from "@/components/SocialLinks";
 import ProjectsAndProducts from "@/components/ProjectsAndProducts";
 import MountainRange from "@/components/MountainRange";
 import RidgeDivider from "@/components/RidgeDivider";
 import RidgeLayer from "@/components/RidgeLayer";
-import RidgeRise from "@/components/RidgeRise";
 import { rangeById } from "@/data/mountainRanges";
 
 /**
@@ -63,13 +61,6 @@ const INTRO_LIFT_TOTAL = 180;
 const INTRO_LIFT = 36;
 
 /**
- * Travel of the ridge that opens More About Me. Shortened from 70 for the same
- * reason as INTRO_LIFT: with the structural 180 removed, what was left under
- * the heading was almost entirely this value still travelling.
- */
-const ABOUT_RISE = 30;
-
-/**
  * Travel of the footer ridge. Kept short because trimBottom shortens the
  * document by the inherited lift, which puts the "end end" scroll position a
  * little out of reach — whatever travel has not run by the true bottom of the
@@ -119,30 +110,14 @@ export default function Home() {
           difference of two transforms; at 180 it swung by that much. */}
       <RidgeDivider range={CLOSING} rise={INTRO_LIFT} followLift={INTRO_LIFT_TOTAL}>
         <ProjectsAndProducts />
-        <SectionHeading paddingBottom={0} marginBottom={6}>
-          More about me
-        </SectionHeading>
       </RidgeDivider>
 
-      {/* "end end" because the footer below is shorter than a viewport, so the
-          scroll position that would carry this block's bottom past the top of
-          the screen does not exist. Left on the default the travel stalled with
-          21px still to go, and since the footer ridge is welded to this block's
-          base and does finish its own travel, the ridge ended up 21px ABOVE the
-          black section and flattened into a line — worst on a phone, where the
-          page is shortest, but measurable at every width.
-
-          Finishing here rather than at the page bottom is deliberate: this
-          block settles before the footer does, so the ridge can only ever sit
-          below the edge it hangs from, never across it. */}
-      <RidgeRise
-        range={OPENING}
-        rise={ABOUT_RISE}
-        followLift={INTRO_LIFT_TOTAL}
-        scrollOffset={["start end", "end end"]}
-      >
-        <MoreAboutMe lift={INTRO_LIFT_TOTAL} />
-      </RidgeRise>
+      {/* Heading and ridge are inside this now rather than above it. The
+          section pins, and anything left in flow above the pin has scrolled
+          away by the time the pin starts — which is why the screen went pure
+          black for the whole animation. It also carries the inherited lift
+          itself, so the chain down to the footer is unchanged. */}
+      <MoreAboutMe range={OPENING} />
 
       {/* The chips inside carry a drift of their own, on a shorter throw than
           this block's, so the ridge and the row arrive at different rates
@@ -151,8 +126,6 @@ export default function Home() {
         range={FOOTER_RIDGE}
         rise={FOOTER_RISE}
         sectionColor="#d4d4d4"
-        followLift={INTRO_LIFT_TOTAL}
-        trimBottom={INTRO_LIFT_TOTAL}
         scrollOffset={["start end", "end end"]}
       >
         <SocialLinks />

@@ -43,7 +43,9 @@ export default function ProjectsAndProducts() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "0 10px 120px",
+        // Small, because the lift the block above sheds already leaves about
+        // 180px of grey between the last thumbnail and the section below.
+        padding: "0 10px 24px",
         gap: GAP,
       }}
     >

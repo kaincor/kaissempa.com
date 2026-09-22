@@ -10,7 +10,8 @@ import {
   type MotionValue,
 } from "motion/react";
 import { useRef, useState } from "react";
-import { useRangeLift } from "@/components/MountainRange";
+import SectionHeading from "@/components/SectionHeading";
+import type { MountainRange as Range } from "@/data/mountainRanges";
 
 /**
  * A pinned section where photographs rise from below and settle into a loose
@@ -101,7 +102,25 @@ const ENTER = { x: 44, y: 620, rot: -14, scale: 0.82 };
  * straight line, they swing wide and hook back in, which is what keeps five
  * identical rises from reading as a machine feeding cards.
  */
-const ARC = 62;
+/**
+ * Headroom above and below the pile for the scatter to bleed into. Smaller on
+ * a short screen, where the black band has to hold the pile and five sentences
+ * one above the other rather than side by side.
+ */
+const PILE_PAD = "clamp(24px, 4svh, 44px)";
+/** The same reserve sideways, where the tilt throws the corners furthest. */
+const PILE_SIDE = "clamp(20px, 3.8vw, 46px)";
+
+const ARC = 88;
+/**
+ * Where along the flight the bow reaches its widest, as an exponent on t.
+ *
+ * Above 1 pushes it late: at 1.35 the widest point falls around 61% of the
+ * way up, so a photograph sweeps out and then hooks back in as it lands
+ * rather than bulging in the middle of a journey nobody is looking at. The
+ * curve wants to be where the eye already is, which is the arrival.
+ */
+const ARC_SKEW = 1.35;
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -115,26 +134,38 @@ function slice(i: number, n: number) {
   return { start: i * step, span: step * TRAVEL };
 }
 
-export default function MoreAboutMe({ lift = 0 }: { lift?: number }) {
+export default function MoreAboutMe({
+  range,
+  heading = "More about me",
+  ridgeHeight = "clamp(75px, 11vw, 190px)",
+  color = "#000000",
+  aboveColor = "#d4d4d4",
+}: {
+  /** The ridge that opens the section. It is part of the pinned scene. */
+  range: Range;
+  heading?: string;
+  ridgeHeight?: string;
+  color?: string;
+  aboveColor?: string;
+}) {
   const reduced = useReducedMotion();
   const track = useRef<HTMLDivElement>(null);
   const n = SLIDES.length;
 
   /**
-   * Undoes the inherited lift, for this content only.
+   * Nothing in here carries the intro's lift, deliberately.
    *
    * position: sticky pins against the viewport, but a transform on an ancestor
-   * moves the pinned element with it, and this section sits inside a block
-   * carrying the intro's lift. Measured, the pin landed 169px above the top of
-   * the screen and the composition sat that far high in it. Cancelling the same
-   * motion value is exact at every scroll position, where a constant would only
-   * be right once the lift had saturated.
+   * drags the pinned element with it — measured, inheriting the lift put the
+   * pin 180px above the top of the screen and took the heading off it
+   * entirely. Cancelling it back inside only moves the problem, because the
+   * bottom of the scene then falls short by the same amount.
    *
-   * It does not cancel the ridge's own throw, which is a further 30px at most
-   * and arrives slowly enough across a three-viewport pin to read as nothing.
+   * So the debt stops here instead. What it leaves is 180px of extra space
+   * between the section above and this one, and since both are page grey at
+   * that boundary, there is nothing to see. The block above had its own bottom
+   * padding cut to keep the total honest.
    */
-  const inherited = useRangeLift(lift);
-  const counter = useTransform(inherited, (v) => -v);
 
   const { scrollYProgress } = useScroll({
     target: track,
@@ -164,21 +195,67 @@ export default function MoreAboutMe({ lift = 0 }: { lift?: number }) {
         // Tall enough to scrub through. The sticky child is what stays on
         // screen; reduced motion gets neither, just the settled pile.
         height: reduced ? "auto" : `${(1 + n * SCROLL_PER) * 100}svh`,
+        background: color,
       }}
     >
+      {/* The whole scene, pinned: heading, ridge, and the black the
+          photographs fly up through. The heading and the ridge used to sit
+          above this section in flow, which meant they had scrolled away
+          before the pin even began and the screen was pure black for the
+          entire animation. Inside the sticky they stay put and the pile has
+          something to happen against. */}
       <div
         style={{
           position: reduced ? "relative" : "sticky",
           top: 0,
           height: reduced ? "auto" : "100svh",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          flexDirection: "column",
+          background: aboveColor,
+          overflow: "hidden",
         }}
       >
+        <div
+          style={{
+            flex: "0 0 auto",
+            // Enough to clear the floating navbar, which sits at top 20 and
+            // is 42 tall and centred on the same axis as this heading.
+            paddingTop: "clamp(34px, 8svh, 84px)",
+            paddingBottom: "clamp(6px, 1.4svh, 18px)",
+          }}
+        >
+          <SectionHeading paddingTop={0} paddingBottom={0}>
+            {heading}
+          </SectionHeading>
+        </div>
+
+        <svg
+          viewBox={range.viewBox}
+          preserveAspectRatio="none"
+          width="100%"
+          height={ridgeHeight}
+          style={{ display: "block", flex: "0 0 auto" }}
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d={range.d} fill={color} />
+        </svg>
+
+        <div
+          style={{
+            flex: "1 1 auto",
+            background: color,
+            // Covers the fraction these paths stop short of their viewBox
+            // floor, which would otherwise show as a hairline.
+            marginTop: -3,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 0,
+          }}
+        >
         <motion.div
           style={{
-            y: reduced ? 0 : counter,
             maxWidth: "var(--content-max)",
             width: "100%",
             margin: "0 auto",
@@ -202,16 +279,18 @@ export default function MoreAboutMe({ lift = 0 }: { lift?: number }) {
             style={{
               position: "relative",
               zIndex: 1,
-              flex: "0 1 clamp(200px, 26vw, 290px)",
+              flex: "0 1 clamp(165px, 26vw, 290px)",
               aspectRatio: "3 / 4",
               // Headroom for the scatter. The cards are positioned against
-              // this box but the offsets and the tilt carry them past its
-              // edges, and where the row wraps to a column the copy sits
-              // directly underneath — without this the bottom of the pile
-              // landed on the first sentence, which is the one thing that is
-              // not allowed to happen at rest. Block only: sideways the bleed
-              // runs into the gap, which is empty.
-              paddingBlock: 56,
+              // this box, but the resting offsets and the tilt carry them a
+              // good way past its edges, and the copy sits directly against
+              // both — underneath where the row wraps to a column, alongside
+              // where it does not. Without the reserve the pile landed on the
+              // first sentence on a phone and clipped the start of every line
+              // on a tablet, where the column gap is narrower than the bleed.
+              // Nothing may cover the text at rest; this is what guarantees it.
+              paddingBlock: PILE_PAD,
+              paddingInline: PILE_SIDE,
               boxSizing: "content-box",
             }}
           >
@@ -232,7 +311,7 @@ export default function MoreAboutMe({ lift = 0 }: { lift?: number }) {
             style={{
               flex: "1 1 340px",
               textAlign: "left",
-              fontSize: "clamp(15px, 1.7vw, 21px)",
+              fontSize: "clamp(14px, 1.7vw, 21px)",
               lineHeight: 1.45,
               display: "flex",
               flexDirection: "column",
@@ -262,6 +341,7 @@ export default function MoreAboutMe({ lift = 0 }: { lift?: number }) {
             })}
           </div>
         </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -290,7 +370,7 @@ function Card({
 
   const x = useTransform(
     t,
-    (v) => lerp(rest.x + ENTER.x, rest.x, easeInOut(v)) + ARC * Math.sin(Math.PI * v),
+    (v) => lerp(rest.x + ENTER.x, rest.x, easeInOut(v)) + ARC * Math.sin(Math.PI * Math.pow(v, ARC_SKEW)),
   );
   const y = useTransform(t, (v) => lerp(rest.y + ENTER.y, rest.y, easeOut(v)));
   const rotate = useTransform(t, (v) =>
@@ -303,9 +383,10 @@ function Card({
     <motion.div
       style={{
         position: "absolute",
-        insetInline: 0,
-        top: 56,
-        bottom: 56,
+        left: PILE_SIDE,
+        right: PILE_SIDE,
+        top: PILE_PAD,
+        bottom: PILE_PAD,
         borderRadius: 14,
         overflow: "hidden",
         // Later photographs land on top, which is what makes it a pile rather
