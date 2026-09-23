@@ -92,8 +92,11 @@ function Word({
   const style = {
     opacity: reduced ? 1 : opacity,
     color: unit.tone ? TONE_COLOR[unit.tone] : undefined,
-    // Whitespace units have to keep their space or the sentence runs together.
-    whiteSpace: "pre" as const,
+    // The sentence is laid back out as one span per word, so the spaces
+    // between them are themselves spans and would otherwise be collapsed away.
+    // pre-wrap keeps them AND still breaks lines — plain pre keeps the spaces
+    // but refuses to wrap, which ran the whole line off the side of a phone.
+    whiteSpace: "pre-wrap" as const,
   };
   return (
     <motion.span style={style}>
