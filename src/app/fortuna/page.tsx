@@ -97,10 +97,7 @@ export default function FortunaPage() {
         const dark = toneIsDark(section.tone);
         return (
           <Band key={section.id} id={section.id} tone={section.tone}>
-            {section.eyebrow ? (
-              <Eyebrow dark={dark}>{section.eyebrow}</Eyebrow>
-            ) : null}
-            <Display>
+            <Display align={section.align}>
               {section.heading}
               {/* The doc says "Title" wherever Kai has not named it yet. Marked
                   rather than silently rendered, so it cannot slip past. */}
@@ -126,7 +123,9 @@ export default function FortunaPage() {
               <Figure note={section.draft} dark={dark} />
             ) : null}
 
-            {section.blocks.map((block, i) => renderBlock(block, i, dark))}
+            {section.blocks.map((block, i) =>
+              renderBlock(block, i, dark, section.align),
+            )}
           </Band>
         );
       })}

@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { Block, Tone } from "@/content/fortuna";
+import FortunaWordmark from "./FortunaWordmark";
+import RevealCallout from "./RevealCallout";
+import type { Block, Rich, Token, Tone } from "@/content/fortuna";
 
 /**
  * The Fortuna case study's typographic kit.
@@ -15,13 +17,50 @@ const TONE_BG: Record<Tone, string> = {
   cream: "var(--f-cream)",
   "cream-deep": "var(--f-cream-deep)",
   card: "var(--f-card)",
-  peach: "var(--f-peach)",
   forest: "var(--f-forest)",
 };
 
 /** Forest is the one dark band, so it flips the type colours with it. */
 function toneIsDark(tone: Tone) {
   return tone === "forest";
+}
+
+const TONE_COLOR: Record<string, string> = {
+  orange: "var(--f-orange)",
+  green: "var(--f-green)",
+  brown: "var(--f-brown)",
+};
+
+/**
+ * Renders a run of inline tokens.
+ *
+ * "dim" is opacity rather than a lighter colour on purpose: it has to sit back
+ * from whatever it is inside without leaving the palette, and half strength of
+ * the running colour does that at any tone.
+ */
+export function Inline({ nodes }: { nodes: Rich }) {
+  if (typeof nodes === "string") return <>{nodes}</>;
+  return (
+    <>
+      {nodes.map((node: Token, i) => {
+        if (typeof node === "string") return <span key={i}>{node}</span>;
+        if ("wordmark" in node)
+          return <FortunaWordmark key={i} title="fortuna" />;
+        return (
+          <span
+            key={i}
+            style={
+              node.tone === "dim"
+                ? { opacity: 0.5 }
+                : { color: TONE_COLOR[node.tone] }
+            }
+          >
+            {node.text}
+          </span>
+        );
+      })}
+    </>
+  );
 }
 
 export function Band({
@@ -41,7 +80,7 @@ export function Band({
       id={id}
       style={{
         background: TONE_BG[tone],
-        color: dark ? "var(--f-cream)" : "var(--f-forest)",
+        color: dark ? "var(--f-cream)" : "var(--f-ink)",
         padding: "clamp(56px, 9vh, 120px) 0",
         ...style,
       }}
@@ -81,11 +120,18 @@ export function Eyebrow({ children, dark }: { children: ReactNode; dark?: boolea
   );
 }
 
-export function Display({ children }: { children: ReactNode }) {
+export function Display({
+  children,
+  align = "left",
+}: {
+  children: ReactNode;
+  align?: "left" | "center";
+}) {
   return (
     <h2
       style={{
         margin: "0 0 28px",
+        textAlign: align,
         fontFamily: "var(--f-display)",
         fontWeight: 600,
         fontSize: "clamp(28px, 4.4vw, 40px)",
@@ -116,12 +162,22 @@ export function Subheading({ children }: { children: ReactNode }) {
   );
 }
 
-export function Body({ children }: { children: ReactNode }) {
+export function Body({
+  children,
+  align = "left",
+}: {
+  children: ReactNode;
+  align?: "left" | "center";
+}) {
   return (
     <p
       style={{
         margin: "0 0 18px",
         maxWidth: "var(--f-measure-body)",
+        // Centring the text is not enough — the paragraph is narrower than the
+        // column it sits in, so the box has to be centred as well.
+        marginInline: align === "center" ? "auto" : undefined,
+        textAlign: align,
         fontFamily: "var(--f-body)",
         fontSize: "clamp(17px, 2vw, 20px)",
         lineHeight: 1.7,
@@ -145,7 +201,7 @@ export function Quote({ children, dark }: { children: ReactNode; dark?: boolean 
         lineHeight: 1.5,
         letterSpacing: "-0.02em",
         textWrap: "balance",
-        color: dark ? "var(--f-cream)" : "var(--f-forest)",
+        color: dark ? "var(--f-cream)" : "var(--f-ink)",
       }}
     >
       {children}
@@ -332,20 +388,34 @@ export function Figure({ note, dark }: { note: string; dark?: boolean }) {
   );
 }
 
-export function renderBlock(block: Block, i: number, dark: boolean) {
+export function renderBlock(
+  block: Block,
+  i: number,
+  dark: boolean,
+  align: "left" | "center" = "left",
+) {
   switch (block.kind) {
     case "text":
-      return <Body key={i}>{block.text}</Body>;
+      return (
+        <Body key={i} align={align}>
+          <Inline nodes={block.text} />
+        </Body>
+      );
     case "quote":
       return (
         <Quote key={i} dark={dark}>
-          {block.text}
+          <Inline nodes={block.text} />
         </Quote>
       );
     case "callout":
-      return (
+      // The revealing one is a client component; the plain one stays static so
+      // a page full of pull-outs does not become a page full of scroll
+      // listeners. Reveal is opt-in per callout.
+      return block.reveal ? (
+        <RevealCallout key={i} text={block.text} align={align} />
+      ) : (
         <Callout key={i} dark={dark}>
-          {block.text}
+          <Inline nodes={block.text} />
         </Callout>
       );
     case "subheading":

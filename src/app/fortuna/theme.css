@@ -10,14 +10,6 @@
    pairing the rest of the system already uses, so nothing breaks in between. */
 
 @font-face {
-  font-family: "Tiempos Headline";
-  src: url("/fonts/TiemposHeadline-Semibold.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
   font-family: "Graphik";
   src: url("/fonts/Graphik-Regular.woff2") format("woff2");
   font-weight: 400;
@@ -25,21 +17,58 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-RegularItalic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Tiempos Headline is deliberately absent.
+   The file in assets/fonts is the trial cut — it names itself "Test Tiempos
+   Headline SmB" and carries 66 glyphs against Graphik's 375. It has no
+   apostrophe, no question mark, no brackets, no ampersand and no dashes, so it
+   cannot set headings like "Tinder's spine" or "How might we…" at all. Source
+   Serif 4 holds the display role until the retail file arrives, at which point
+   this is one @font-face and one line of the stack below. */
+
 .fortuna {
-  --f-cream: rgb(247, 245, 240);
-  --f-cream-deep: rgb(242, 240, 235);
-  --f-card: rgb(233, 232, 227);
-  --f-forest: rgb(50, 68, 62);
-  --f-green: rgb(105, 189, 69);
-  --f-orange: rgb(255, 129, 0);
-  --f-muted: rgb(109, 113, 111);
-  --f-ring: rgb(153, 160, 159);
-  --f-peach: rgb(247, 230, 223);
+  /* Straight from Fortuna's own colors.js, which is the authority — the Framer
+     styles had drifted from it in two places. Nothing on this page may use a
+     colour that is not in here. */
+  --f-cream: #f7f5f0;        /* PRIMARY.BACKGROUND */
+  --f-cream-deep: #f2f0eb;   /* COMPLEMENTARY.DARK_BACKGROUND */
+  --f-card: #ebe9e4;         /* COMPLEMENTARY.DISABLED_BACKGROUND */
+  --f-forest: #32443e;       /* COMPLEMENTARY.DARK_PETROL_GREEN */
+  --f-petrol: #6f8b81;       /* PRIMARY.PETROL_GREEN */
+  --f-petrol-light: #aec6ba; /* COMPLEMENTARY.LIGHT_PETROL_GREEN */
+  --f-green: #69bd45;        /* PRIMARY.GREEN */
+  --f-green-dark: #298800;   /* COMPLEMENTARY.DARK_GREEN */
+  --f-green-light: #ade495;  /* COMPLEMENTARY.LIGHT_GREEN */
+  --f-orange: #f58120;       /* PRIMARY.ORANGE — was #ff8100 in Framer */
+  --f-brown: #736f5c;        /* PRIMARY.BROWN */
+  --f-brown-dark: #63604f;   /* COMPLEMENTARY.DARK_BROWN */
+  --f-ring: #c6c6c6;         /* PRIMARY.GREY */
+  --f-muted: #999999;        /* COMPLEMENTARY.MEDIUM_DARK_GREY */
+
+  /* Running text. Nearest brand colour to the 6D716F you quoted: DARK_GREY is
+     a neutral like that value is, and clears contrast on cream at 6.4:1.
+     BROWN (#736f5c) is marginally closer arithmetically but reads khaki. */
+  --f-ink: #616161;          /* COMPLEMENTARY.DARK_GREY */
 
   /* The tinted box behind a pull-out. Forest at 6%, straight from Framer. */
   --f-callout: rgba(50, 68, 62, 0.06);
 
-  --f-display: "Tiempos Headline", var(--font-serif), Georgia, serif;
+  --f-display: var(--font-serif), Georgia, serif;
   --f-serif: var(--font-serif), Georgia, serif;
   --f-body: "Graphik", var(--font-grotesk), system-ui, sans-serif;
   --f-grotesk: var(--font-grotesk), system-ui, sans-serif;
@@ -62,6 +91,6 @@
   --f-measure-body: min(660px, 100%);
 
   background: var(--f-cream);
-  color: var(--f-forest);
+  color: var(--f-ink);
   font-family: var(--f-body);
 }

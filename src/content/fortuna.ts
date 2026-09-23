@@ -9,14 +9,29 @@
  * section the doc leaves as "add later" — it still renders, as a visible slot,
  * so the shape of the finished piece is legible while it is being written.
  */
-export type Tone = "cream" | "cream-deep" | "card" | "peach" | "forest";
+export type Tone = "cream" | "cream-deep" | "card" | "forest";
+
+/**
+ * Inline runs inside a paragraph.
+ *
+ * A plain string is the common case. The objects are for the places a word has
+ * to behave differently from the sentence around it: the wordmark standing in
+ * for "Fortuna", a word carrying a brand colour, or an aside set back at half
+ * strength.
+ */
+export type Token =
+  | string
+  | { wordmark: true }
+  | { text: string; tone: "orange" | "green" | "brown" | "dim" };
+
+export type Rich = string | Token[];
 
 export type Block =
-  | { kind: "text"; text: string }
+  | { kind: "text"; text: Rich }
   /** Set in italics in the doc — rendered as a serif pull-quote. */
-  | { kind: "quote"; text: string }
+  | { kind: "quote"; text: Rich }
   /** The tinted box: one line that needs to land harder than body copy. */
-  | { kind: "callout"; text: string }
+  | { kind: "callout"; text: Rich; reveal?: boolean }
   | { kind: "subheading"; text: string }
   | { kind: "list"; ordered?: boolean; items: string[] }
   /** A labelled step with an arrow flow and its own explanation. */
@@ -26,12 +41,12 @@ export type Block =
 
 export type Section = {
   id: string;
-  /** Small caps label above the heading. */
-  eyebrow?: string;
   heading: string;
   /** The doc says "Title" where Kai has not named the section yet. */
   headingPending?: boolean;
   tone: Tone;
+  /** Centred sections read as a statement; left ones read as an argument. */
+  align?: "left" | "center";
   draft?: string;
   blocks: Block[];
 };
@@ -49,23 +64,35 @@ export const HERO = {
 export const SECTIONS: Section[] = [
   {
     id: "clunky",
-    eyebrow: "The problem",
     heading: "The job search is clunky",
     tone: "cream",
+    align: "center",
     blocks: [
       {
         kind: "text",
-        text: "I personally remember filling out an application for a job lifting boxes at the back of a warehouse when I was in high school only to get a response halfway through college (it was a no).",
+        text: [
+          "I personally remember filling out an application for a job lifting boxes at the back of a warehouse when I was in high school only to get a response halfway through college (",
+          // The aside sits back; the brackets stay at full strength so the
+          // sentence keeps its punctuation.
+          { text: "it was a no", tone: "dim" },
+          ").",
+        ],
       },
       {
         kind: "callout",
-        text: "With Fortuna, I was part of an ambitious project to redesign and modernize the way we find work.",
+        reveal: true,
+        text: [
+          "With ",
+          { wordmark: true },
+          ", I was part of an ambitious project to redesign and ",
+          { text: "modernize", tone: "orange" },
+          " the way we find work.",
+        ],
       },
     ],
   },
   {
     id: "many-pots",
-    eyebrow: "The goals",
     heading: "Many pots on the stove",
     tone: "cream-deep",
     blocks: [
@@ -97,8 +124,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "early-research",
-    eyebrow: "Early UX research",
-    heading: "Title",
+    heading: "Early UX research",
     headingPending: true,
     tone: "cream",
     blocks: [
@@ -115,10 +141,9 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "reflections",
-    eyebrow: "Personal reflections on issues",
-    heading: "Title",
+    heading: "Personal reflections on issues",
     headingPending: true,
-    tone: "peach",
+    tone: "card",
     blocks: [
       {
         kind: "text",
@@ -136,8 +161,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "data-frameworks",
-    eyebrow: "Data frameworks on research",
-    heading: "Title",
+    heading: "Data frameworks on research",
     headingPending: true,
     tone: "cream",
     draft: "Add later",
@@ -145,7 +169,6 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "hamster-wheel",
-    eyebrow: "How might we",
     heading: "Running on a hamster wheel in a rat race",
     tone: "forest",
     blocks: [
@@ -169,7 +192,6 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "introducing-fortuna",
-    eyebrow: "The solution",
     heading: "Introducing Fortuna",
     tone: "cream",
     blocks: [
@@ -182,8 +204,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "how-we-got-there",
-    eyebrow: "How we got there",
-    heading: "Title",
+    heading: "How we got there",
     headingPending: true,
     tone: "cream-deep",
     blocks: [
@@ -244,8 +265,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "new-feature-ideas",
-    eyebrow: "New feature ideas",
-    heading: "Title",
+    heading: "New feature ideas",
     headingPending: true,
     tone: "cream",
     draft: "Will remove",
@@ -253,7 +273,6 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "testing-job-seeker",
-    eyebrow: "Testing",
     heading: "Testing on the job seeker flow",
     tone: "cream",
     blocks: [
@@ -269,7 +288,6 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "two-sided",
-    eyebrow: "Transition",
     heading: "From the job seeker to the employer",
     tone: "forest",
     blocks: [
@@ -285,7 +303,6 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "employer-flow",
-    eyebrow: "The other side",
     heading: "Employer flow",
     tone: "cream",
     blocks: [
@@ -350,16 +367,15 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "branding",
-    eyebrow: "Branding",
-    heading: "Title",
+    heading: "Branding",
     headingPending: true,
     tone: "cream-deep",
     draft: "Add later — may move to the front",
     blocks: [],
   },
-  { id: "website", eyebrow: "Website", heading: "Title", headingPending: true, tone: "cream", draft: "Add later", blocks: [] },
-  { id: "video-resume", eyebrow: "Video resume", heading: "Title", headingPending: true, tone: "cream-deep", draft: "Add later", blocks: [] },
-  { id: "app-store", eyebrow: "App Store screens", heading: "Title", headingPending: true, tone: "cream", draft: "Add later — A and B testing", blocks: [] },
-  { id: "promo", eyebrow: "Promotional video shoots + flyers", heading: "Title", headingPending: true, tone: "peach", draft: "Add later", blocks: [] },
-  { id: "closing", eyebrow: "Closing reflection", heading: "Title", headingPending: true, tone: "forest", draft: "Add later", blocks: [] },
+  { id: "website", heading: "Website", headingPending: true, tone: "cream", draft: "Add later", blocks: [] },
+  { id: "video-resume", heading: "Video resume", headingPending: true, tone: "cream-deep", draft: "Add later", blocks: [] },
+  { id: "app-store", heading: "App Store screens", headingPending: true, tone: "cream", draft: "Add later — A and B testing", blocks: [] },
+  { id: "promo", heading: "Promotional video shoots + flyers", headingPending: true, tone: "card", draft: "Add later", blocks: [] },
+  { id: "closing", heading: "Closing reflection", headingPending: true, tone: "forest", draft: "Add later", blocks: [] },
 ];
