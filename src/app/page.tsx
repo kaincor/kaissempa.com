@@ -82,7 +82,7 @@ export default function Home() {
             range={BACK}
             height="clamp(105px, 16vw, 240px)"
             rise={45}
-            drop={-28}
+            drop={-25}
           />
         }
       />
