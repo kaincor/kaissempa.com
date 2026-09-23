@@ -280,6 +280,20 @@ export default function MoreAboutMe({
           {/* The pile. A little smaller than the single photograph it replaces,
               as asked.
 
+              The 38vw slope is steeper than the pile needs on its own. It is
+              there to reach the ceiling early, at around 760px, which is where
+              a tablet sits: the pile goes full size, the row can no longer hold
+              both columns, and the layout stacks. Side by side on a 1024-tall
+              screen the two columns came to 351px of content with 231px of
+              black above it and 238px below — stacked, the same content uses
+              the height instead of floating in it. Phones and desktops are
+              both already at an end of the clamp, so neither moves.
+
+              The svh term is a brake for short landscape windows. Width alone
+              would hand a 1024x700 the full-size pile and leave the content
+              exactly as tall as the black it sits in, with nothing to spare and
+              an overflow a little below that.
+
               Above the copy, not behind it. A photograph swings wide enough on
               its way up to cross the column, and passing underneath the
               sentences reads as a z-order mistake where passing over them reads
@@ -289,7 +303,7 @@ export default function MoreAboutMe({
             style={{
               position: "relative",
               zIndex: 1,
-              flex: "0 1 clamp(165px, 26vw, 290px)",
+              flex: "0 1 clamp(165px, min(38vw, 37svh), 290px)",
               aspectRatio: "3 / 4",
               // Headroom for the scatter. The cards are positioned against
               // this box, but the resting offsets and the tilt carry them a
