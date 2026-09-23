@@ -42,11 +42,20 @@ export function Band({
       style={{
         background: TONE_BG[tone],
         color: dark ? "var(--f-cream)" : "var(--f-forest)",
-        padding: "clamp(56px, 9vh, 120px) 24px",
+        padding: "clamp(56px, 9vh, 120px) 0",
         ...style,
       }}
     >
-      <div style={{ maxWidth: "var(--f-measure)", margin: "0 auto" }}>
+      {/* The column carries the boundary rather than padding on the band, so
+          the margin scales with the viewport instead of sitting at one value.
+          The 28px subtraction is only a floor for very narrow screens, where
+          the measure's own minimum would otherwise be wider than the glass. */}
+      <div
+        style={{
+          width: "min(var(--f-measure), 100% - 28px)",
+          margin: "0 auto",
+        }}
+      >
         {children}
       </div>
     </section>

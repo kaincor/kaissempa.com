@@ -23,10 +23,15 @@ export default function FortunaPage() {
           page has a top, not because it is finished. */}
       <header
         style={{
-          padding: "clamp(120px, 22vh, 220px) 24px clamp(48px, 8vh, 96px)",
+          padding: "clamp(120px, 22vh, 220px) 0 clamp(48px, 8vh, 96px)",
         }}
       >
-        <div style={{ maxWidth: "var(--f-measure)", margin: "0 auto" }}>
+        <div
+          style={{
+            width: "min(var(--f-measure), 100% - 28px)",
+            margin: "0 auto",
+          }}
+        >
           <Eyebrow>{HERO.eyebrow}</Eyebrow>
           <h1
             style={{

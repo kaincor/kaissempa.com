@@ -44,11 +44,22 @@
   --f-body: "Graphik", var(--font-grotesk), system-ui, sans-serif;
   --f-grotesk: var(--font-grotesk), system-ui, sans-serif;
 
-  /* Framer sets the heading column at 720 and the paragraph at 660. The
-     difference is deliberate: a heading runs a little wider than the body
-     under it. */
-  --f-measure: 720px;
-  --f-measure-body: 660px;
+  /* The measure, and with it the boundary.
+     
+     Framer caps the column at 720 and the paragraph at 660 — a heading runs a
+     little wider than the body under it. But a fixed cap plus fixed padding
+     produces wildly different margins: at 1280 the cap alone leaves 22% of the
+     screen empty each side, while at 768 the cap is never reached and the
+     margin is whatever the padding was, about 3%. Desktop looked composed and
+     tablet looked like text jammed against the glass.
+     
+     Making the column fluid puts them on the same footing. 62vw between a
+     300px floor and the 720px cap lands the boundary at roughly 10% on a
+     phone, 19% on a tablet and 19-22% on a desktop, so the proportion holds
+     from tablet up and a phone keeps the wider column it needs to stay
+     readable. */
+  --f-measure: clamp(300px, 62vw, 720px);
+  --f-measure-body: min(660px, 100%);
 
   background: var(--f-cream);
   color: var(--f-forest);
