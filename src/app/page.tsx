@@ -91,7 +91,12 @@ export default function Home() {
         range={FRONT}
         height="clamp(75px, 11vw, 190px)"
         rise={180}
-        drop={-24}
+        // Positive, so the ridge sits 30px lower than it used to and its solid
+        // section lands just below the fold. That is what the overscan is for:
+        // with the section no longer covering the bottom of the screen, the
+        // silhouette has to, and its own feet do not reach the corners.
+        drop={6}
+        overscan={2.5}
         // The divider below extends black upward behind itself, so the default
         // reserve here would only add dead space above the ridge.
         padBottom={0}

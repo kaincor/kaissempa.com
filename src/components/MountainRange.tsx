@@ -14,6 +14,17 @@ export type MountainRangeProps = {
   /** Pixels to sink the ridge below the fold, so less of it shows at rest. */
   drop?: number;
   /**
+   * Percent to stretch the silhouette past each side of the screen.
+   *
+   * These paths taper to nothing at their left and right extremes, so the
+   * outermost few pixels of the viewport are not covered by the ridge at all —
+   * only by the solid section beneath it. That is invisible while the section
+   * sits above the fold, and becomes a grey notch in each bottom corner the
+   * moment it does not. Pushing the feet off screen means the visible edge is
+   * always somewhere the silhouette is solid.
+   */
+  overscan?: number;
+  /**
    * Padding under the section's content. Defaults to `rise`, which stops the
    * lift exposing page background when nothing follows. Pass 0 when the next
    * section already extends this colour upward behind itself.
@@ -65,6 +76,7 @@ export default function MountainRange({
   color = "#000000",
   rise = 140,
   drop = 28,
+  overscan = 0,
   padBottom,
   children,
 }: MountainRangeProps) {
@@ -83,10 +95,11 @@ export default function MountainRange({
       <svg
         viewBox={range.viewBox}
         preserveAspectRatio="none"
-        width="100%"
+        width={`${100 + overscan * 2}%`}
         height={height}
         style={{
           display: "block",
+          marginLeft: `${-overscan}%`,
           // Pulls the ridge up over the section above so its base lands on the
           // bottom edge of the viewport at scroll 0, less `drop` to sink it.
           marginTop: `calc(${drop}px - (${height}))`,
