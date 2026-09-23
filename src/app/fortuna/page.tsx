@@ -9,6 +9,7 @@ import {
   renderBlock,
   toneIsDark,
 } from "@/components/fortuna/Prose";
+import FadeIn from "@/components/fortuna/FadeIn";
 
 export const metadata: Metadata = {
   title: "Fortuna — A Tale of Two Users",
@@ -97,7 +98,9 @@ export default function FortunaPage() {
         const dark = toneIsDark(section.tone);
         return (
           <Band key={section.id} id={section.id} tone={section.tone}>
-            <Display align={section.align}>
+            {(() => {
+              const heading = (
+                <Display align={section.align}>
               {section.heading}
               {/* The doc says "Title" wherever Kai has not named it yet. Marked
                   rather than silently rendered, so it cannot slip past. */}
@@ -117,14 +120,19 @@ export default function FortunaPage() {
                   needs a title
                 </span>
               ) : null}
-            </Display>
+                </Display>
+              );
+              // The heading takes the first slot in the arrival order, so the
+              // blocks beneath it start counting from one.
+              return section.reveal ? <FadeIn>{heading}</FadeIn> : heading;
+            })()}
 
             {section.draft ? (
               <Figure note={section.draft} dark={dark} />
             ) : null}
 
             {section.blocks.map((block, i) =>
-              renderBlock(block, i, dark, section.align),
+              renderBlock(block, i, dark, section.align, section.reveal, i + 1),
             )}
           </Band>
         );

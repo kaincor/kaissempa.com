@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import FortunaWordmark from "./FortunaWordmark";
-import RevealCallout from "./RevealCallout";
+import BillboardCallout from "./BillboardCallout";
+import FadeIn from "./FadeIn";
 import type { Block, Rich, Token, Tone } from "@/content/fortuna";
 
 /**
@@ -45,7 +46,7 @@ export function Inline({ nodes }: { nodes: Rich }) {
       {nodes.map((node: Token, i) => {
         if (typeof node === "string") return <span key={i}>{node}</span>;
         if ("wordmark" in node)
-          return <FortunaWordmark key={i} title="fortuna" />;
+          return <FortunaWordmark key={i} dot={node.dot} title="fortuna" />;
         return (
           <span
             key={i}
@@ -388,19 +389,39 @@ export function Figure({ note, dark }: { note: string; dark?: boolean }) {
   );
 }
 
+/**
+ * Order of arrival within a revealing section.
+ *
+ * The heading goes first and the paragraph follows it; the billboard waits for
+ * both, because it is the loudest thing in the section and should not be what
+ * the eye catches on the way in.
+ */
+const STEP = 0.18;
+
 export function renderBlock(
   block: Block,
   i: number,
   dark: boolean,
   align: "left" | "center" = "left",
+  reveal = false,
+  /** Position in the section's arrival order, heading included. */
+  order = 0,
 ) {
   switch (block.kind) {
-    case "text":
-      return (
+    case "text": {
+      const body = (
         <Body key={i} align={align}>
           <Inline nodes={block.text} />
         </Body>
       );
+      return reveal ? (
+        <FadeIn key={i} delay={order * STEP}>
+          {body}
+        </FadeIn>
+      ) : (
+        body
+      );
+    }
     case "quote":
       return (
         <Quote key={i} dark={dark}>
@@ -412,7 +433,12 @@ export function renderBlock(
       // a page full of pull-outs does not become a page full of scroll
       // listeners. Reveal is opt-in per callout.
       return block.reveal ? (
-        <RevealCallout key={i} text={block.text} align={align} />
+        <BillboardCallout
+          key={i}
+          text={block.text}
+          align={align}
+          delay={order * STEP}
+        />
       ) : (
         <Callout key={i} dark={dark}>
           <Inline nodes={block.text} />

@@ -21,8 +21,14 @@ export type Tone = "cream" | "cream-deep" | "card" | "forest";
  */
 export type Token =
   | string
-  | { wordmark: true }
-  | { text: string; tone: "orange" | "green" | "brown" | "dim" };
+  /** `dot: false` drops the lockup's orange full stop, for mid-sentence use. */
+  | { wordmark: true; dot?: boolean }
+  | {
+      text: string;
+      tone: "orange" | "green" | "brown" | "dim";
+      /** Starts the colour of the sentence and floods in, left to right. */
+      fill?: boolean;
+    };
 
 export type Rich = string | Token[];
 
@@ -47,6 +53,8 @@ export type Section = {
   tone: Tone;
   /** Centred sections read as a statement; left ones read as an argument. */
   align?: "left" | "center";
+  /** Fade the heading and paragraphs in, staggered, as the section arrives. */
+  reveal?: boolean;
   draft?: string;
   blocks: Block[];
 };
@@ -67,6 +75,7 @@ export const SECTIONS: Section[] = [
     heading: "The job search is clunky",
     tone: "cream",
     align: "center",
+    reveal: true,
     blocks: [
       {
         kind: "text",
@@ -83,9 +92,11 @@ export const SECTIONS: Section[] = [
         reveal: true,
         text: [
           "With ",
-          { wordmark: true },
+          // No full stop on the mark here — the sentence supplies its own
+          // punctuation immediately after it.
+          { wordmark: true, dot: false },
           ", I was part of an ambitious project to redesign and ",
-          { text: "modernize", tone: "orange" },
+          { text: "modernize", tone: "orange", fill: true },
           " the way we find work.",
         ],
       },
