@@ -97,6 +97,11 @@ export default function Home() {
         // is what keeps the bottom edge covered however far this one drops —
         // this ridge's own section stopped reaching the fold long ago.
         drop={56}
+        // Range 1's path stops short of its own viewBox edges, which leaves a
+        // bare column down each side of the screen at every height. Those
+        // columns are a window onto the seam behind this silhouette; the
+        // stretch puts them off frame.
+        overscan={1.5}
         // The divider below extends black upward behind itself, so the default
         // reserve here would only add dead space above the ridge.
         padBottom={0}

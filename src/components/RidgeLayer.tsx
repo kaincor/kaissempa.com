@@ -100,7 +100,12 @@ export default function RidgeLayer({
           left: 0,
           right: 0,
           height: "100vh",
-          marginTop: -1,
+          // Four rather than one. Where two black layers merely touch, each is
+          // antialiased against the backdrop separately and the two partial
+          // coverages do not add up to opaque — on a fractionally scaled
+          // display that reads as a hairline. Overlap costs nothing here,
+          // because what it covers is the silhouette's own solid baseline.
+          marginTop: -4,
           background: color,
         }}
       />
