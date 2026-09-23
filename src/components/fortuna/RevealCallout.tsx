@@ -142,7 +142,7 @@ export default function RevealCallout({
         style={{
           margin: 0,
           fontFamily: "var(--f-body)",
-          fontSize: "clamp(17px, 2vw, 20px)",
+          fontSize: "var(--f-body-size)",
           lineHeight: 1.6,
           letterSpacing: "-0.02em",
           textAlign: align,

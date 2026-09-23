@@ -179,7 +179,7 @@ export function Body({
         marginInline: align === "center" ? "auto" : undefined,
         textAlign: align,
         fontFamily: "var(--f-body)",
-        fontSize: "clamp(17px, 2vw, 20px)",
+        fontSize: "var(--f-body-size)",
         lineHeight: 1.7,
         letterSpacing: "-0.02em",
       }}
@@ -225,7 +225,7 @@ export function Callout({ children, dark }: { children: ReactNode; dark?: boolea
         style={{
           margin: 0,
           fontFamily: "var(--f-body)",
-          fontSize: "clamp(17px, 2vw, 20px)",
+          fontSize: "var(--f-body-size)",
           lineHeight: 1.6,
           letterSpacing: "-0.02em",
         }}
@@ -266,7 +266,7 @@ export function List({
             gridTemplateColumns: "28px 1fr",
             alignItems: "baseline",
             fontFamily: "var(--f-body)",
-            fontSize: "clamp(17px, 2vw, 20px)",
+            fontSize: "var(--f-body-size)",
             lineHeight: 1.6,
             letterSpacing: "-0.02em",
           }}

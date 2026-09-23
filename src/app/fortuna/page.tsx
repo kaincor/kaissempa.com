@@ -67,7 +67,7 @@ export default function FortunaPage() {
               margin: "0 0 18px",
               maxWidth: "var(--f-measure-body)",
               fontFamily: "var(--f-body)",
-              fontSize: "clamp(17px, 2vw, 20px)",
+              fontSize: "var(--f-body-size)",
               lineHeight: 1.7,
               letterSpacing: "-0.02em",
             }}

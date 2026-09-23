@@ -33,13 +33,27 @@
   font-display: swap;
 }
 
-/* Tiempos Headline is deliberately absent.
-   The file in assets/fonts is the trial cut — it names itself "Test Tiempos
-   Headline SmB" and carries 66 glyphs against Graphik's 375. It has no
-   apostrophe, no question mark, no brackets, no ampersand and no dashes, so it
-   cannot set headings like "Tinder's spine" or "How might we…" at all. Source
-   Serif 4 holds the display role until the retail file arrives, at which point
-   this is one @font-face and one line of the stack below. */
+/* Tiempos Headline — the trial cut, standing in until the retail file arrives.
+   
+   It names itself "Test Tiempos Headline SmB" and carries 66 glyphs against
+   Graphik's 375: no apostrophe, question mark, brackets, ampersand or dashes.
+   That is survivable because a font stack falls back per GLYPH, not per
+   element — the browser sets each character in the first family that has it,
+   so the letters come from Tiempos and anything it lacks comes from the next
+   family along without the heading changing face wholesale.
+   
+   Across every heading on the page today exactly one character falls through:
+   the + in "Promotional video shoots + flyers".
+   
+   Swapping in the licensed file means replacing this one URL. Nothing else
+   changes, because the family name stays the same. */
+@font-face {
+  font-family: "Tiempos Headline";
+  src: url("/fonts/TiemposHeadline-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
 
 .fortuna {
   /* Straight from Fortuna's own colors.js, which is the authority — the Framer
@@ -68,7 +82,10 @@
   /* The tinted box behind a pull-out. Forest at 6%, straight from Framer. */
   --f-callout: rgba(50, 68, 62, 0.06);
 
-  --f-display: var(--font-serif), Georgia, serif;
+  /* Graphik catches what the trial cut is missing, as asked. Source Serif sits
+     behind it as a last resort — it is a serif, so if a heading ever needs an
+     apostrophe or a question mark it will blend better than the grotesk will. */
+  --f-display: "Tiempos Headline", "Graphik", var(--font-serif), Georgia, serif;
   --f-serif: var(--font-serif), Georgia, serif;
   --f-body: "Graphik", var(--font-grotesk), system-ui, sans-serif;
   --f-grotesk: var(--font-grotesk), system-ui, sans-serif;
@@ -87,6 +104,11 @@
      phone, 19% on a tablet and 19-22% on a desktop, so the proportion holds
      from tablet up and a phone keeps the wider column it needs to stay
      readable. */
+  /* Running text. Was 20px at the top end, straight from Framer, which read
+     heavy on screen; 18 sits better against this measure. One value, because
+     body copy, callouts and lists all have to agree. */
+  --f-body-size: clamp(16px, 1.55vw, 18px);
+
   --f-measure: clamp(300px, 62vw, 720px);
   --f-measure-body: min(660px, 100%);
 
