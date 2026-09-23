@@ -43,39 +43,44 @@ type Slide = {
 };
 
 /**
- * Placeholders, reusing photographs the intro already shows. The mockup calls
- * for the graduation, family and mountain biking shots, which are not in the
- * repo yet: drop them into public/photos and swap src and alt here. The
- * sentences are the ones this section already carried, unchanged.
+ * Kai's photographs, paired one to a sentence.
+ *
+ * All five are cropped to the same 3:4 as they land, which keeps the pile
+ * tidy. Four of them are natively 3:4 so nothing is lost; blender-nodes is a
+ * 9:16 screenshot and gets a centre crop.
+ *
+ * rural-uganda arrived with EXIF orientation 6 — stored landscape, displayed
+ * portrait. That is baked into the file in public/photos rather than left for
+ * the browser and the optimiser to each interpret.
  */
 const SLIDES: Slide[] = [
   {
-    src: "/photos/kai-with-stick.jpg",
-    alt: "Kai outdoors",
+    src: "/photos/rural-uganda.jpg",
+    alt: "Rural Uganda",
     line: "I grew up in rural Uganda.",
     rest: { x: -38, y: -30, rot: -9 },
   },
   {
-    src: "/photos/kai-and-dia.jpg",
-    alt: "Kai and Dia",
+    src: "/photos/parents-at-graduation.jpg",
+    alt: "Kai's parents at his graduation",
     line: "My parents devoted their careers to public health work in remote villages & I grew up working alongside them.",
     rest: { x: 30, y: 24, rot: 6.5 },
   },
   {
-    src: "/photos/irving-raghad-cyprien-kai.jpg",
-    alt: "Irving, Raghad, Cyprien and Kai",
+    src: "/photos/blender-nodes.jpg",
+    alt: "A Blender node graph Kai built",
     line: "At Stanford, I study design & computer science. I'm also on the leadership team for the Black Student Engineers Club.",
     rest: { x: -24, y: 34, rot: -4 },
   },
   {
-    src: "/photos/kai-in-lake-lagunita.jpg",
-    alt: "Kai at Lake Lagunita",
+    src: "/photos/working-at-amouage.jpg",
+    alt: "Kai working at Amouage",
     line: "I try to put a piece of myself into my work: assets from scratch. Illustrations. Custom fonts. I hand drew this font I'm using right now.",
     rest: { x: 36, y: -26, rot: 9 },
   },
   {
-    src: "/photos/snowboarding-with-ben.jpg",
-    alt: "Kai snowboarding with Ben",
+    src: "/photos/helmet.jpg",
+    alt: "Kai in a mountain biking helmet",
     line: "I enjoy bodybuilding, mountain biking & embroidery.",
     rest: { x: -6, y: 6, rot: -2.5 },
   },
