@@ -23,12 +23,17 @@ import { rangeById } from "@/data/mountainRanges";
  *
  * Depth reads from the gap between the rates, not their size: 45 against 180.
  */
-const BACK = rangeById(13);
-const FRONT = rangeById(12);
-/** Flipped, so its peaks hang down out of the black section. */
-const CLOSING = rangeById(13);
 /** Opens the More About Me section, peaks upward into the grey. */
 const OPENING = rangeById(1);
+
+const BACK = rangeById(12);
+/**
+ * In front of the scene — deliberately the same silhouette that opens More
+ * About Me, so the page comes back to a shape it has already shown.
+ */
+const FRONT = OPENING;
+/** Flipped, so its peaks hang down out of the black section. */
+const CLOSING = rangeById(13);
 /** Flipped, closing More About Me back out into the page grey. */
 const FOOTER_RIDGE = rangeById(4);
 
@@ -77,7 +82,7 @@ export default function Home() {
             range={BACK}
             height="clamp(105px, 16vw, 240px)"
             rise={45}
-            drop={-10}
+            drop={-28}
           />
         }
       />
