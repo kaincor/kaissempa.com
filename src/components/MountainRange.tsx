@@ -70,6 +70,8 @@ export default function MountainRange({
 }: MountainRangeProps) {
   const reduced = useReducedMotion();
   const y = useRangeLift(rise);
+  // Pins the skirt below to the hero's edge while this block parallaxes.
+  const counter = useTransform(y, (v) => -v);
 
   return (
     <motion.div
@@ -80,6 +82,38 @@ export default function MountainRange({
         willChange: "transform",
       }}
     >
+      {/* The skirt.
+
+          The layer behind the 3D scene hangs a full viewport of black under
+          its own silhouette, and that is what keeps the bottom of the hero
+          covered. But the hero clips it, and once `drop` sinks this ridge far
+          enough that its section starts below the hero's edge, the strip in
+          between is backed by nothing at all: the only black there is this
+          silhouette, so every valley in it shows page grey. Measured at
+          drop 56, that was a 55px strip with 108px of its width bare.
+
+          So this fills exactly that strip. It is pinned to the hero's edge
+          rather than carried along with the parallax — the block it belongs to
+          rides up as the reader scrolls, and a skirt that rode with it would
+          climb into the sky and black out the valleys of the ridge behind.
+          Three pixels of overlap upward, into territory the layer behind is
+          already painting black, to bury the seam. */}
+      {drop > 0 ? (
+        <motion.div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: -3,
+            left: 0,
+            right: 0,
+            height: drop + 3,
+            background: color,
+            y: reduced ? 0 : counter,
+            pointerEvents: "none",
+          }}
+        />
+      ) : null}
+
       <svg
         viewBox={range.viewBox}
         preserveAspectRatio="none"
