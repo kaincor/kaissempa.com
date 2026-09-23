@@ -91,12 +91,12 @@ export default function Home() {
         range={FRONT}
         height="clamp(75px, 11vw, 190px)"
         rise={180}
-        // Positive, so the ridge sits 30px lower than it used to and its solid
-        // section lands just below the fold. That is what the overscan is for:
-        // with the section no longer covering the bottom of the screen, the
-        // silhouette has to, and its own feet do not reach the corners.
-        drop={6}
-        overscan={2.5}
+        // Sinks the ridge well below the fold, so most of what shows at the
+        // bottom of the screen is the back layer rather than this one. That
+        // layer hangs a full viewport of black under its own silhouette, which
+        // is what keeps the bottom edge covered however far this one drops —
+        // this ridge's own section stopped reaching the fold long ago.
+        drop={56}
         // The divider below extends black upward behind itself, so the default
         // reserve here would only add dead space above the ridge.
         padBottom={0}
