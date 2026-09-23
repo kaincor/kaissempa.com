@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 const LINKS = [
@@ -22,6 +23,24 @@ const LINE_SHIFT = (LINE_THICKNESS + LINE_GAP) / 2;
 const BAR_TINT = "rgba(5, 5, 5, 0.15)";
 const MENU_TINT =
   "linear-gradient(270deg, rgba(5, 5, 5, 0.16) 0%, rgba(5, 5, 5, 0.2) 100%)";
+
+/**
+ * Each case study carries its own brand, and the navbar travels with it.
+ *
+ * The glass composition is unchanged — same blur, same squircle, same
+ * geometry. Only the tint moves, so the bar reads as the same object wearing
+ * the page's colour rather than a different component. Keyed by path prefix,
+ * which is the only thing the bar knows about where it is.
+ */
+const CASE_THEMES: { prefix: string; bar: string; menu: string }[] = [
+  {
+    prefix: "/fortuna",
+    // Forest, the deep green Fortuna's palette is built on, at the same
+    // opacity the default near-black tint uses.
+    bar: "rgba(50, 68, 62, 0.22)",
+    menu: "linear-gradient(270deg, rgba(50, 68, 62, 0.26) 0%, rgba(50, 68, 62, 0.32) 100%)",
+  },
+];
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
 export default function Navbar({ logo }: { logo?: ReactNode }) {
@@ -29,6 +48,11 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
   const [canHover, setCanHover] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const hidden = useHideOnScroll(open);
+
+  const pathname = usePathname();
+  const theme = CASE_THEMES.find((t) => pathname?.startsWith(t.prefix));
+  const barTint = theme?.bar ?? BAR_TINT;
+  const menuTint = theme?.menu ?? MENU_TINT;
 
   // Hover opens on pointer devices; touch gets tap-to-toggle, since a hover
   // that cannot be undone by moving away is a trap on a phone.
@@ -102,7 +126,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           justifyContent: logo ? "space-between" : "flex-end",
           padding: "0 16px",
           borderRadius: 10,
-          background: BAR_TINT,
+          background: barTint,
         }}
       >
         {logo ? (
@@ -160,7 +184,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           width: "100%",
           padding: 15,
           borderRadius: 13.5,
-          background: MENU_TINT,
+          background: menuTint,
           display: "flex",
           flexDirection: "column",
           gap: 7.5,

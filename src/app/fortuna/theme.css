@@ -1,0 +1,56 @@
+/* Fortuna's identity, lifted from the Framer project's colour and text styles
+   rather than sampled by eye. Scoped to .fortuna so each case study can carry
+   its own brand without leaking into the rest of the site.
+
+   Two of the twenty-three text styles use licensed faces Kai owns — Tiempos
+   Headline for the display and Graphik for body copy. Those are declared here
+   and self-hosted. Everything else was already on Google Fonts and is loaded
+   in the layout. Until the two woff2 files are dropped into public/fonts the
+   browser falls through to the next family in each stack, which is the
+   pairing the rest of the system already uses, so nothing breaks in between. */
+
+@font-face {
+  font-family: "Tiempos Headline";
+  src: url("/fonts/TiemposHeadline-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.fortuna {
+  --f-cream: rgb(247, 245, 240);
+  --f-cream-deep: rgb(242, 240, 235);
+  --f-card: rgb(233, 232, 227);
+  --f-forest: rgb(50, 68, 62);
+  --f-green: rgb(105, 189, 69);
+  --f-orange: rgb(255, 129, 0);
+  --f-muted: rgb(109, 113, 111);
+  --f-ring: rgb(153, 160, 159);
+  --f-peach: rgb(247, 230, 223);
+
+  /* The tinted box behind a pull-out. Forest at 6%, straight from Framer. */
+  --f-callout: rgba(50, 68, 62, 0.06);
+
+  --f-display: "Tiempos Headline", var(--font-serif), Georgia, serif;
+  --f-serif: var(--font-serif), Georgia, serif;
+  --f-body: "Graphik", var(--font-grotesk), system-ui, sans-serif;
+  --f-grotesk: var(--font-grotesk), system-ui, sans-serif;
+
+  /* Framer sets the heading column at 720 and the paragraph at 660. The
+     difference is deliberate: a heading runs a little wider than the body
+     under it. */
+  --f-measure: 720px;
+  --f-measure-body: 660px;
+
+  background: var(--f-cream);
+  color: var(--f-forest);
+  font-family: var(--f-body);
+}

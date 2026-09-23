@@ -54,7 +54,7 @@ export default function ProjectsAndProducts() {
       <Thumb label="Fortuna" href={null} shadow={FORTUNA_GREEN}>
         <FortunaThumb
           src="https://my.spline.design/untitled-LJJusTxa5gWBBga8bpLjm42w-3v2/"
-          href={WIP}
+          href="/fortuna"
           label="Fortuna"
         />
       </Thumb>
