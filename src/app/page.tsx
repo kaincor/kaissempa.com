@@ -23,8 +23,8 @@ import { rangeById } from "@/data/mountainRanges";
  *
  * Depth reads from the gap between the rates, not their size: 45 against 180.
  */
-const BACK = rangeById(15);
-const FRONT = rangeById(4);
+const BACK = rangeById(13);
+const FRONT = rangeById(12);
 /** Flipped, so its peaks hang down out of the black section. */
 const CLOSING = rangeById(13);
 /** Opens the More About Me section, peaks upward into the grey. */
