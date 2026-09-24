@@ -35,6 +35,20 @@ const TILT = (4 * Math.PI) / 180;
  */
 const SPACING = 0.95;
 
+/**
+ * How the land sits on the body, applied after projection.
+ *
+ * Rotating the dots and not the sphere is the point: the body is a circle, so
+ * turning it would change nothing, but turning the land reads as the planet
+ * being on a tilted axis. Counterclockwise on screen, where y runs downward.
+ *
+ * Applied here rather than at runtime so it happens before the culling — a dot
+ * shifted past the frame edge should be dropped, not carried.
+ */
+const LAND_ROTATE = 20;
+const LAND_SHIFT_X = 34;
+const LAND_SHIFT_Y = 12;
+
 const EARTH = 6378137;
 const rad = (d) => (d * Math.PI) / 180;
 
@@ -105,10 +119,20 @@ for (let lat = -82; lat <= 84; lat += SPACING) {
   for (let lon = -180; lon < 180; lon += lonStep) {
     if (!isLand(lat, lon)) continue;
     const { sx, sy, depth } = project(lat, lon);
-    if (depth <= 0.04 || sy > H + 8) continue;
+    if (depth <= 0.04) continue;
+    const t = rad(LAND_ROTATE);
+    const px = sx - CX;
+    const py = sy - CY;
+    const rx = CX + px * Math.cos(t) + py * Math.sin(t) + LAND_SHIFT_X;
+    const ry = CY - px * Math.sin(t) + py * Math.cos(t) + LAND_SHIFT_Y;
+    // Shifting the land moves it off the body it is supposed to be painted
+    // on, so anything now past the horizon is dropped. Without this the
+    // right-hand coast floats in space beside the planet.
+    if (Math.hypot(rx - CX, ry - CY) > R - 3) continue;
+    if (ry > H + 8) continue;
     dots.push([
-      Math.round(sx * 10) / 10,
-      Math.round(sy * 10) / 10,
+      Math.round(rx * 10) / 10,
+      Math.round(ry * 10) / 10,
       // Coarse steps as well as small numbers: thousands of dots sharing a
       // dozen values gzip far better than thousands differing in the third
       // decimal.

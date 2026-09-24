@@ -31,9 +31,9 @@ export default function GlobeRise({
     offset: ["start end", "center center"],
   });
 
-  const y = useTransform(scrollYProgress, [0, 1], [70, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [0.84, 1]);
-  const opacity = useTransform(scrollYProgress, [0, 0.45], [0, 1]);
+  const y = useTransform(scrollYProgress, [0, 1], [118, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.66, 1]);
+  const opacity = useTransform(scrollYProgress, [0, 0.38], [0, 1]);
 
   return (
     <motion.div
