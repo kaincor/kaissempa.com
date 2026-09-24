@@ -145,7 +145,7 @@ export function Band({
         // Asymmetric when tight: close at the top so the heading sits high in
         // the band, open at the bottom so the next section is not crowded.
         padding: tight
-          ? "clamp(17px, 2.4vh, 31px) 0 clamp(44px, 6.5vh, 88px)"
+          ? "clamp(17px, 2.4vh, 31px) 0 clamp(76px, 11vh, 150px)"
           : "clamp(56px, 9vh, 120px) 0",
         // `svh`, not `vh`: on a phone `vh` is the tallest the viewport ever
         // gets, so a 100vh band is cut off by the address bar until the reader

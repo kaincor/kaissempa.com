@@ -141,15 +141,16 @@
    using this element's transform for the lift and the growth. */
 .fortuna .f-globe-frame {
   width: min(var(--f-globe-max, 760px), 100%);
-  /* Air underneath as well as above, so the green sweeping up from the next
-     band has some empty cream to cross before it reaches the globe. */
-  margin: 34px auto clamp(28px, 5vh, 64px);
+  /* Tight to the caption above — the line names what the picture shows, so
+     they should read as one unit — and open underneath, so the green sweeping
+     up from the next band has some empty cream to cross first. */
+  margin: 8px auto clamp(28px, 5vh, 64px);
 }
 
 @media (max-width: 640px) {
   .fortuna .f-globe-frame {
     width: 125vw;
-    margin: 28px 0 clamp(24px, 4vh, 48px) calc(50% - 62.5vw);
+    margin: 6px 0 clamp(24px, 4vh, 48px) calc(50% - 62.5vw);
   }
 }
 

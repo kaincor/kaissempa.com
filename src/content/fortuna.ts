@@ -201,10 +201,6 @@ export const SECTIONS: Section[] = [
       {
         kind: "list",
         ordered: true,
-        // Centred as a block while the heading stays left. The rows keep their
-        // left edge — the numerals sit in a gutter, and centring each row
-        // would leave the digits ragged.
-        align: "center",
         emphasis: true,
         items: [
           "Drive the cost of every interaction towards zero.",

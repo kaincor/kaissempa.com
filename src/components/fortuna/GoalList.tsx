@@ -47,7 +47,7 @@ export default function GoalList({
       <ol
         style={{
           listStyle: "none",
-          margin: "clamp(34px, 4.6vh, 52px) 0 0",
+          margin: "clamp(46px, 6vh, 68px) 0 0",
           padding: 0,
           maxWidth: "var(--f-measure-body)",
           // Shrink to the longest line before centring; centring a block that

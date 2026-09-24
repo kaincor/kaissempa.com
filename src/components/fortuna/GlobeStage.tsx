@@ -43,9 +43,13 @@ const PIN_DELAY = 220;
  * The globe takes more than the line above it. It is the larger, nearer
  * object, and giving the two the same depth would say they are on the same
  * plane, which is the one thing the effect is there to deny.
+ *
+ * It used to take 26. Once the globe moved up against its caption there was no
+ * longer 26px of slack between them to borrow, and the difference in their
+ * drifts is exactly what eats that gap.
  */
 const CAPTION_DRIFT = 12;
-const GLOBE_DRIFT = 26;
+const GLOBE_DRIFT = 18;
 
 /**
  * Where in the entrance the caption arrives, as a share of it.
@@ -114,7 +118,7 @@ export default function GlobeStage({
             // Set apart from the paragraph above rather than following on from
             // it: it is the caption to the picture underneath, not the last
             // line of that argument.
-            margin: "clamp(26px, 4vh, 48px) 0 18px",
+            margin: "clamp(26px, 4vh, 48px) 0 10px",
             maxWidth: "var(--f-measure-body)",
             marginInline: "auto",
             textAlign: "center",
