@@ -105,9 +105,9 @@
      from tablet up and a phone keeps the wider column it needs to stay
      readable. */
   /* Running text. Was 20px at the top end, straight from Framer, which read
-     heavy on screen; 18 sits better against this measure. One value, because
+     heavy on screen, and 18 was still a shade loud; 17 sits right. One value, because
      body copy, callouts and lists all have to agree. */
-  --f-body-size: clamp(16px, 1.55vw, 18px);
+  --f-body-size: clamp(15px, 1.35vw, 17px);
 
   --f-measure: clamp(300px, 62vw, 720px);
   --f-measure-body: min(660px, 100%);

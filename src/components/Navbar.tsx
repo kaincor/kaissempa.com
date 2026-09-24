@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -35,12 +36,16 @@ const MENU_TINT =
 const CASE_THEMES: { prefix: string; bar: string; menu: string }[] = [
   {
     prefix: "/fortuna",
-    // Forest, the deep green Fortuna's palette is built on, at the same
-    // opacity the default near-black tint uses.
-    bar: "rgba(50, 68, 62, 0.22)",
-    menu: "linear-gradient(270deg, rgba(50, 68, 62, 0.26) 0%, rgba(50, 68, 62, 0.32) 100%)",
+    // Fortuna green, heavy enough to read as green rather than as a tint,
+    // with enough left over for the blur underneath to still do something.
+    bar: "rgba(105, 189, 69, 0.82)",
+    menu: "linear-gradient(270deg, rgba(105, 189, 69, 0.84) 0%, rgba(105, 189, 69, 0.9) 100%)",
   },
 ];
+
+/** How long the colour takes to run across the bar, and its head start. */
+const WIPE_MS = 0.95;
+const WIPE_DELAY = 0.35;
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
 export default function Navbar({ logo }: { logo?: ReactNode }) {
@@ -51,7 +56,8 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
 
   const pathname = usePathname();
   const theme = CASE_THEMES.find((t) => pathname?.startsWith(t.prefix));
-  const barTint = theme?.bar ?? BAR_TINT;
+  // The bar keeps its own grey underneath; the theme rides over it as a wipe.
+  // The menu is never on screen while that runs, so it just takes the colour.
   const menuTint = theme?.menu ?? MENU_TINT;
 
   // Hover opens on pointer devices; touch gets tap-to-toggle, since a hover
@@ -120,17 +126,52 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
         className="glass"
         style={{
           position: "relative",
+          // The wipe is a child laid over the whole bar, so it has to be
+          // trimmed to the bar's own corners on the way past them.
+          overflow: "hidden",
           height: BAR_HEIGHT,
           display: "flex",
           alignItems: "center",
           justifyContent: logo ? "space-between" : "flex-end",
           padding: "0 16px",
           borderRadius: 10,
-          background: barTint,
+          background: BAR_TINT,
         }}
       >
+        {/* The case study's colour, run across the bar rather than swapped in.
+            Keyed on the theme so moving between case studies replays it, and
+            unmounting on the way home puts the bar back to its own grey.
+
+            It is a layer over the tint rather than a change to it because a
+            background cannot be wiped — clip-path can, and clipping an opaque
+            layer is one compositor property, so the whole thing stays off the
+            main thread. */}
+        {theme ? (
+          <motion.span
+            key={theme.prefix}
+            aria-hidden="true"
+            initial={{ clipPath: "inset(0 100% 0 0)" }}
+            animate={{ clipPath: "inset(0 0% 0 0)" }}
+            transition={{
+              duration: WIPE_MS,
+              ease: [0.22, 1, 0.36, 1],
+              delay: WIPE_DELAY,
+            }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: theme.bar,
+              pointerEvents: "none",
+            }}
+          />
+        ) : null}
+
         {logo ? (
-          <Link href="/" aria-label="Kai Ssempa, home" style={{ display: "flex" }}>
+          <Link
+            href="/"
+            aria-label="Kai Ssempa, home"
+            style={{ display: "flex", position: "relative", zIndex: 1 }}
+          >
             {logo}
           </Link>
         ) : null}
@@ -142,6 +183,10 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           aria-controls="main-menu"
           aria-label={open ? "Close menu" : "Open menu"}
           style={{
+            // Above the wipe: the colour runs behind the hamburger, which
+            // stays white the whole way through.
+            position: "relative",
+            zIndex: 1,
             display: "flex",
             flexDirection: "column",
             gap: LINE_GAP,

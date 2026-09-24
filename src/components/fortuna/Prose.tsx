@@ -396,7 +396,7 @@ export function Figure({ note, dark }: { note: string; dark?: boolean }) {
  * both, because it is the loudest thing in the section and should not be what
  * the eye catches on the way in.
  */
-const STEP = 0.18;
+const STEP = 0.34;
 
 export function renderBlock(
   block: Block,
