@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { useRef } from "react";
 
 /**
  * An ordered list that is the point of its section rather than a supporting
@@ -22,20 +23,40 @@ import { motion, useReducedMotion } from "motion/react";
 /** Seconds between one goal landing and the next starting. */
 const STAGGER = 0.26;
 
+/**
+ * How far the block drifts against the page, in pixels each way.
+ *
+ * The whole list moves as one, not each line on its own depth. Separate
+ * depths would open and close the gaps between the goals as the reader
+ * scrolls, and four lines that breathe in and out are a effect rather than a
+ * list. Moving the block keeps the spacing exactly as set while still putting
+ * the goals on a different plane from the heading above them.
+ */
+const DRIFT = 18;
+
 export default function GoalList({
   items,
   align = "left",
 }: {
   items: string[];
-  align?: "left" | "center";
+  align?: "left" | "center" | "right";
 }) {
   const reduced = useReducedMotion();
+  const ref = useRef<HTMLOListElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const drift = useTransform(scrollYProgress, [0, 1], [DRIFT, -DRIFT]);
 
   return (
-    <ol
+    <motion.ol
+      ref={ref}
       style={{
+        y: reduced ? 0 : drift,
+        willChange: "transform",
         listStyle: "none",
-        margin: "6px 0 0",
+        margin: "clamp(34px, 4.6vh, 52px) 0 0",
         padding: 0,
         maxWidth: "var(--f-measure-body)",
         // Shrink to the longest line before centring; centring a block that
@@ -111,6 +132,6 @@ export default function GoalList({
           </span>
         </motion.li>
       ))}
-    </ol>
+    </motion.ol>
   );
 }

@@ -99,7 +99,10 @@ export default function GlobeStage({
           y: reduced ? 0 : capY,
           opacity: reduced ? 1 : capOpacity,
           willChange: "transform, opacity",
-          margin: "0 0 18px",
+          // Set apart from the paragraph above rather than following on from
+          // it: it is the caption to the picture underneath, not the last
+          // line of that argument.
+          margin: "clamp(26px, 4vh, 48px) 0 18px",
           maxWidth: "var(--f-measure-body)",
           marginInline: "auto",
           textAlign: "center",

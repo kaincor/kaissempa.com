@@ -11,6 +11,9 @@
  */
 export type Tone = "cream" | "cream-deep" | "card" | "forest" | "green";
 
+/** Which edge a section's contents hang from. */
+export type Align = "left" | "center" | "right";
+
 /** Palette names a section can reach for directly. Resolved as `var(--f-…)`. */
 export type BrandColor =
   | "orange"
@@ -52,7 +55,7 @@ export type Block =
       kind: "list";
       ordered?: boolean;
       /** Overrides the section's alignment for this block alone. */
-      align?: "left" | "center";
+      align?: "left" | "center" | "right";
       /**
        * Set the items in the display face and bubble them in one at a time.
        * For a list that is the point of its section rather than a supporting
@@ -78,7 +81,7 @@ export type Section = {
   headingPending?: boolean;
   tone: Tone;
   /** Centred sections read as a statement; left ones read as an argument. */
-  align?: "left" | "center";
+  align?: "left" | "center" | "right";
   /** Fade the heading and paragraphs in, staggered, as the section arrives. */
   reveal?: boolean;
   draft?: string;
@@ -164,19 +167,15 @@ export const SECTIONS: Section[] = [
         text: "There were just a few of us. I worked alongside that other designer, a couple software engineers, and a product manager who doubled as our co-CEO. Fortuna was an early stage startup, so roles bent and blurred. We all stepped outside our job description to keep the product moving.",
       },
       // Out of the tinted box: it is the next sentence, not an aside, and the
-      // globe beneath it is what gives it its weight. The line slides in
-      // partway through the globe's entrance and floods green when the pin
-      // strikes, so the sentence and the picture finish together.
+      // globe beneath it is what gives it its weight. It slides in partway
+      // through the globe's entrance, already green — the wipe it used to do
+      // was a second event competing with the pin for the same moment.
       {
         kind: "globe",
         caption: [
           { wordmark: true, dot: false },
           " ",
-          {
-            text: "launched in Miami in summer 2022.",
-            tone: "green",
-            fill: true,
-          },
+          { text: "launched in Miami in summer 2022.", tone: "green" },
         ],
       },
     ],
@@ -194,10 +193,9 @@ export const SECTIONS: Section[] = [
     // The sweep is what makes the moment, and it happens above this band
     // regardless of how tall the band itself is.
     tight: true,
-    // The heading in cream, the running text in the band's own deep forest —
-    // which is also the way round that reads best: the small type gets the
-    // 5.11:1 and the forty-pixel display face gets the 2.15:1 it can carry.
-    headingTone: "cream",
+    // Everything in the band's deep forest. The heading does not need a
+    // second colour to outrank the goals — it already outranks them by size.
+    headingTone: "forest-deep",
     blocks: [
       { kind: "text", text: "Our high level goals for the app were to:" },
       {
@@ -219,12 +217,12 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "early-research",
-    heading: "Early UX research",
-    headingPending: true,
+    heading: "Field interviews",
     // Green too, so the goals and the research they came out of read as one
     // stretch of the page. No `rise` — the band above is already this colour,
     // so there is nothing for a sweep to reveal.
     tone: "green",
+    align: "right",
     blocks: [
       {
         kind: "text",

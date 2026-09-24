@@ -30,7 +30,7 @@ export default function BillboardCallout({
   delay = 0,
 }: {
   text: Rich;
-  align?: "left" | "center";
+  align?: "left" | "center" | "right";
   delay?: number;
 }) {
   const reduced = useReducedMotion();

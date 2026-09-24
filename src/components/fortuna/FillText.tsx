@@ -128,6 +128,14 @@ export function FillLine({
   filled: boolean;
   duration?: number;
 }) {
+  // A line with nothing to fill does not need a second copy of itself sitting
+  // invisibly on top of it. Callers reach for this component for the effect;
+  // when the manuscript drops the `fill` token it should cost nothing.
+  const fillable =
+    typeof nodes !== "string" &&
+    nodes.some((n) => typeof n !== "string" && "fill" in n && n.fill);
+  if (!fillable) return <Run nodes={nodes} ghost={false} />;
+
   return (
     <span style={{ position: "relative", display: "block" }}>
       <Run nodes={nodes} ghost={false} />

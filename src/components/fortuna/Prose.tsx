@@ -5,7 +5,7 @@ import FadeIn from "./FadeIn";
 import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
 import GoalList from "./GoalList";
-import type { Block, Rich, Token, Tone } from "@/content/fortuna";
+import type { Align, Block, Rich, Token, Tone } from "@/content/fortuna";
 
 /**
  * The Fortuna case study's typographic kit.
@@ -52,6 +52,17 @@ const TONE_ACCENT: Record<Tone, string> = {
   forest: "var(--f-green)",
   green: "var(--f-forest-deep)",
 };
+
+/**
+ * Moving a block within its column, as opposed to the text within the block.
+ * A paragraph is narrower than the column, so `text-align` alone leaves the
+ * box itself sitting on the left whatever the words inside it are doing.
+ */
+function blockAlign(align: Align) {
+  if (align === "center") return { marginInline: "auto" };
+  if (align === "right") return { marginLeft: "auto", marginRight: 0 };
+  return null;
+}
 
 /** Forest is the one band dark enough to flip a component's whole treatment. */
 function toneIsDark(tone: Tone) {
@@ -131,8 +142,10 @@ export function Band({
         // sit against the default text colour has no reason to work against
         // a different one.
         ["--f-accent" as string]: ink ?? TONE_ACCENT[tone],
+        // Asymmetric when tight: close at the top so the heading sits high in
+        // the band, open at the bottom so the next section is not crowded.
         padding: tight
-          ? "clamp(17px, 2.4vh, 31px) 0"
+          ? "clamp(17px, 2.4vh, 31px) 0 clamp(44px, 6.5vh, 88px)"
           : "clamp(56px, 9vh, 120px) 0",
         // `svh`, not `vh`: on a phone `vh` is the tallest the viewport ever
         // gets, so a 100vh band is cut off by the address bar until the reader
@@ -189,7 +202,7 @@ export function Display({
   color,
 }: {
   children: ReactNode;
-  align?: "left" | "center";
+  align?: "left" | "center" | "right";
   color?: string;
 }) {
   return (
@@ -216,7 +229,7 @@ export function Subheading({
   align = "left",
 }: {
   children: ReactNode;
-  align?: "left" | "center";
+  align?: "left" | "center" | "right";
 }) {
   return (
     <h3
@@ -240,16 +253,16 @@ export function Body({
   align = "left",
 }: {
   children: ReactNode;
-  align?: "left" | "center";
+  align?: "left" | "center" | "right";
 }) {
   return (
     <p
       style={{
         margin: "0 0 18px",
         maxWidth: "var(--f-measure-body)",
-        // Centring the text is not enough — the paragraph is narrower than the
-        // column it sits in, so the box has to be centred as well.
-        marginInline: align === "center" ? "auto" : undefined,
+        // Aligning the text is not enough — the paragraph is narrower than
+        // the column it sits in, so the box has to move as well.
+        ...blockAlign(align),
         textAlign: align,
         fontFamily: "var(--f-body)",
         fontSize: "var(--f-body-size)",
@@ -262,7 +275,15 @@ export function Body({
   );
 }
 
-export function Quote({ children, dark }: { children: ReactNode; dark?: boolean }) {
+export function Quote({
+  children,
+  dark,
+  align = "left",
+}: {
+  children: ReactNode;
+  dark?: boolean;
+  align?: Align;
+}) {
   return (
     <p
       style={{
@@ -274,7 +295,9 @@ export function Quote({ children, dark }: { children: ReactNode; dark?: boolean 
         lineHeight: 1.5,
         letterSpacing: "-0.02em",
         textWrap: "balance",
-        color: dark ? "var(--f-cream)" : "var(--f-ink)",
+        textAlign: align,
+        // Inherits the band's ink on green, where neither of these is right.
+        color: dark ? "var(--f-cream)" : undefined,
       }}
     >
       {children}
@@ -282,7 +305,15 @@ export function Quote({ children, dark }: { children: ReactNode; dark?: boolean 
   );
 }
 
-export function Callout({ children, dark }: { children: ReactNode; dark?: boolean }) {
+export function Callout({
+  children,
+  dark,
+  align = "left",
+}: {
+  children: ReactNode;
+  dark?: boolean;
+  align?: Align;
+}) {
   return (
     <div
       style={{
@@ -301,6 +332,7 @@ export function Callout({ children, dark }: { children: ReactNode; dark?: boolea
           fontSize: "var(--f-body-size)",
           lineHeight: 1.6,
           letterSpacing: "-0.02em",
+          textAlign: align,
         }}
       >
         {children}
@@ -317,7 +349,7 @@ export function List({
 }: {
   items: string[];
   ordered?: boolean;
-  align?: "left" | "center";
+  align?: "left" | "center" | "right";
 }) {
   return (
     <ol
@@ -330,9 +362,7 @@ export function List({
         // stay left: the numerals sit in a gutter, and centring each one would
         // leave the digits ragged.
         maxWidth: "var(--f-measure-body)",
-        ...(align === "center"
-          ? { width: "fit-content", marginInline: "auto" }
-          : null),
+        ...(align === "left" ? null : { width: "fit-content", ...blockAlign(align) }),
         display: "flex",
         flexDirection: "column",
         gap: 14,
@@ -481,7 +511,7 @@ export function renderBlock(
   block: Block,
   i: number,
   dark: boolean,
-  align: "left" | "center" = "left",
+  align: Align = "left",
   reveal = false,
   /** Position in the section's arrival order, heading included. */
   order = 0,
@@ -503,7 +533,7 @@ export function renderBlock(
     }
     case "quote":
       return (
-        <Quote key={i} dark={dark}>
+        <Quote key={i} dark={dark} align={align}>
           <Inline nodes={block.text} />
         </Quote>
       );
@@ -519,7 +549,7 @@ export function renderBlock(
           delay={order * STEP}
         />
       ) : (
-        <Callout key={i} dark={dark}>
+        <Callout key={i} dark={dark} align={align}>
           <Inline nodes={block.text} />
         </Callout>
       );
