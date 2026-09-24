@@ -36,10 +36,12 @@ const MENU_TINT =
 const CASE_THEMES: { prefix: string; bar: string; menu: string }[] = [
   {
     prefix: "/fortuna",
-    // Fortuna green, heavy enough to read as green rather than as a tint,
-    // with enough left over for the blur underneath to still do something.
-    bar: "rgba(105, 189, 69, 0.82)",
-    menu: "linear-gradient(270deg, rgba(105, 189, 69, 0.84) 0%, rgba(105, 189, 69, 0.9) 100%)",
+    // 0.82 read as a solid green panel — past about two thirds the blur
+    // underneath stops being visible at all and the glass is just paint.
+    // 0.58 still reads overwhelmingly green while letting the page move
+    // behind it.
+    bar: "rgba(105, 189, 69, 0.58)",
+    menu: "linear-gradient(270deg, rgba(105, 189, 69, 0.6) 0%, rgba(105, 189, 69, 0.66) 100%)",
   },
 ];
 

@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import FortunaWordmark from "./FortunaWordmark";
 import BillboardCallout from "./BillboardCallout";
 import FadeIn from "./FadeIn";
+import MiamiGlobe from "./MiamiGlobe";
 import type { Block, Rich, Token, Tone } from "@/content/fortuna";
 
 /**
@@ -146,11 +147,18 @@ export function Display({
   );
 }
 
-export function Subheading({ children }: { children: ReactNode }) {
+export function Subheading({
+  children,
+  align = "left",
+}: {
+  children: ReactNode;
+  align?: "left" | "center";
+}) {
   return (
     <h3
       style={{
         margin: "48px 0 16px",
+        textAlign: align,
         fontFamily: "var(--f-serif)",
         fontWeight: 600,
         fontSize: "clamp(21px, 2.8vw, 27px)",
@@ -242,10 +250,12 @@ export function List({
   items,
   ordered,
   dark,
+  align = "left",
 }: {
   items: string[];
   ordered?: boolean;
   dark?: boolean;
+  align?: "left" | "center";
 }) {
   return (
     <ol
@@ -254,6 +264,9 @@ export function List({
         margin: "0 0 18px",
         padding: 0,
         maxWidth: "var(--f-measure-body)",
+        // The numbers sit in a gutter, so a centred list is centred as a
+        // block; centring each row would leave the digits ragged.
+        marginInline: align === "center" ? "auto" : undefined,
         display: "flex",
         flexDirection: "column",
         gap: 14,
@@ -445,10 +458,20 @@ export function renderBlock(
         </Callout>
       );
     case "subheading":
-      return <Subheading key={i}>{block.text}</Subheading>;
+      return (
+        <Subheading key={i} align={align}>
+          {block.text}
+        </Subheading>
+      );
     case "list":
       return (
-        <List key={i} items={block.items} ordered={block.ordered} dark={dark} />
+        <List
+          key={i}
+          items={block.items}
+          ordered={block.ordered}
+          dark={dark}
+          align={align}
+        />
       );
     case "step":
       return (
@@ -463,6 +486,8 @@ export function renderBlock(
       );
     case "figure":
       return <Figure key={i} note={block.note} dark={dark} />;
+    case "globe":
+      return <MiamiGlobe key={i} />;
   }
 }
 

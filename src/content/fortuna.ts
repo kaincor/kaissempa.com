@@ -43,7 +43,9 @@ export type Block =
   /** A labelled step with an arrow flow and its own explanation. */
   | { kind: "step"; n: number; title: string; flow?: string; text: string[] }
   /** A note to self in the doc about a visual that does not exist yet. */
-  | { kind: "figure"; note: string };
+  | { kind: "figure"; note: string }
+  /** The Miami globe. */
+  | { kind: "globe" };
 
 export type Section = {
   id: string;
@@ -106,6 +108,8 @@ export const SECTIONS: Section[] = [
     id: "many-pots",
     heading: "Many pots on the stove",
     tone: "cream-deep",
+    align: "center",
+    reveal: true,
     blocks: [
       {
         kind: "text",
@@ -119,7 +123,10 @@ export const SECTIONS: Section[] = [
         kind: "text",
         text: "There were just a few of us. I worked alongside that other designer, a couple software engineers, and a product manager who doubled as our co-CEO. Fortuna was an early stage startup, so roles bent and blurred. We all stepped outside our job description to keep the product moving.",
       },
-      { kind: "callout", text: "Fortuna launched in Miami in summer 2022." },
+      // Out of the tinted box: it is the next sentence, not an aside, and the
+      // globe beside it is what gives it its weight.
+      { kind: "text", text: "Fortuna launched in Miami in summer 2022." },
+      { kind: "globe" },
       { kind: "subheading", text: "Our high level goals for the app were to:" },
       {
         kind: "list",
