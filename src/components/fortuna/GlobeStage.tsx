@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import GlobeCanvas from "./GlobeCanvas";
 import MiamiPin from "./MiamiPin";
 import { FillLine } from "./FillText";
+import Parallax from "./Parallax";
 import type { Rich } from "@/content/fortuna";
 
 /**
@@ -35,6 +36,16 @@ const RISE_MS = 0.95;
 const RISE_EASE = [0.22, 0.61, 0.24, 1] as const;
 /** A beat after the globe settles, so the two read as separate events. */
 const PIN_DELAY = 220;
+
+/**
+ * Drift for the caption and for the globe, in pixels each way.
+ *
+ * The globe takes more than the line above it. It is the larger, nearer
+ * object, and giving the two the same depth would say they are on the same
+ * plane, which is the one thing the effect is there to deny.
+ */
+const CAPTION_DRIFT = 12;
+const GLOBE_DRIFT = 26;
 
 /**
  * Where in the entrance the caption arrives, as a share of it.
@@ -94,50 +105,54 @@ export default function GlobeStage({
 
   return (
     <>
-      <motion.p
-        style={{
-          y: reduced ? 0 : capY,
-          opacity: reduced ? 1 : capOpacity,
-          willChange: "transform, opacity",
-          // Set apart from the paragraph above rather than following on from
-          // it: it is the caption to the picture underneath, not the last
-          // line of that argument.
-          margin: "clamp(26px, 4vh, 48px) 0 18px",
-          maxWidth: "var(--f-measure-body)",
-          marginInline: "auto",
-          textAlign: "center",
-          fontFamily: "var(--f-body)",
-          fontSize: "var(--f-body-size)",
-          lineHeight: 1.7,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        <FillLine nodes={caption} filled={reduced ? true : struck} />
-      </motion.p>
+      <Parallax drift={CAPTION_DRIFT}>
+        <motion.p
+          style={{
+            y: reduced ? 0 : capY,
+            opacity: reduced ? 1 : capOpacity,
+            willChange: "transform, opacity",
+            // Set apart from the paragraph above rather than following on from
+            // it: it is the caption to the picture underneath, not the last
+            // line of that argument.
+            margin: "clamp(26px, 4vh, 48px) 0 18px",
+            maxWidth: "var(--f-measure-body)",
+            marginInline: "auto",
+            textAlign: "center",
+            fontFamily: "var(--f-body)",
+            fontSize: "var(--f-body-size)",
+            lineHeight: 1.7,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          <FillLine nodes={caption} filled={reduced ? true : struck} />
+        </motion.p>
+      </Parallax>
 
-      <motion.div
-        ref={ref}
-        // Width and margin live in theme.css, because on a phone the globe
-        // breaks out of the column and that needs a media query.
-        className="f-globe-frame"
-        style={{
-          position: "relative",
-          // The cap the stylesheet clamps to, so the number lives in one place.
-          ["--f-globe-max" as string]: `${width}px`,
-          aspectRatio: `${width} / ${height}`,
-          // Grows from its own base, so it rises out of the page rather than
-          // inflating around its middle.
-          transformOrigin: "50% 85%",
-          y: reduced ? 0 : y,
-          scale: reduced ? 1 : scale,
-          opacity: reduced ? 1 : opacity,
-          willChange: "transform, opacity",
-        }}
-      >
-        {children}
-        <GlobeCanvas progress={progress} impact={struck} />
-        <MiamiPin drop={reduced || dropPin} onTouch={() => setStruck(true)} />
-      </motion.div>
+      <Parallax drift={GLOBE_DRIFT}>
+        <motion.div
+          ref={ref}
+          // Width and margin live in theme.css, because on a phone the globe
+          // breaks out of the column and that needs a media query.
+          className="f-globe-frame"
+          style={{
+            position: "relative",
+            // The cap the stylesheet clamps to, so the number lives in one place.
+            ["--f-globe-max" as string]: `${width}px`,
+            aspectRatio: `${width} / ${height}`,
+            // Grows from its own base, so it rises out of the page rather than
+            // inflating around its middle.
+            transformOrigin: "50% 85%",
+            y: reduced ? 0 : y,
+            scale: reduced ? 1 : scale,
+            opacity: reduced ? 1 : opacity,
+            willChange: "transform, opacity",
+          }}
+        >
+          {children}
+          <GlobeCanvas progress={progress} impact={struck} />
+          <MiamiPin drop={reduced || dropPin} onTouch={() => setStruck(true)} />
+        </motion.div>
+      </Parallax>
     </>
   );
 }
