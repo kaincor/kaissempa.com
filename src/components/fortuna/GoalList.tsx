@@ -20,7 +20,7 @@ import { motion, useReducedMotion } from "motion/react";
  */
 
 /** Seconds between one goal landing and the next starting. */
-const STAGGER = 0.13;
+const STAGGER = 0.26;
 
 export default function GoalList({
   items,
@@ -55,17 +55,24 @@ export default function GoalList({
           whileInView={{ opacity: 1, scale: 1, y: 0 }}
           viewport={{ once: true, amount: 0.6 }}
           transition={{
-            // Enough overshoot to read as a bubble arriving rather than a
-            // box fading up, and damped hard enough not to wobble.
-            type: "spring",
-            stiffness: 420,
-            damping: 20,
-            mass: 0.8,
-            delay: i * STAGGER,
+            // Enough overshoot to read as a bubble arriving rather than a box
+            // fading up, but soft: a goal should settle into place, not snap.
+            default: {
+              type: "spring",
+              stiffness: 130,
+              damping: 17,
+              mass: 1.1,
+              delay: i * STAGGER,
+            },
+            // Opacity gets a tween, not the spring. A spring this soft is
+            // underdamped enough to overshoot, and on a transform that reads
+            // as bounce — which is the point — while on opacity it is a
+            // visible flicker back to 90% after the line has already arrived.
+            opacity: { duration: 0.45, ease: "easeOut", delay: i * STAGGER },
           }}
           style={{
             display: "grid",
-            gridTemplateColumns: "clamp(30px, 4vw, 44px) 1fr",
+            gridTemplateColumns: "clamp(24px, 3vw, 38px) 1fr",
             alignItems: "baseline",
             // Each bubbles about its own leading edge, so the column of
             // numerals stays put while the lines pop.
@@ -77,7 +84,7 @@ export default function GoalList({
             style={{
               fontFamily: "var(--f-display)",
               fontWeight: 600,
-              fontSize: "clamp(17px, 2vw, 22px)",
+              fontSize: "clamp(13px, 1.6vw, 19px)",
               // The numeral is the quiet half of the pair: it counts the line,
               // it does not compete with it.
               opacity: 0.45,
@@ -89,7 +96,12 @@ export default function GoalList({
             style={{
               fontFamily: "var(--f-display)",
               fontWeight: 600,
-              fontSize: "clamp(19px, 2.5vw, 27px)",
+              // Sized to put the longest goal on one line rather than to a
+              // round number. The column is 62vw, so the type has to track vw
+              // too or the fit only holds at one width. It gives out on a
+              // phone, where 58 characters on one line would mean type smaller
+              // than the body copy — there they wrap to two.
+              fontSize: "clamp(15px, 2vw, 24px)",
               lineHeight: 1.32,
               letterSpacing: "-0.02em",
               textWrap: "balance",

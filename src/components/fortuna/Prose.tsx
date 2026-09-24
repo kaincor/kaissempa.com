@@ -132,7 +132,7 @@ export function Band({
         // a different one.
         ["--f-accent" as string]: ink ?? TONE_ACCENT[tone],
         padding: tight
-          ? "clamp(26px, 3.6vh, 46px) 0"
+          ? "clamp(17px, 2.4vh, 31px) 0"
           : "clamp(56px, 9vh, 120px) 0",
         // `svh`, not `vh`: on a phone `vh` is the tallest the viewport ever
         // gets, so a 100vh band is cut off by the address bar until the reader

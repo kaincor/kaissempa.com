@@ -30,7 +30,7 @@ import type { Rich } from "@/content/fortuna";
  */
 
 /** Long enough to be a reveal, short enough not to be a wait. */
-const RISE_MS = 1.45;
+const RISE_MS = 0.95;
 /** Slow out of the gate, long glide into place. */
 const RISE_EASE = [0.22, 0.61, 0.24, 1] as const;
 /** A beat after the globe settles, so the two read as separate events. */

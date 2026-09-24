@@ -194,10 +194,10 @@ export const SECTIONS: Section[] = [
     // The sweep is what makes the moment, and it happens above this band
     // regardless of how tall the band itself is.
     tight: true,
-    // Reversed out of the usual arrangement: the running text takes the cream
-    // and the heading takes the deep forest the text would normally carry.
-    headingTone: "forest-deep",
-    bodyTone: "cream",
+    // The heading in cream, the running text in the band's own deep forest —
+    // which is also the way round that reads best: the small type gets the
+    // 5.11:1 and the forty-pixel display face gets the 2.15:1 it can carry.
+    headingTone: "cream",
     blocks: [
       { kind: "text", text: "Our high level goals for the app were to:" },
       {
