@@ -7,84 +7,88 @@ import {
   useSpring,
   useTransform,
 } from "motion/react";
-import { useRef, type PointerEvent } from "react";
+import { useRef, type PointerEvent, type RefObject } from "react";
+import type { MotionValue } from "motion/react";
 
 /**
- * A dotted globe with Miami marked, after the references.
+ * A dotted globe, built to match the Hero 216 reference.
  *
- * The continents are not drawn, they are sampled. Dots are laid out on a
- * sphere at even spacing, projected orthographically, and kept only where they
- * fall on land — so the coastlines emerge from the grid rather than being
- * traced, which is what gives the references their look and what makes an
- * approximate landmass acceptable. Dots shrink and fade toward the limb, and
- * that alone is what reads as curvature; there is no shading anywhere.
+ * The trick in that image is that the sphere is not made of the dots. There is
+ * a lit body underneath — near-white in the middle, shading to grey at the rim
+ * — and the dots only mark land. The oceans are where you actually read the
+ * curvature, because that is where the body shows through unobstructed. Take
+ * the body away and you get a flat scatter; that was the previous version.
  *
- * Still no canvas. The whole thing is generated once at module scope and
- * emitted as static SVG, so rendering it costs a paint and nothing else.
+ * Everything else is depth cues doing the work. Dots shrink and fade towards
+ * the limb, the rim carries a faint inner shadow, and the whole thing is lit
+ * from the upper left. No canvas, no WebGL, no per-frame maths: the grid is
+ * projected once at module scope and emitted as static markup.
  */
 
 /**
- * Land, at five degrees, for the hemisphere that faces us.
+ * Land at five degrees. Columns run -170 to +20 west to east, rows 80N down to
+ * 60S, so the hemisphere facing the Americas is covered end to end and West
+ * Africa and Europe come round the right limb the way they do in the
+ * reference.
  *
- * Columns run -165 to -15 west to east, rows 75N down to 55S. Deliberately
- * legible as text: at dot resolution the coastline is a dozen pixels of
- * decision, and editing this is easier than editing a path. Everything outside
- * the grid is ocean, which for a globe centred on the Americas is true.
+ * Kept as text on purpose. At this dot size a coastline is a handful of pixels
+ * of decision, and correcting a picture beats correcting path data.
  */
 const LAND = [
-  "........####################...",
-  "#############################..",
-  "######################..#####..",
-  "#######################........",
-  ".######################........",
-  "......#################........",
-  ".......################........",
-  "........##############.........",
-  ".........############..........",
-  "..........##########...........",
-  "...........####..#.............",
-  "............####.###...........",
-  "..............####.............",
-  ".................#####.........",
-  ".................######........",
-  "..................#######......",
-  "..................#########....",
-  "..................#########....",
-  "...................########....",
-  "....................#######....",
-  "....................######.....",
-  "...................######......",
-  "...................#####.......",
-  "...................####........",
-  "...................###.........",
-  "...................###.........",
-  "...................##..........",
+  "............#########.#########........",
+  "..........###########.#########.....#..",
+  ".#####################.########.....###",
+  ".#####################...#####..#..####",
+  ".######################...###......####",
+  "..#####.################.........######",
+  ".........###############.........######",
+  "..........##############..........#####",
+  "...........############...........#####",
+  "............##########............#####",
+  ".............########............######",
+  "..............######.............######",
+  "...............###.###..........#######",
+  "................####...........########",
+  "...................#####......#########",
+  "...................######.....#########",
+  "....................#######....########",
+  "....................#########...#######",
+  "....................#########....######",
+  ".....................########....######",
+  "......................#######....######",
+  "......................######......#####",
+  ".....................######........####",
+  ".....................#####..........##.",
+  ".....................####..............",
+  ".....................###...............",
+  ".....................###...............",
+  ".....................##................",
+  "......................................."
 ];
-const LAT_TOP = 75;
-const LON_LEFT = -165;
+const LAT_TOP = 80;
+const LON_LEFT = -170;
 const STEP = 5;
 
 /**
- * The frame, and where the sphere sits in it.
+ * The frame, and the sphere in it.
  *
- * The centre has to be INSIDE the picture, not below it. With the centre below
- * the bottom edge only northern latitudes projected into view, so the whole of
- * South America fell off and what was left was a small cluster around the
- * Great Lakes. At CY just under the radius the top of the globe clears the top
- * edge by 30 and the frame still reaches about 25 degrees south, which is the
- * Americas end to end.
+ * Proportioned off the reference: the body is a little over half the frame
+ * wide, its centre sits below the bottom edge, and roughly the top 45 per cent
+ * of it is in shot.
  */
 const W = 760;
-const H = 460;
+const H = 430;
 const CX = 380;
-const CY = 330;
-const R = 300;
+const CY = 470;
+const R = 365;
 
-/** Longitude facing the viewer, and how far the north pole tips forward. */
-const LON0 = -92;
-const TILT = (12 * Math.PI) / 180;
+/** Longitude facing us, and how far the pole tips forward. */
+const LON0 = -75;
+const TILT = (4 * Math.PI) / 180;
 
 const MIAMI = { lat: 25.76, lon: -80.19 };
+/** A second marker, as the reference has, on the Pacific coast of Mexico. */
+const SECOND = { lat: 19.4, lon: -99.1 };
 
 const rad = (d: number) => (d * Math.PI) / 180;
 
@@ -94,7 +98,6 @@ function isLand(lat: number, lon: number) {
   return LAND[r]?.[c] === "#";
 }
 
-/** Orthographic projection, with the tilt applied. */
 function project(lat: number, lon: number) {
   const la = rad(lat);
   const lo = rad(lon - LON0);
@@ -106,31 +109,31 @@ function project(lat: number, lon: number) {
   return { sx: CX + R * x, sy: CY - R * y2, depth: z2 };
 }
 
-type Dot = { x: number; y: number; r: number; o: number };
-
 /**
- * Built once, at module scope. Roughly even spacing means the longitude step
- * has to open up towards the poles, or the dots crowd into a solid cap.
+ * Built once, at module scope.
+ *
+ * Radius and opacity are rounded to coarse steps as well as small numbers:
+ * hundreds of circles sharing a dozen values gzip far better than hundreds
+ * differing in the third decimal.
  */
+type Dot = { x: number; y: number; r: number; o: number };
+type Point = { sx: number; sy: number; depth: number };
+
 const DOTS: Dot[] = (() => {
   const out: Dot[] = [];
-  // 2.6 degrees. At 4 the grid was too coarse to read as a surface — the
-  // references get their texture from density, not from the dots themselves.
-  for (let lat = -56; lat <= 80; lat += 2.6) {
-    const lonStep = 2.6 / Math.max(Math.cos(rad(lat)), 0.22);
+  // 1.9 degrees. The reference's texture comes from density — the dots
+  // themselves are barely more than a pixel at the centre.
+  for (let lat = -58; lat <= 82; lat += 1.9) {
+    const lonStep = 1.9 / Math.max(Math.cos(rad(lat)), 0.2);
     for (let lon = -180; lon < 180; lon += lonStep) {
       if (!isLand(lat, lon)) continue;
       const { sx, sy, depth } = project(lat, lon);
-      // Behind the sphere, or below the frame.
-      if (depth <= 0.06 || sy > H + 6) continue;
+      if (depth <= 0.05 || sy > H + 8) continue;
       out.push({
         x: Math.round(sx * 10) / 10,
         y: Math.round(sy * 10) / 10,
-        // Rounded to coarse steps as well as small: hundreds of circles
-        // differing only in the third decimal compress far worse than
-        // hundreds sharing a dozen values.
-        r: Math.round((0.95 + 1.3 * depth) * 20) / 20,
-        o: Math.round(Math.min(1, 0.3 + 0.7 * depth) * 20) / 20,
+        r: Math.round((0.35 + 1.05 * depth) * 20) / 20,
+        o: Math.round(Math.min(1, 0.06 + 0.92 * depth) * 20) / 20,
       });
     }
   }
@@ -138,10 +141,73 @@ const DOTS: Dot[] = (() => {
 })();
 
 const PIN = project(MIAMI.lat, MIAMI.lon);
+const PIN2 = project(SECOND.lat, SECOND.lon);
 
-const MAX_TILT = 12;
-const REACH = 300;
+const MAX_TILT = 11;
+const REACH = 320;
 const clamp = (v: number) => Math.max(-1, Math.min(1, v));
+
+function Marker({
+  at,
+  delay,
+  reduced,
+  rotateX,
+  rotateY,
+  innerRef,
+}: {
+  at: Point;
+  delay: number;
+  reduced: boolean;
+  rotateX: MotionValue<number>;
+  rotateY: MotionValue<number>;
+  innerRef?: RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <motion.div
+      ref={innerRef}
+      initial={reduced ? false : { scale: 0, opacity: 0 }}
+      whileInView={{ scale: 1, opacity: 1 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ type: "spring", stiffness: 330, damping: 14, mass: 0.6, delay }}
+      style={{
+        position: "absolute",
+        left: `${(at.sx / W) * 100}%`,
+        top: `${(at.sy / H) * 100}%`,
+        width: "2.1%",
+        aspectRatio: "1",
+        marginLeft: "-1.05%",
+        marginTop: `${(-1.05 * W) / H}%`,
+        display: "grid",
+        placeItems: "center",
+        transformPerspective: 200,
+        rotateX: reduced ? 0 : rotateX,
+        rotateY: reduced ? 0 : rotateY,
+        transformStyle: "preserve-3d",
+        willChange: "transform",
+      }}
+    >
+      {/* The bloom around each marker in the reference is a blur, not a ring. */}
+      <span
+        style={{
+          position: "absolute",
+          inset: "-115%",
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(245,129,32,0.55) 0%, rgba(245,129,32,0.22) 42%, rgba(245,129,32,0) 70%)",
+        }}
+      />
+      <span
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: "50%",
+          background: "var(--f-orange)",
+          transform: "translateZ(5px)",
+        }}
+      />
+    </motion.div>
+  );
+}
 
 export default function MiamiGlobe({ label = "Miami, Florida" }: { label?: string }) {
   const reduced = useReducedMotion();
@@ -174,76 +240,55 @@ export default function MiamiGlobe({ label = "Miami, Florida" }: { label?: strin
       style={{
         position: "relative",
         width: "min(760px, 100%)",
-        margin: "36px auto 4px",
+        margin: "34px auto 0",
         aspectRatio: `${W} / ${H}`,
       }}
     >
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" aria-hidden="true" style={{ display: "block" }}>
         <defs>
-          {/* The globe stops at the bottom the way the references do: not cut,
-              just no longer there. */}
-          <linearGradient id="fg-fade" x1="0" y1="0" x2="0" y2="1">
+          {/* The body. Lit from the upper left, and never quite white — on
+              cream a pure white sphere reads as a hole in the page. */}
+          <radialGradient id="fg-body" cx="36%" cy="28%" r="76%">
+            <stop offset="0%" stopColor="#fffdf8" />
+            <stop offset="58%" stopColor="#fbf9f4" />
+            <stop offset="100%" stopColor="#e9e7e1" />
+          </radialGradient>
+
+          {/* Contact shadow at the rim. Without it the body has no edge and
+              the whole thing flattens into a pale disc. */}
+          <radialGradient id="fg-rim" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#32443e" stopOpacity="0" />
+            <stop offset="84%" stopColor="#32443e" stopOpacity="0" />
+            <stop offset="93%" stopColor="#32443e" stopOpacity="0.045" />
+            <stop offset="100%" stopColor="#32443e" stopOpacity="0.13" />
+          </radialGradient>
+
+          {/* A short fade at the very bottom. The reference is cut by the
+              viewport; mid-page a hard line reads as a clipping bug, so the
+              last few per cent dissolve instead. */}
+          <linearGradient id="fg-cut" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#fff" stopOpacity="1" />
-            <stop offset="74%" stopColor="#fff" stopOpacity="1" />
+            <stop offset="93%" stopColor="#fff" stopOpacity="1" />
             <stop offset="100%" stopColor="#fff" stopOpacity="0" />
           </linearGradient>
-          <mask id="fg-mask">
-            <rect width={W} height={H} fill="url(#fg-fade)" />
+          <mask id="fg-cut-mask">
+            <rect width={W} height={H} fill="url(#fg-cut)" />
           </mask>
         </defs>
 
-        <g mask="url(#fg-mask)" fill="var(--f-petrol)">
-          {DOTS.map((d, i) => (
-            <circle key={i} cx={d.x} cy={d.y} r={d.r} fillOpacity={d.o} />
-          ))}
+        <g mask="url(#fg-cut-mask)">
+          <circle cx={CX} cy={CY} r={R} fill="url(#fg-body)" />
+          <circle cx={CX} cy={CY} r={R} fill="url(#fg-rim)" />
+          <g fill="#404443">
+            {DOTS.map((d, i) => (
+              <circle key={i} cx={d.x} cy={d.y} r={d.r} fillOpacity={d.o} />
+            ))}
+          </g>
         </g>
       </svg>
 
-      {/* Miami. One accent dot with a ring around it, which is how the
-          references mark a place — no pin, no label. */}
-      <motion.div
-        ref={marker}
-        initial={reduced ? false : { scale: 0, opacity: 0 }}
-        whileInView={{ scale: 1, opacity: 1 }}
-        viewport={{ once: true, amount: 0.5 }}
-        transition={{ type: "spring", stiffness: 320, damping: 14, mass: 0.6, delay: 0.45 }}
-        style={{
-          position: "absolute",
-          left: `${(PIN.sx / W) * 100}%`,
-          top: `${(PIN.sy / H) * 100}%`,
-          width: "3.4%",
-          aspectRatio: "1",
-          marginLeft: "-1.7%",
-          marginTop: `${(-1.7 * W) / H}%`,
-          display: "grid",
-          placeItems: "center",
-          transformPerspective: 220,
-          rotateX: reduced ? 0 : rotateX,
-          rotateY: reduced ? 0 : rotateY,
-          transformStyle: "preserve-3d",
-          willChange: "transform",
-        }}
-      >
-        <span
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            border: "1.5px solid var(--f-orange)",
-            opacity: 0.45,
-          }}
-        />
-        <span
-          style={{
-            width: "46%",
-            height: "46%",
-            borderRadius: "50%",
-            background: "var(--f-orange)",
-            transform: "translateZ(6px)",
-            boxShadow: "0 0 10px rgba(245, 129, 32, 0.55)",
-          }}
-        />
-      </motion.div>
+      <Marker at={PIN} delay={0.45} reduced={!!reduced} rotateX={rotateX} rotateY={rotateY} innerRef={marker} />
+      <Marker at={PIN2} delay={0.6} reduced={!!reduced} rotateX={rotateX} rotateY={rotateY} />
 
       <span className="sr-only">{label}</span>
     </div>
