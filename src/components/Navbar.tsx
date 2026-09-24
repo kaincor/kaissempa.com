@@ -33,15 +33,23 @@ const MENU_TINT =
  * the page's colour rather than a different component. Keyed by path prefix,
  * which is the only thing the bar knows about where it is.
  */
-const CASE_THEMES: { prefix: string; bar: string; menu: string }[] = [
+const CASE_THEMES: {
+  prefix: string;
+  bar: string;
+  menu: string;
+  /** Overrides .glass for this theme. */
+  blur: number;
+}[] = [
   {
     prefix: "/fortuna",
-    // 0.82 read as a solid green panel — past about two thirds the blur
-    // underneath stops being visible at all and the glass is just paint.
-    // 0.58 still reads overwhelmingly green while letting the page move
-    // behind it.
-    bar: "rgba(105, 189, 69, 0.58)",
-    menu: "linear-gradient(270deg, rgba(105, 189, 69, 0.6) 0%, rgba(105, 189, 69, 0.66) 100%)",
+    // Opacity was only half the problem. The blur radius was the other half:
+    // at 26px a line of body copy is averaged into flat grey before the tint
+    // is even applied, so no amount of transparency brings it back. A short
+    // blur keeps the smear legible as text, and at that point the bar can
+    // stay properly green and still read as glass.
+    bar: "rgba(105, 189, 69, 0.42)",
+    menu: "linear-gradient(270deg, rgba(105, 189, 69, 0.46) 0%, rgba(105, 189, 69, 0.52) 100%)",
+    blur: 8,
   },
 ];
 
@@ -61,6 +69,9 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
   // The bar keeps its own grey underneath; the theme rides over it as a wipe.
   // The menu is never on screen while that runs, so it just takes the colour.
   const menuTint = theme?.menu ?? MENU_TINT;
+  // Inline, so it beats the .glass rule for themed routes only — the home
+  // page sits over the 3D scene, where the long blur is the right call.
+  const glass = theme ? { backdropFilter: `blur(${theme.blur}px) saturate(170%)`, WebkitBackdropFilter: `blur(${theme.blur}px) saturate(170%)` } : undefined;
 
   // Hover opens on pointer devices; touch gets tap-to-toggle, since a hover
   // that cannot be undone by moving away is a trap on a phone.
@@ -138,6 +149,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           padding: "0 16px",
           borderRadius: 10,
           background: BAR_TINT,
+          ...glass,
         }}
       >
         {/* The case study's colour, run across the bar rather than swapped in.
@@ -232,6 +244,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           padding: 15,
           borderRadius: 13.5,
           background: menuTint,
+          ...glass,
           display: "flex",
           flexDirection: "column",
           gap: 7.5,

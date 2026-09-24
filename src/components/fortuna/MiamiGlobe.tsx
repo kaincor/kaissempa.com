@@ -1,5 +1,5 @@
-import GlobeFrame, { type MarkerSpec } from "./GlobeFrame";
-import { DOTS, GLOBE } from "@/content/globe-dots";
+import GlobeCanvas from "./GlobeCanvas";
+import { GLOBE } from "@/content/globe-dots";
 
 /**
  * A dotted globe, built against the Hero 216 reference.
@@ -10,42 +10,26 @@ import { DOTS, GLOBE } from "@/content/globe-dots";
  * oceans are where the curvature actually reads, because that is the only
  * place the body shows through unobstructed.
  *
- * The coastlines are real. They come from dotted-map's world geometry,
- * resampled onto an even sphere grid and projected by scripts/generate-globe,
- * so none of that library reaches the browser: 29,318 land samples go in at
- * build time and 953 positions come out.
+ * The body is still SVG and still server-rendered: it never changes, so it
+ * should cost nothing. Only the dots, which now turn, are drawn on a canvas
+ * over the top.
  *
- * A server component, deliberately. It holds the dot array, so keeping it off
- * the client means the positions ship once, as markup, instead of twice.
+ * Coastlines are real, sampled from dotted-map's world geometry at build time
+ * by scripts/generate-globe. None of that library reaches the browser.
  */
 
-const { W, H, CX, CY, R, LON0, TILT } = GLOBE;
-
-function project(lat: number, lon: number) {
-  const la = (lat * Math.PI) / 180;
-  const lo = ((lon - LON0) * Math.PI) / 180;
-  const y = Math.sin(la);
-  const z = Math.cos(la) * Math.cos(lo);
-  return {
-    x: CX + R * (Math.cos(la) * Math.sin(lo)),
-    y: CY - R * (y * Math.cos(TILT) - z * Math.sin(TILT)),
-  };
-}
-
-const PLACES = [
-  { lat: 25.76, lon: -80.19, label: "Miami, Florida", delay: 0.45 },
-  { lat: 19.43, lon: -99.13, label: "Mexico City", delay: 0.6 },
-];
-
-const MARKERS: MarkerSpec[] = PLACES.map((p) => ({
-  ...project(p.lat, p.lon),
-  delay: p.delay,
-  label: p.label,
-}));
+const { W, H, CX, CY, R } = GLOBE;
 
 export default function MiamiGlobe() {
   return (
-    <GlobeFrame markers={MARKERS} width={W} height={H}>
+    <div
+      style={{
+        position: "relative",
+        width: `min(${W}px, 100%)`,
+        margin: "34px auto 0",
+        aspectRatio: `${W} / ${H}`,
+      }}
+    >
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -85,13 +69,10 @@ export default function MiamiGlobe() {
         <g mask="url(#fg-cut-mask)">
           <circle cx={CX} cy={CY} r={R} fill="url(#fg-body)" />
           <circle cx={CX} cy={CY} r={R} fill="url(#fg-rim)" />
-          <g fill="#404443">
-            {DOTS.map(([x, y, r, o], i) => (
-              <circle key={i} cx={x} cy={y} r={r} fillOpacity={o} />
-            ))}
-          </g>
         </g>
       </svg>
-    </GlobeFrame>
+
+      <GlobeCanvas />
+    </div>
   );
 }
