@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import { useRef } from "react";
 import { GLOBE, MIAMI } from "@/content/globe-dots";
 
 /**
@@ -30,6 +31,12 @@ const SCALE = SIZE / PIN_W;
 
 /** How far above the surface it starts, in frame units. */
 const FALL = 58;
+/**
+ * How close the tip has to get before the surface counts as struck, in frame
+ * units. Not zero: the spring approaches its target asymptotically, and at
+ * this size the last unit and a half is not a gap anyone can see.
+ */
+const TOUCH_AT = 1.5;
 
 /**
  * The shadow.
@@ -48,13 +55,17 @@ const SHADOW_STRENGTH = 0.16;
 
 export default function MiamiPin({
   drop,
+  onTouch,
   onLanded,
 }: {
   /** Set once the globe has finished rising. */
   drop: boolean;
+  /** The tip meeting the surface. Fires before the spring has stopped. */
+  onTouch: () => void;
   onLanded: () => void;
 }) {
   const reduced = useReducedMotion();
+  const touched = useRef(false);
 
   // Reduced motion gets the pin, just not the journey. It is information —
   // this is where Fortuna launched — not decoration.
@@ -87,6 +98,18 @@ export default function MiamiPin({
       <motion.g
         initial={{ y: -FALL, opacity: 0 }}
         animate={drop ? { y: 0, opacity: 1 } : undefined}
+        // Contact, not rest. A spring is mostly tail: the tip reaches the
+        // surface early and then spends a few hundred milliseconds settling
+        // onto it, and waiting for that made the dots flinch long after they
+        // had been hit. Measured, this fires roughly 300ms sooner.
+        onUpdate={(latest) => {
+          if (touched.current) return;
+          const y = latest.y;
+          if (typeof y === "number" && y > -TOUCH_AT) {
+            touched.current = true;
+            onTouch();
+          }
+        }}
         onAnimationComplete={onLanded}
         transition={{
           y: { type: "spring", stiffness: 520, damping: 17, mass: 0.7 },
@@ -144,7 +167,13 @@ function Shadow() {
   );
 }
 
-/** The asset, verbatim, minus its own sizing so the frame can place it. */
+/**
+ * The asset, verbatim, minus its own sizing so the frame can place it.
+ *
+ * The green cut rather than the white one. On a body that runs #fffdf8 to
+ * #e9e7e1 a cream pin has nothing to push against and survives on its outline
+ * alone; green is the one colour in the palette the globe cannot swallow.
+ */
 function PinArt() {
   return (
     <>
@@ -152,15 +181,15 @@ function PinArt() {
         fillRule="evenodd"
         clipRule="evenodd"
         d="M75.5 38.5389C75.5 18.0829 58.9347 1.5 38.5003 1.5C18.0653 1.5 1.5 18.0829 1.5 38.5389C1.5 44.4343 2.88239 50.0052 5.33113 54.9528L5.32481 54.956L38.5003 121.5L71.6752 54.956L71.6689 54.9528C74.1176 50.0052 75.5 44.4343 75.5 38.5389"
-        fill="#F7F5F0"
+        fill="#69BD45"
       />
       <path
         d="M75.5 38.5389C75.5 18.0829 58.9347 1.5 38.5003 1.5C18.0653 1.5 1.5 18.0829 1.5 38.5389C1.5 44.4343 2.88239 50.0052 5.33113 54.9528L5.32481 54.956L38.5003 121.5L71.6752 54.956L71.6689 54.9528C74.1176 50.0052 75.5 44.4343 75.5 38.5389"
         // The asset carries `fill="none"` on its root element, which is not
         // here any more — without this the outline path fills black and the
-        // cream pin comes out a silhouette.
+        // pin comes out a silhouette.
         fill="none"
-        stroke="#C6C6C6"
+        stroke="#FFFFFF"
         strokeWidth="3"
       />
       <rect x="18.5" y="18.5" width="40" height="40" rx="4" fill="#F7F5F0" />

@@ -116,3 +116,36 @@
   color: var(--f-ink);
   font-family: var(--f-body);
 }
+
+/* The globe's frame.
+   
+   On anything wider than a phone it behaves: it sits inside the column and
+   stops at 760. On a phone the column is 300px wide, which renders the globe
+   at 40% of the size it was drawn for and the pin at thirteen pixels — legible
+   in theory, nothing anyone would look at.
+   
+   So on a phone it breaks out of the column and runs 125vw wide, which puts
+   exactly a tenth of the globe past each edge of the screen. (120vw would be
+   the obvious number and is the wrong one: the overflow is a share of the
+   viewport, and what gets clipped is a share of the globe — 8.3%, not 10.) `50%` resolves against the column, so the left edge lands at the
+   column's centre and the negative half-width pulls it back: centred on the
+   viewport without a transform, which matters because the entrance is already
+   using this element's transform for the lift and the growth. */
+.fortuna .f-globe-frame {
+  width: min(var(--f-globe-max, 760px), 100%);
+  margin: 34px auto 0;
+}
+
+@media (max-width: 640px) {
+  .fortuna .f-globe-frame {
+    width: 125vw;
+    margin: 28px 0 0 calc(50% - 62.5vw);
+  }
+}
+
+/* The bleed would otherwise be a horizontal scrollbar. `clip` rather than
+   `hidden`: `hidden` turns the element into a scroll container, which would
+   take over as the containing block for anything sticky inside it. */
+.fortuna {
+  overflow-x: clip;
+}

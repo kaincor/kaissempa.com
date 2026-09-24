@@ -56,6 +56,7 @@ export default function GlobeStage({
 
   const progress = useMotionValue(reduced ? 1 : 0);
   const [dropPin, setDropPin] = useState(false);
+  const [struck, setStruck] = useState(false);
   const [landed, setLanded] = useState(false);
 
   useEffect(() => {
@@ -99,10 +100,13 @@ export default function GlobeStage({
 
       <motion.div
         ref={ref}
+        // Width and margin live in theme.css, because on a phone the globe
+        // breaks out of the column and that needs a media query.
+        className="f-globe-frame"
         style={{
           position: "relative",
-          width: `min(${width}px, 100%)`,
-          margin: "34px auto 0",
+          // The cap the stylesheet clamps to, so the number lives in one place.
+          ["--f-globe-max" as string]: `${width}px`,
           aspectRatio: `${width} / ${height}`,
           // Grows from its own base, so it rises out of the page rather than
           // inflating around its middle.
@@ -114,8 +118,12 @@ export default function GlobeStage({
         }}
       >
         {children}
-        <GlobeCanvas progress={progress} impact={landed} />
-        <MiamiPin drop={reduced || dropPin} onLanded={() => setLanded(true)} />
+        <GlobeCanvas progress={progress} impact={struck} />
+        <MiamiPin
+          drop={reduced || dropPin}
+          onTouch={() => setStruck(true)}
+          onLanded={() => setLanded(true)}
+        />
       </motion.div>
     </>
   );
