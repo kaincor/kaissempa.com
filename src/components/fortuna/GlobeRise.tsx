@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useRef, type ReactNode } from "react";
+import GlobeCanvas from "./GlobeCanvas";
 
 /**
  * Brings the globe up into the page as the reader arrives at it.
@@ -14,6 +15,10 @@ import { useRef, type ReactNode } from "react";
  * It finishes early, at the point the globe reaches the middle of the screen,
  * so the reader spends most of its time on screen looking at it settled rather
  * than still arriving.
+ *
+ * It owns the canvas rather than sitting beside it, because the same scroll
+ * value drives the planet's rotation and a motion value can only be handed
+ * between client components.
  */
 export default function GlobeRise({
   children,
@@ -53,6 +58,7 @@ export default function GlobeRise({
       }}
     >
       {children}
+      <GlobeCanvas progress={scrollYProgress} />
     </motion.div>
   );
 }

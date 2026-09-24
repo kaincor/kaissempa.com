@@ -1,4 +1,3 @@
-import GlobeCanvas from "./GlobeCanvas";
 import GlobeRise from "./GlobeRise";
 import { GLOBE } from "@/content/globe-dots";
 
@@ -66,7 +65,6 @@ export default function MiamiGlobe() {
         </g>
       </svg>
 
-      <GlobeCanvas />
     </GlobeRise>
   );
 }
