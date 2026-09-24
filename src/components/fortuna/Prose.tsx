@@ -101,6 +101,7 @@ export function Band({
   id,
   rise,
   full,
+  tight,
   style,
 }: {
   tone: Tone;
@@ -110,6 +111,8 @@ export function Band({
   rise?: boolean;
   /** Hold the whole screen, with the content centred in it. */
   full?: boolean;
+  /** Close the band right up around its content. */
+  tight?: boolean;
   style?: CSSProperties;
 }) {
   return (
@@ -121,7 +124,9 @@ export function Band({
         background: TONE_BG[tone],
         color: TONE_INK[tone],
         ["--f-accent" as string]: TONE_ACCENT[tone],
-        padding: "clamp(56px, 9vh, 120px) 0",
+        padding: tight
+          ? "clamp(26px, 3.6vh, 46px) 0"
+          : "clamp(56px, 9vh, 120px) 0",
         // `svh`, not `vh`: on a phone `vh` is the tallest the viewport ever
         // gets, so a 100vh band is cut off by the address bar until the reader
         // scrolls it away.
@@ -313,10 +318,14 @@ export function List({
         listStyle: "none",
         margin: "0 0 18px",
         padding: 0,
+        // Centring a block that already fills the column moves nothing, so a
+        // centred list shrinks to its longest row first. The rows themselves
+        // stay left: the numerals sit in a gutter, and centring each one would
+        // leave the digits ragged.
         maxWidth: "var(--f-measure-body)",
-        // The numbers sit in a gutter, so a centred list is centred as a
-        // block; centring each row would leave the digits ragged.
-        marginInline: align === "center" ? "auto" : undefined,
+        ...(align === "center"
+          ? { width: "fit-content", marginInline: "auto" }
+          : null),
         display: "flex",
         flexDirection: "column",
         gap: 14,
@@ -515,7 +524,12 @@ export function renderBlock(
       );
     case "list":
       return (
-        <List key={i} items={block.items} ordered={block.ordered} align={align} />
+        <List
+          key={i}
+          items={block.items}
+          ordered={block.ordered}
+          align={block.align ?? align}
+        />
       );
     case "step":
       return (

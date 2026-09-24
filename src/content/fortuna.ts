@@ -39,7 +39,13 @@ export type Block =
   /** The tinted box: one line that needs to land harder than body copy. */
   | { kind: "callout"; text: Rich; reveal?: boolean }
   | { kind: "subheading"; text: string }
-  | { kind: "list"; ordered?: boolean; items: string[] }
+  | {
+      kind: "list";
+      ordered?: boolean;
+      /** Overrides the section's alignment for this block alone. */
+      align?: "left" | "center";
+      items: string[];
+    }
   /** A labelled step with an arrow flow and its own explanation. */
   | { kind: "step"; n: number; title: string; flow?: string; text: string[] }
   /** A note to self in the doc about a visual that does not exist yet. */
@@ -69,7 +75,9 @@ export type Section = {
   /** Hold the whole screen, with the content centred in it. */
   full?: boolean;
   /** Paint the heading in a brand colour rather than the band's running ink. */
-  headingTone?: "orange" | "green" | "brown";
+  headingTone?: "orange" | "green" | "brown" | "cream";
+  /** Close the band right up around its content. */
+  tight?: boolean;
   blocks: Block[];
 };
 
@@ -165,12 +173,19 @@ export const SECTIONS: Section[] = [
     align: "left",
     reveal: true,
     rise: true,
-    full: true,
-    headingTone: "orange",
+    // Not `full`: holding a whole screen left the goals swimming in green.
+    // The sweep is what makes the moment, and it happens above this band
+    // regardless of how tall the band itself is.
+    tight: true,
+    headingTone: "cream",
     blocks: [
       {
         kind: "list",
         ordered: true,
+        // Centred as a block while the heading stays left. The rows keep their
+        // left edge — the numerals sit in a gutter, and centring each row
+        // would leave the digits ragged.
+        align: "center",
         items: [
           "Drive the cost of every interaction towards zero.",
           "Automate the work so every tap is reserved for a decision.",
