@@ -1,4 +1,5 @@
 import GlobeCanvas from "./GlobeCanvas";
+import GlobeRise from "./GlobeRise";
 import { GLOBE } from "@/content/globe-dots";
 
 /**
@@ -10,9 +11,9 @@ import { GLOBE } from "@/content/globe-dots";
  * oceans are where the curvature actually reads, because that is the only
  * place the body shows through unobstructed.
  *
- * The body is still SVG and still server-rendered: it never changes, so it
- * should cost nothing. Only the dots, which now turn, are drawn on a canvas
- * over the top.
+ * The body is SVG and server-rendered: it never changes, so it should cost
+ * nothing. The dots are on a canvas over the top, because the cursor pushes
+ * them about and thousands of DOM nodes cannot be moved a frame at a time.
  *
  * Coastlines are real, sampled from dotted-map's world geometry at build time
  * by scripts/generate-globe. None of that library reaches the browser.
@@ -22,14 +23,7 @@ const { W, H, CX, CY, R } = GLOBE;
 
 export default function MiamiGlobe() {
   return (
-    <div
-      style={{
-        position: "relative",
-        width: `min(${W}px, 100%)`,
-        margin: "34px auto 0",
-        aspectRatio: `${W} / ${H}`,
-      }}
-    >
+    <GlobeRise width={W} height={H}>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -73,6 +67,6 @@ export default function MiamiGlobe() {
       </svg>
 
       <GlobeCanvas />
-    </div>
+    </GlobeRise>
   );
 }
