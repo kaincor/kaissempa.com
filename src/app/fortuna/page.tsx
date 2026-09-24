@@ -97,7 +97,11 @@ export default function FortunaPage() {
       {SECTIONS.map((section) => {
         const dark = toneIsDark(section.tone);
         return (
-          <Band key={section.id} id={section.id} tone={section.tone} rise={section.rise} full={section.full} tight={section.tight}>
+          <Band key={section.id} id={section.id} tone={section.tone} rise={section.rise}
+            full={section.full}
+            tight={section.tight}
+            ink={section.bodyTone ? `var(--f-${section.bodyTone})` : undefined}
+          >
             {(() => {
               const heading = (
                 <Display

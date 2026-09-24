@@ -11,6 +11,15 @@
  */
 export type Tone = "cream" | "cream-deep" | "card" | "forest" | "green";
 
+/** Palette names a section can reach for directly. Resolved as `var(--f-…)`. */
+export type BrandColor =
+  | "orange"
+  | "green"
+  | "brown"
+  | "cream"
+  | "forest-deep"
+  | "ink";
+
 /**
  * Inline runs inside a paragraph.
  *
@@ -44,6 +53,12 @@ export type Block =
       ordered?: boolean;
       /** Overrides the section's alignment for this block alone. */
       align?: "left" | "center";
+      /**
+       * Set the items in the display face and bubble them in one at a time.
+       * For a list that is the point of its section rather than a supporting
+       * run of detail.
+       */
+      emphasis?: boolean;
       items: string[];
     }
   /** A labelled step with an arrow flow and its own explanation. */
@@ -75,7 +90,9 @@ export type Section = {
   /** Hold the whole screen, with the content centred in it. */
   full?: boolean;
   /** Paint the heading in a brand colour rather than the band's running ink. */
-  headingTone?: "orange" | "green" | "brown" | "cream";
+  headingTone?: BrandColor;
+  /** Override the band's running text colour, numerals included. */
+  bodyTone?: BrandColor;
   /** Close the band right up around its content. */
   tight?: boolean;
   blocks: Block[];
@@ -168,7 +185,7 @@ export const SECTIONS: Section[] = [
     // The brief's one full-colour moment. Green sweeps up over the cream as
     // the reader leaves the globe, and the goals arrive on it.
     id: "goals",
-    heading: "Our high level goals for the app were to:",
+    heading: "Four North Stars",
     tone: "green",
     align: "left",
     reveal: true,
@@ -177,8 +194,12 @@ export const SECTIONS: Section[] = [
     // The sweep is what makes the moment, and it happens above this band
     // regardless of how tall the band itself is.
     tight: true,
-    headingTone: "cream",
+    // Reversed out of the usual arrangement: the running text takes the cream
+    // and the heading takes the deep forest the text would normally carry.
+    headingTone: "forest-deep",
+    bodyTone: "cream",
     blocks: [
+      { kind: "text", text: "Our high level goals for the app were to:" },
       {
         kind: "list",
         ordered: true,
@@ -186,6 +207,7 @@ export const SECTIONS: Section[] = [
         // left edge — the numerals sit in a gutter, and centring each row
         // would leave the digits ragged.
         align: "center",
+        emphasis: true,
         items: [
           "Drive the cost of every interaction towards zero.",
           "Automate the work so every tap is reserved for a decision.",
@@ -199,7 +221,10 @@ export const SECTIONS: Section[] = [
     id: "early-research",
     heading: "Early UX research",
     headingPending: true,
-    tone: "cream",
+    // Green too, so the goals and the research they came out of read as one
+    // stretch of the page. No `rise` — the band above is already this colour,
+    // so there is nothing for a sweep to reveal.
+    tone: "green",
     blocks: [
       {
         kind: "text",

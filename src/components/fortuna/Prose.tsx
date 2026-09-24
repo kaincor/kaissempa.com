@@ -4,6 +4,7 @@ import BillboardCallout from "./BillboardCallout";
 import FadeIn from "./FadeIn";
 import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
+import GoalList from "./GoalList";
 import type { Block, Rich, Token, Tone } from "@/content/fortuna";
 
 /**
@@ -102,6 +103,7 @@ export function Band({
   rise,
   full,
   tight,
+  ink,
   style,
 }: {
   tone: Tone;
@@ -113,6 +115,8 @@ export function Band({
   full?: boolean;
   /** Close the band right up around its content. */
   tight?: boolean;
+  /** Override the band's running text colour. Numerals follow it. */
+  ink?: string;
   style?: CSSProperties;
 }) {
   return (
@@ -122,8 +126,11 @@ export function Band({
         // The riser hangs off the top edge, so the band has to be its origin.
         position: "relative",
         background: TONE_BG[tone],
-        color: TONE_INK[tone],
-        ["--f-accent" as string]: TONE_ACCENT[tone],
+        color: ink ?? TONE_INK[tone],
+        // An overridden ink takes the numerals with it: an accent chosen to
+        // sit against the default text colour has no reason to work against
+        // a different one.
+        ["--f-accent" as string]: ink ?? TONE_ACCENT[tone],
         padding: tight
           ? "clamp(26px, 3.6vh, 46px) 0"
           : "clamp(56px, 9vh, 120px) 0",
@@ -523,7 +530,9 @@ export function renderBlock(
         </Subheading>
       );
     case "list":
-      return (
+      return block.emphasis ? (
+        <GoalList key={i} items={block.items} align={block.align ?? align} />
+      ) : (
         <List
           key={i}
           items={block.items}
