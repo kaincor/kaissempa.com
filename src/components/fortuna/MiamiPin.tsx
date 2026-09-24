@@ -167,9 +167,10 @@ function Shadow() {
 /**
  * The asset, verbatim, minus its own sizing so the frame can place it.
  *
- * The green cut rather than the white one. On a body that runs #fffdf8 to
- * #e9e7e1 a cream pin has nothing to push against and survives on its outline
- * alone; green is the one colour in the palette the globe cannot swallow.
+ * The second green cut: a solid green teardrop with the mark reversed out of
+ * it in cream, rather than a green teardrop carrying a cream tile. One shape
+ * instead of two, which at twenty-five pixels is the difference between a pin
+ * and a small busy thing.
  */
 function PinArt() {
   return (
@@ -189,10 +190,10 @@ function PinArt() {
         stroke="#FFFFFF"
         strokeWidth="3"
       />
-      <rect x="18.5" y="18.5" width="40" height="40" rx="4" fill="#F7F5F0" />
+      <rect x="18.5" y="18.5" width="40" height="40" rx="4" fill="#69BD45" />
       <path
         d="M25.9639 53.875V51.6686L27.9327 51.236L27.9976 44.7898V36.0508H25.5312V33.1954L28.149 32.871C28.6466 29.3234 29.7716 27.2901 31.5024 25.538C33.7524 23.2883 36.9111 22.25 39.637 22.25C42.1899 22.25 44.6563 23.072 45.2188 25.6677C45.2188 27.528 44.0072 28.9124 41.9303 28.9124C40.3293 28.9124 38.988 27.8309 37.7332 25.1053L37.6466 24.9107C36.3486 26.533 36.0024 28.6961 36.1106 32.8061H40.1995V36.0508H36.2188V44.7898L36.2837 50.9115L39.3774 51.6686V53.875H27.8678H25.9639Z"
-        fill="#69BD45"
+        fill="#F7F5F0"
       />
       <path
         d="M42.9977 50.4399C42.9977 48.1034 44.8625 46.1562 47.2477 46.1562C49.6329 46.1562 51.4977 48.1034 51.4977 50.4399C51.4977 52.7332 49.6329 54.5938 47.2477 54.5938C44.8625 54.5938 42.9977 52.7332 42.9977 50.4399Z"

@@ -174,15 +174,18 @@ export function Eyebrow({ children, dark }: { children: ReactNode; dark?: boolea
 export function Display({
   children,
   align = "left",
+  color,
 }: {
   children: ReactNode;
   align?: "left" | "center";
+  color?: string;
 }) {
   return (
     <h2
       style={{
         margin: "0 0 28px",
         textAlign: align,
+        color,
         fontFamily: "var(--f-display)",
         fontWeight: 600,
         fontSize: "clamp(28px, 4.4vw, 40px)",

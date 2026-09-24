@@ -100,7 +100,14 @@ export default function FortunaPage() {
           <Band key={section.id} id={section.id} tone={section.tone} rise={section.rise} full={section.full}>
             {(() => {
               const heading = (
-                <Display align={section.align}>
+                <Display
+                  align={section.align}
+                  color={
+                    section.headingTone
+                      ? `var(--f-${section.headingTone})`
+                      : undefined
+                  }
+                >
               {section.heading}
               {/* The doc says "Title" wherever Kai has not named it yet. Marked
                   rather than silently rendered, so it cannot slip past. */}

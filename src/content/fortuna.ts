@@ -68,6 +68,8 @@ export type Section = {
   rise?: boolean;
   /** Hold the whole screen, with the content centred in it. */
   full?: boolean;
+  /** Paint the heading in a brand colour rather than the band's running ink. */
+  headingTone?: "orange" | "green" | "brown";
   blocks: Block[];
 };
 
@@ -164,6 +166,7 @@ export const SECTIONS: Section[] = [
     reveal: true,
     rise: true,
     full: true,
+    headingTone: "orange",
     blocks: [
       {
         kind: "list",
