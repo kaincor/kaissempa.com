@@ -97,7 +97,7 @@ export default function FortunaPage() {
       {SECTIONS.map((section) => {
         const dark = toneIsDark(section.tone);
         return (
-          <Band key={section.id} id={section.id} tone={section.tone}>
+          <Band key={section.id} id={section.id} tone={section.tone} rise={section.rise} full={section.full}>
             {(() => {
               const heading = (
                 <Display align={section.align}>
@@ -114,7 +114,7 @@ export default function FortunaPage() {
                     letterSpacing: "0.1em",
                     textTransform: "uppercase",
                     verticalAlign: "middle",
-                    color: dark ? "var(--f-green)" : "var(--f-orange)",
+                    color: "var(--f-accent)",
                   }}
                 >
                   needs a title

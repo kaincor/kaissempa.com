@@ -36,6 +36,15 @@ const RISE_EASE = [0.22, 0.61, 0.24, 1] as const;
 /** A beat after the globe settles, so the two read as separate events. */
 const PIN_DELAY = 220;
 
+/**
+ * Where in the entrance the caption arrives, as a share of it.
+ *
+ * Hung off the same value that drives the globe rather than its own timer, so
+ * the line cannot drift out of the window the brief asks for — partway through
+ * the globe appearing, not before it and not after it has settled.
+ */
+const CAPTION_IN = [0.3, 0.78] as const;
+
 export default function GlobeStage({
   children,
   caption,
@@ -57,7 +66,6 @@ export default function GlobeStage({
   const progress = useMotionValue(reduced ? 1 : 0);
   const [dropPin, setDropPin] = useState(false);
   const [struck, setStruck] = useState(false);
-  const [landed, setLanded] = useState(false);
 
   useEffect(() => {
     if (!inView || reduced) return;
@@ -81,10 +89,16 @@ export default function GlobeStage({
   const scale = useTransform(progress, [0, 1], [0.66, 1]);
   const opacity = useTransform(progress, [0, 0.38], [0, 1]);
 
+  const capY = useTransform(progress, [...CAPTION_IN], [14, 0]);
+  const capOpacity = useTransform(progress, [CAPTION_IN[0], 0.66], [0, 1]);
+
   return (
     <>
-      <p
+      <motion.p
         style={{
+          y: reduced ? 0 : capY,
+          opacity: reduced ? 1 : capOpacity,
+          willChange: "transform, opacity",
           margin: "0 0 18px",
           maxWidth: "var(--f-measure-body)",
           marginInline: "auto",
@@ -95,8 +109,8 @@ export default function GlobeStage({
           letterSpacing: "-0.02em",
         }}
       >
-        <FillLine nodes={caption} filled={reduced ? true : landed} />
-      </p>
+        <FillLine nodes={caption} filled={reduced ? true : struck} />
+      </motion.p>
 
       <motion.div
         ref={ref}
@@ -119,11 +133,7 @@ export default function GlobeStage({
       >
         {children}
         <GlobeCanvas progress={progress} impact={struck} />
-        <MiamiPin
-          drop={reduced || dropPin}
-          onTouch={() => setStruck(true)}
-          onLanded={() => setLanded(true)}
-        />
+        <MiamiPin drop={reduced || dropPin} onTouch={() => setStruck(true)} />
       </motion.div>
     </>
   );

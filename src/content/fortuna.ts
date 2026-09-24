@@ -9,7 +9,7 @@
  * section the doc leaves as "add later" — it still renders, as a visible slot,
  * so the shape of the finished piece is legible while it is being written.
  */
-export type Tone = "cream" | "cream-deep" | "card" | "forest";
+export type Tone = "cream" | "cream-deep" | "card" | "forest" | "green";
 
 /**
  * Inline runs inside a paragraph.
@@ -61,6 +61,13 @@ export type Section = {
   /** Fade the heading and paragraphs in, staggered, as the section arrives. */
   reveal?: boolean;
   draft?: string;
+  /**
+   * Sweep this band's colour up over the one above it as the reader arrives,
+   * instead of letting the boundary simply scroll past.
+   */
+  rise?: boolean;
+  /** Hold the whole screen, with the content centred in it. */
+  full?: boolean;
   blocks: Block[];
 };
 
@@ -110,7 +117,10 @@ export const SECTIONS: Section[] = [
   {
     id: "many-pots",
     heading: "Many pots on the stove",
-    tone: "cream-deep",
+    // Same cream as "The job search is clunky" above it. They are two halves
+    // of the same run-up, and the green band below is the only colour change
+    // this stretch of the page should be making.
+    tone: "cream",
     align: "center",
     reveal: true,
     blocks: [
@@ -127,8 +137,9 @@ export const SECTIONS: Section[] = [
         text: "There were just a few of us. I worked alongside that other designer, a couple software engineers, and a product manager who doubled as our co-CEO. Fortuna was an early stage startup, so roles bent and blurred. We all stepped outside our job description to keep the product moving.",
       },
       // Out of the tinted box: it is the next sentence, not an aside, and the
-      // globe beneath it is what gives it its weight. The line floods orange
-      // when the pin lands, so the sentence and the picture finish together.
+      // globe beneath it is what gives it its weight. The line slides in
+      // partway through the globe's entrance and floods green when the pin
+      // strikes, so the sentence and the picture finish together.
       {
         kind: "globe",
         caption: [
@@ -136,12 +147,24 @@ export const SECTIONS: Section[] = [
           " ",
           {
             text: "launched in Miami in summer 2022.",
-            tone: "orange",
+            tone: "green",
             fill: true,
           },
         ],
       },
-      { kind: "subheading", text: "Our high level goals for the app were to:" },
+    ],
+  },
+  {
+    // The brief's one full-colour moment. Green sweeps up over the cream as
+    // the reader leaves the globe, and the goals arrive on it.
+    id: "goals",
+    heading: "Our high level goals for the app were to:",
+    tone: "green",
+    align: "left",
+    reveal: true,
+    rise: true,
+    full: true,
+    blocks: [
       {
         kind: "list",
         ordered: true,

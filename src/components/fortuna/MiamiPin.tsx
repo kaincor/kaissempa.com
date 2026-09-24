@@ -56,13 +56,11 @@ const SHADOW_STRENGTH = 0.16;
 export default function MiamiPin({
   drop,
   onTouch,
-  onLanded,
 }: {
   /** Set once the globe has finished rising. */
   drop: boolean;
   /** The tip meeting the surface. Fires before the spring has stopped. */
   onTouch: () => void;
-  onLanded: () => void;
 }) {
   const reduced = useReducedMotion();
   const touched = useRef(false);
@@ -110,7 +108,6 @@ export default function MiamiPin({
             onTouch();
           }
         }}
-        onAnimationComplete={onLanded}
         transition={{
           y: { type: "spring", stiffness: 520, damping: 17, mass: 0.7 },
           opacity: { duration: 0.14 },

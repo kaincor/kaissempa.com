@@ -3,6 +3,7 @@ import FortunaWordmark from "./FortunaWordmark";
 import BillboardCallout from "./BillboardCallout";
 import FadeIn from "./FadeIn";
 import MiamiGlobe from "./MiamiGlobe";
+import BandRise from "./BandRise";
 import type { Block, Rich, Token, Tone } from "@/content/fortuna";
 
 /**
@@ -20,9 +21,38 @@ const TONE_BG: Record<Tone, string> = {
   "cream-deep": "var(--f-cream-deep)",
   card: "var(--f-card)",
   forest: "var(--f-forest)",
+  green: "var(--f-green)",
 };
 
-/** Forest is the one dark band, so it flips the type colours with it. */
+/**
+ * Running type per band.
+ *
+ * Green is why this is a table rather than a light/dark flag. It is neither:
+ * cream on it is 2.15:1 and the page's own ink is 2.64:1, so it needs a colour
+ * that appears nowhere else — forest taken deep enough to clear AA.
+ */
+const TONE_INK: Record<Tone, string> = {
+  cream: "var(--f-ink)",
+  "cream-deep": "var(--f-ink)",
+  card: "var(--f-ink)",
+  forest: "var(--f-cream)",
+  green: "var(--f-forest-deep)",
+};
+
+/**
+ * The accent: list numerals, the "needs a title" tag. Orange carries it on
+ * cream and green carries it on forest, but on a green band both vanish, so
+ * there the numerals simply join the running type.
+ */
+const TONE_ACCENT: Record<Tone, string> = {
+  cream: "var(--f-orange)",
+  "cream-deep": "var(--f-orange)",
+  card: "var(--f-orange)",
+  forest: "var(--f-green)",
+  green: "var(--f-forest-deep)",
+};
+
+/** Forest is the one band dark enough to flip a component's whole treatment. */
 function toneIsDark(tone: Tone) {
   return tone === "forest";
 }
@@ -69,24 +99,43 @@ export function Band({
   tone,
   children,
   id,
+  rise,
+  full,
   style,
 }: {
   tone: Tone;
   children: ReactNode;
   id?: string;
+  /** Sweep this colour up over the band above instead of butting against it. */
+  rise?: boolean;
+  /** Hold the whole screen, with the content centred in it. */
+  full?: boolean;
   style?: CSSProperties;
 }) {
-  const dark = toneIsDark(tone);
   return (
     <section
       id={id}
       style={{
+        // The riser hangs off the top edge, so the band has to be its origin.
+        position: "relative",
         background: TONE_BG[tone],
-        color: dark ? "var(--f-cream)" : "var(--f-ink)",
+        color: TONE_INK[tone],
+        ["--f-accent" as string]: TONE_ACCENT[tone],
         padding: "clamp(56px, 9vh, 120px) 0",
+        // `svh`, not `vh`: on a phone `vh` is the tallest the viewport ever
+        // gets, so a 100vh band is cut off by the address bar until the reader
+        // scrolls it away.
+        ...(full
+          ? {
+              minHeight: "100svh",
+              display: "flex",
+              alignItems: "center",
+            }
+          : null),
         ...style,
       }}
     >
+      {rise ? <BandRise color={TONE_BG[tone]} /> : null}
       {/* The column carries the boundary rather than padding on the band, so
           the margin scales with the viewport instead of sitting at one value.
           The 28px subtraction is only a floor for very narrow screens, where
@@ -249,12 +298,10 @@ export function Callout({ children, dark }: { children: ReactNode; dark?: boolea
 export function List({
   items,
   ordered,
-  dark,
   align = "left",
 }: {
   items: string[];
   ordered?: boolean;
-  dark?: boolean;
   align?: "left" | "center";
 }) {
   return (
@@ -291,7 +338,7 @@ export function List({
               fontFamily: "var(--f-grotesk)",
               fontWeight: 700,
               fontSize: 14,
-              color: dark ? "var(--f-green)" : "var(--f-orange)",
+              color: "var(--f-accent)",
             }}
           >
             {ordered ? `${i + 1}.` : "—"}
@@ -465,13 +512,7 @@ export function renderBlock(
       );
     case "list":
       return (
-        <List
-          key={i}
-          items={block.items}
-          ordered={block.ordered}
-          dark={dark}
-          align={align}
-        />
+        <List key={i} items={block.items} ordered={block.ordered} align={align} />
       );
     case "step":
       return (

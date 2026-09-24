@@ -109,6 +109,14 @@
      body copy, callouts and lists all have to agree. */
   --f-body-size: clamp(15px, 1.35vw, 17px);
 
+  /* Type for the green band.
+     
+     Forest itself lands at 4.41:1 on #69bd45 — a hair under AA, which is a
+     silly place to stop. Fifteen per cent deeper takes it to 5.11:1 and still
+     reads as the same colour. Nothing lighter works: cream on Fortuna green is
+     2.15:1 and white is worse, so a green band has to carry dark type. */
+  --f-forest-deep: #2a3a35;
+
   --f-measure: clamp(300px, 62vw, 720px);
   --f-measure-body: min(660px, 100%);
 
@@ -133,13 +141,15 @@
    using this element's transform for the lift and the growth. */
 .fortuna .f-globe-frame {
   width: min(var(--f-globe-max, 760px), 100%);
-  margin: 34px auto 0;
+  /* Air underneath as well as above, so the green sweeping up from the next
+     band has some empty cream to cross before it reaches the globe. */
+  margin: 34px auto clamp(28px, 5vh, 64px);
 }
 
 @media (max-width: 640px) {
   .fortuna .f-globe-frame {
     width: 125vw;
-    margin: 28px 0 0 calc(50% - 62.5vw);
+    margin: 28px 0 clamp(24px, 4vh, 48px) calc(50% - 62.5vw);
   }
 }
 
