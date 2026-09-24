@@ -44,8 +44,11 @@ export type Block =
   | { kind: "step"; n: number; title: string; flow?: string; text: string[] }
   /** A note to self in the doc about a visual that does not exist yet. */
   | { kind: "figure"; note: string }
-  /** The Miami globe. */
-  | { kind: "globe" };
+  /**
+   * The Miami globe. Its caption belongs to it rather than sitting above it
+   * as its own paragraph, because the globe's animation is what lights it.
+   */
+  | { kind: "globe"; caption: Rich };
 
 export type Section = {
   id: string;
@@ -124,9 +127,20 @@ export const SECTIONS: Section[] = [
         text: "There were just a few of us. I worked alongside that other designer, a couple software engineers, and a product manager who doubled as our co-CEO. Fortuna was an early stage startup, so roles bent and blurred. We all stepped outside our job description to keep the product moving.",
       },
       // Out of the tinted box: it is the next sentence, not an aside, and the
-      // globe beside it is what gives it its weight.
-      { kind: "text", text: "Fortuna launched in Miami in summer 2022." },
-      { kind: "globe" },
+      // globe beneath it is what gives it its weight. The line floods orange
+      // when the pin lands, so the sentence and the picture finish together.
+      {
+        kind: "globe",
+        caption: [
+          { wordmark: true, dot: false },
+          " ",
+          {
+            text: "launched in Miami in summer 2022.",
+            tone: "orange",
+            fill: true,
+          },
+        ],
+      },
       { kind: "subheading", text: "Our high level goals for the app were to:" },
       {
         kind: "list",

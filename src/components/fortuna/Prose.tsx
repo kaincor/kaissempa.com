@@ -487,7 +487,7 @@ export function renderBlock(
     case "figure":
       return <Figure key={i} note={block.note} dark={dark} />;
     case "globe":
-      return <MiamiGlobe key={i} />;
+      return <MiamiGlobe key={i} caption={block.caption} />;
   }
 }
 

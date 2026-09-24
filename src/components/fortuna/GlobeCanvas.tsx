@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { MotionValue } from "motion/react";
-import { DOTS, GLOBE } from "@/content/globe-dots";
+import { DOTS, GLOBE, MIAMI } from "@/content/globe-dots";
 
 /**
  * The dot field: turns with the scroll, scatters under the cursor.
@@ -33,9 +33,38 @@ const EASE = 0.14;
 const SETTLED = 0.05;
 const DOT_COLOR = "64, 68, 67";
 
-export default function GlobeCanvas({ progress }: { progress: MotionValue<number> }) {
+/**
+ * The pin's impact.
+ *
+ * A ring that travels out from Miami and dies, rather than a patch that
+ * swells and shrinks: a ring is what a surface actually does when something
+ * lands on it, and it costs the same. Deliberately small and short — this is
+ * a flinch, not an event.
+ */
+const SHOCK_MS = 620;
+/** How far the ring gets, in frame units. */
+const SHOCK_REACH = 104;
+/** Peak displacement of a dot sitting exactly on the ring, in frame units. */
+const SHOCK_AMP = 6.2;
+/** Thickness of the ring. Wider reads as a wobble, tighter as a glitch. */
+const SHOCK_BAND = 15;
+/** Everything the ring can ever touch, squared, for one cheap early-out. */
+const SHOCK_MAX_SQ = (SHOCK_REACH + SHOCK_BAND * 2) ** 2;
+
+export default function GlobeCanvas({
+  progress,
+  impact,
+}: {
+  progress: MotionValue<number>;
+  /** Flips once, when the pin lands, to set the ring off. */
+  impact: boolean;
+}) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  // The ring lives inside the draw effect's closure, so firing it from a prop
+  // change means leaving a handle behind rather than re-running the effect —
+  // which would rebuild every buffer and lose the cursor's current state.
+  const fire = useRef<() => void>(() => {});
 
   useEffect(() => {
     const el = canvas.current;
@@ -50,6 +79,10 @@ export default function GlobeCanvas({ progress }: { progress: MotionValue<number
     // times a frame.
     const ox = new Float32Array(n);
     const oy = new Float32Array(n);
+    // The shock is not eased. It has its own short life and its own shape, and
+    // running it through the cursor's spring would smear the ring into a blur.
+    const rx = new Float32Array(n);
+    const ry = new Float32Array(n);
 
     let cursor: { x: number; y: number } | null = null;
     let spin = still ? SPIN_RAD : 0;
@@ -57,6 +90,7 @@ export default function GlobeCanvas({ progress }: { progress: MotionValue<number
     let dpr = 1;
     let raf = 0;
     let onScreen = true;
+    let shockFrom = 0;
 
     const size = () => {
       const w = box.clientWidth;
@@ -103,14 +137,65 @@ export default function GlobeCanvas({ progress }: { progress: MotionValue<number
         ctx.globalAlpha = 0.06 + 0.92 * z;
         ctx.beginPath();
         ctx.arc(
-          (CX + sx + ox[i]) * k,
-          (fy + oy[i]) * k,
+          (CX + sx + ox[i] + rx[i]) * k,
+          (fy + oy[i] + ry[i]) * k,
           (0.3 + 0.95 * z) * k,
           0,
           6.2832,
         );
         ctx.fill();
       }
+    };
+
+    /**
+     * Advances the impact ring. Returns whether it is still alive.
+     *
+     * Most dots are nowhere near the ring at any given moment, so the squared
+     * distance check throws them out before anything expensive happens.
+     */
+    const shockStep = (now: number) => {
+      if (!shockFrom) return false;
+      const age = (now - shockFrom) / SHOCK_MS;
+      if (age >= 1) {
+        shockFrom = 0;
+        rx.fill(0);
+        ry.fill(0);
+        return false;
+      }
+
+      const ring = age * SHOCK_REACH;
+      // Squared falloff, so it leaves quietly rather than switching off.
+      const amp = SHOCK_AMP * (1 - age) ** 2;
+      const ca = Math.cos(spin);
+      const sa = Math.sin(spin);
+
+      for (let i = 0; i < n; i++) {
+        const d = DOTS[i];
+        const px = R * (d[0] * ca + d[2] * sa);
+        const py = -R * d[1];
+        const dx = CX + px * LR_COS + py * LR_SIN + SHIFT_X - MIAMI.x;
+        const dy = CY - px * LR_SIN + py * LR_COS + SHIFT_Y - MIAMI.y;
+        const sq = dx * dx + dy * dy;
+        if (sq > SHOCK_MAX_SQ) {
+          rx[i] = 0;
+          ry[i] = 0;
+          continue;
+        }
+        const dist = Math.sqrt(sq);
+        const off = (dist - ring) / SHOCK_BAND;
+        // A triangular band instead of a gaussian: an exp per dot per frame
+        // buys nothing the eye can see at this size.
+        const band = off > 1 || off < -1 ? 0 : 1 - Math.abs(off);
+        if (band === 0 || dist < 0.001) {
+          rx[i] = 0;
+          ry[i] = 0;
+          continue;
+        }
+        const f = (amp * band) / dist;
+        rx[i] = dx * f;
+        ry[i] = dy * f;
+      }
+      return true;
     };
 
     /** Advances the cursor scatter. Returns whether anything still moves. */
@@ -153,9 +238,10 @@ export default function GlobeCanvas({ progress }: { progress: MotionValue<number
     };
 
     const tick = () => {
+      const alive = shockStep(performance.now());
       const moving = settleStep();
       draw();
-      raf = moving && onScreen && !still ? requestAnimationFrame(tick) : 0;
+      raf = (moving || alive) && onScreen && !still ? requestAnimationFrame(tick) : 0;
     };
     const kick = () => {
       if (!raf && onScreen && !still) raf = requestAnimationFrame(tick);
@@ -203,7 +289,14 @@ export default function GlobeCanvas({ progress }: { progress: MotionValue<number
     box.addEventListener("pointermove", move);
     box.addEventListener("pointerleave", leave);
 
+    fire.current = () => {
+      if (still) return;
+      shockFrom = performance.now();
+      kick();
+    };
+
     return () => {
+      fire.current = () => {};
       if (raf) cancelAnimationFrame(raf);
       unsub();
       io.disconnect();
@@ -212,6 +305,10 @@ export default function GlobeCanvas({ progress }: { progress: MotionValue<number
       box.removeEventListener("pointerleave", leave);
     };
   }, [progress]);
+
+  useEffect(() => {
+    if (impact) fire.current();
+  }, [impact]);
 
   return (
     <div ref={wrap} style={{ position: "absolute", inset: 0 }}>

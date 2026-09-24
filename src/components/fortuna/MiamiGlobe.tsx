@@ -1,5 +1,6 @@
-import GlobeRise from "./GlobeRise";
+import GlobeStage from "./GlobeStage";
 import { GLOBE } from "@/content/globe-dots";
+import type { Rich } from "@/content/fortuna";
 
 /**
  * A dotted globe, built against the Hero 216 reference.
@@ -20,9 +21,9 @@ import { GLOBE } from "@/content/globe-dots";
 
 const { W, H, CX, CY, R } = GLOBE;
 
-export default function MiamiGlobe() {
+export default function MiamiGlobe({ caption }: { caption: Rich }) {
   return (
-    <GlobeRise width={W} height={H}>
+    <GlobeStage width={W} height={H} caption={caption}>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -65,6 +66,6 @@ export default function MiamiGlobe() {
         </g>
       </svg>
 
-    </GlobeRise>
+    </GlobeStage>
   );
 }

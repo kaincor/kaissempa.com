@@ -2,8 +2,8 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import FortunaWordmark from "./FortunaWordmark";
-import type { Rich, Token } from "@/content/fortuna";
+import FillInline from "./FillText";
+import type { Rich } from "@/content/fortuna";
 
 /**
  * The pull-out, raised like a billboard.
@@ -23,78 +23,6 @@ import type { Rich, Token } from "@/content/fortuna";
 const LAID_FLAT = 90;
 /** How near the viewer the hinge reads. Short, so the throw is dramatic. */
 const PERSPECTIVE = 1100;
-
-const TONE_COLOR: Record<string, string> = {
-  orange: "var(--f-orange)",
-  green: "var(--f-green)",
-  brown: "var(--f-brown)",
-};
-
-/**
- * A word that starts the colour of the sentence and is then flooded with its
- * own, left to right.
- *
- * Two copies of the same word stacked exactly, the coloured one revealed by a
- * clip. Animating the colour itself would cross-fade the whole word at once;
- * clipping makes it fill, which is what reads as ink arriving.
- */
-function FillWord({ text, color, go }: { text: string; color: string; go: boolean }) {
-  return (
-    <span style={{ position: "relative", display: "inline-block" }}>
-      {text}
-      <motion.span
-        aria-hidden="true"
-        initial={{ clipPath: "inset(0 100% 0 0)" }}
-        animate={go ? { clipPath: "inset(0 0% 0 0)" } : undefined}
-        transition={{ duration: 0.75, ease: [0.33, 0, 0.2, 1] }}
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          color,
-          whiteSpace: "pre",
-          pointerEvents: "none",
-        }}
-      >
-        {text}
-      </motion.span>
-    </span>
-  );
-}
-
-function Inline({ nodes, filled }: { nodes: Rich; filled: boolean }) {
-  if (typeof nodes === "string") return <>{nodes}</>;
-  return (
-    <>
-      {nodes.map((node: Token, i) => {
-        if (typeof node === "string") return <span key={i}>{node}</span>;
-        if ("wordmark" in node)
-          return <FortunaWordmark key={i} dot={node.dot} title="fortuna" />;
-        if (node.fill)
-          return (
-            <FillWord
-              key={i}
-              text={node.text}
-              color={TONE_COLOR[node.tone] ?? "var(--f-orange)"}
-              go={filled}
-            />
-          );
-        return (
-          <span
-            key={i}
-            style={
-              node.tone === "dim"
-                ? { opacity: 0.5 }
-                : { color: TONE_COLOR[node.tone] }
-            }
-          >
-            {node.text}
-          </span>
-        );
-      })}
-    </>
-  );
-}
 
 export default function BillboardCallout({
   text,
@@ -145,7 +73,7 @@ export default function BillboardCallout({
           textAlign: align,
         }}
       >
-        <Inline nodes={text} filled={reduced ? true : filled} />
+        <FillInline nodes={text} filled={reduced ? true : filled} />
       </p>
     </motion.div>
   );
