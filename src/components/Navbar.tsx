@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 const LINKS = [
@@ -22,6 +24,38 @@ const LINE_SHIFT = (LINE_THICKNESS + LINE_GAP) / 2;
 const BAR_TINT = "rgba(5, 5, 5, 0.15)";
 const MENU_TINT =
   "linear-gradient(270deg, rgba(5, 5, 5, 0.16) 0%, rgba(5, 5, 5, 0.2) 100%)";
+
+/**
+ * Each case study carries its own brand, and the navbar travels with it.
+ *
+ * The glass composition is unchanged — same blur, same squircle, same
+ * geometry. Only the tint moves, so the bar reads as the same object wearing
+ * the page's colour rather than a different component. Keyed by path prefix,
+ * which is the only thing the bar knows about where it is.
+ */
+const CASE_THEMES: {
+  prefix: string;
+  bar: string;
+  menu: string;
+  /** Overrides .glass for this theme. */
+  blur: number;
+}[] = [
+  {
+    prefix: "/fortuna",
+    // Opacity was only half the problem. The blur radius was the other half:
+    // at 26px a line of body copy is averaged into flat grey before the tint
+    // is even applied, so no amount of transparency brings it back. A short
+    // blur keeps the smear legible as text, and at that point the bar can
+    // stay properly green and still read as glass.
+    bar: "rgba(105, 189, 69, 0.42)",
+    menu: "linear-gradient(270deg, rgba(105, 189, 69, 0.46) 0%, rgba(105, 189, 69, 0.52) 100%)",
+    blur: 8,
+  },
+];
+
+/** How long the colour takes to run across the bar, and its head start. */
+const WIPE_MS = 0.95;
+const WIPE_DELAY = 0.35;
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
 export default function Navbar({ logo }: { logo?: ReactNode }) {
@@ -29,6 +63,15 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
   const [canHover, setCanHover] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const hidden = useHideOnScroll(open);
+
+  const pathname = usePathname();
+  const theme = CASE_THEMES.find((t) => pathname?.startsWith(t.prefix));
+  // The bar keeps its own grey underneath; the theme rides over it as a wipe.
+  // The menu is never on screen while that runs, so it just takes the colour.
+  const menuTint = theme?.menu ?? MENU_TINT;
+  // Inline, so it beats the .glass rule for themed routes only — the home
+  // page sits over the 3D scene, where the long blur is the right call.
+  const glass = theme ? { backdropFilter: `blur(${theme.blur}px) saturate(170%)`, WebkitBackdropFilter: `blur(${theme.blur}px) saturate(170%)` } : undefined;
 
   // Hover opens on pointer devices; touch gets tap-to-toggle, since a hover
   // that cannot be undone by moving away is a trap on a phone.
@@ -96,6 +139,9 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
         className="glass"
         style={{
           position: "relative",
+          // The wipe is a child laid over the whole bar, so it has to be
+          // trimmed to the bar's own corners on the way past them.
+          overflow: "hidden",
           height: BAR_HEIGHT,
           display: "flex",
           alignItems: "center",
@@ -103,10 +149,43 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           padding: "0 16px",
           borderRadius: 10,
           background: BAR_TINT,
+          ...glass,
         }}
       >
+        {/* The case study's colour, run across the bar rather than swapped in.
+            Keyed on the theme so moving between case studies replays it, and
+            unmounting on the way home puts the bar back to its own grey.
+
+            It is a layer over the tint rather than a change to it because a
+            background cannot be wiped — clip-path can, and clipping an opaque
+            layer is one compositor property, so the whole thing stays off the
+            main thread. */}
+        {theme ? (
+          <motion.span
+            key={theme.prefix}
+            aria-hidden="true"
+            initial={{ clipPath: "inset(0 100% 0 0)" }}
+            animate={{ clipPath: "inset(0 0% 0 0)" }}
+            transition={{
+              duration: WIPE_MS,
+              ease: [0.22, 1, 0.36, 1],
+              delay: WIPE_DELAY,
+            }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: theme.bar,
+              pointerEvents: "none",
+            }}
+          />
+        ) : null}
+
         {logo ? (
-          <Link href="/" aria-label="Kai Ssempa, home" style={{ display: "flex" }}>
+          <Link
+            href="/"
+            aria-label="Kai Ssempa, home"
+            style={{ display: "flex", position: "relative", zIndex: 1 }}
+          >
             {logo}
           </Link>
         ) : null}
@@ -118,6 +197,10 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           aria-controls="main-menu"
           aria-label={open ? "Close menu" : "Open menu"}
           style={{
+            // Above the wipe: the colour runs behind the hamburger, which
+            // stays white the whole way through.
+            position: "relative",
+            zIndex: 1,
             display: "flex",
             flexDirection: "column",
             gap: LINE_GAP,
@@ -160,7 +243,8 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           width: "100%",
           padding: 15,
           borderRadius: 13.5,
-          background: MENU_TINT,
+          background: menuTint,
+          ...glass,
           display: "flex",
           flexDirection: "column",
           gap: 7.5,

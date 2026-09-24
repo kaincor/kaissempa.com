@@ -1,0 +1,118 @@
+/* Fortuna's identity, lifted from the Framer project's colour and text styles
+   rather than sampled by eye. Scoped to .fortuna so each case study can carry
+   its own brand without leaking into the rest of the site.
+
+   Two of the twenty-three text styles use licensed faces Kai owns — Tiempos
+   Headline for the display and Graphik for body copy. Those are declared here
+   and self-hosted. Everything else was already on Google Fonts and is loaded
+   in the layout. Until the two woff2 files are dropped into public/fonts the
+   browser falls through to the next family in each stack, which is the
+   pairing the rest of the system already uses, so nothing breaks in between. */
+
+@font-face {
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-RegularItalic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Tiempos Headline — the trial cut, standing in until the retail file arrives.
+   
+   It names itself "Test Tiempos Headline SmB" and carries 66 glyphs against
+   Graphik's 375: no apostrophe, question mark, brackets, ampersand or dashes.
+   That is survivable because a font stack falls back per GLYPH, not per
+   element — the browser sets each character in the first family that has it,
+   so the letters come from Tiempos and anything it lacks comes from the next
+   family along without the heading changing face wholesale.
+   
+   Across every heading on the page today exactly one character falls through:
+   the + in "Promotional video shoots + flyers".
+   
+   Swapping in the licensed file means replacing this one URL. Nothing else
+   changes, because the family name stays the same. */
+@font-face {
+  font-family: "Tiempos Headline";
+  src: url("/fonts/TiemposHeadline-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+.fortuna {
+  /* Straight from Fortuna's own colors.js, which is the authority — the Framer
+     styles had drifted from it in two places. Nothing on this page may use a
+     colour that is not in here. */
+  --f-cream: #f7f5f0;        /* PRIMARY.BACKGROUND */
+  --f-cream-deep: #f2f0eb;   /* COMPLEMENTARY.DARK_BACKGROUND */
+  --f-card: #ebe9e4;         /* COMPLEMENTARY.DISABLED_BACKGROUND */
+  --f-forest: #32443e;       /* COMPLEMENTARY.DARK_PETROL_GREEN */
+  --f-petrol: #6f8b81;       /* PRIMARY.PETROL_GREEN */
+  --f-petrol-light: #aec6ba; /* COMPLEMENTARY.LIGHT_PETROL_GREEN */
+  --f-green: #69bd45;        /* PRIMARY.GREEN */
+  --f-green-dark: #298800;   /* COMPLEMENTARY.DARK_GREEN */
+  --f-green-light: #ade495;  /* COMPLEMENTARY.LIGHT_GREEN */
+  --f-orange: #f58120;       /* PRIMARY.ORANGE — was #ff8100 in Framer */
+  --f-brown: #736f5c;        /* PRIMARY.BROWN */
+  --f-brown-dark: #63604f;   /* COMPLEMENTARY.DARK_BROWN */
+  --f-ring: #c6c6c6;         /* PRIMARY.GREY */
+  --f-muted: #999999;        /* COMPLEMENTARY.MEDIUM_DARK_GREY */
+
+  /* Running text. Nearest brand colour to the 6D716F you quoted: DARK_GREY is
+     a neutral like that value is, and clears contrast on cream at 6.4:1.
+     BROWN (#736f5c) is marginally closer arithmetically but reads khaki. */
+  --f-ink: #616161;          /* COMPLEMENTARY.DARK_GREY */
+
+  /* The tinted box behind a pull-out. Forest at 6%, straight from Framer. */
+  --f-callout: rgba(50, 68, 62, 0.06);
+
+  /* Graphik catches what the trial cut is missing, as asked. Source Serif sits
+     behind it as a last resort — it is a serif, so if a heading ever needs an
+     apostrophe or a question mark it will blend better than the grotesk will. */
+  --f-display: "Tiempos Headline", "Graphik", var(--font-serif), Georgia, serif;
+  --f-serif: var(--font-serif), Georgia, serif;
+  --f-body: "Graphik", var(--font-grotesk), system-ui, sans-serif;
+  --f-grotesk: var(--font-grotesk), system-ui, sans-serif;
+
+  /* The measure, and with it the boundary.
+     
+     Framer caps the column at 720 and the paragraph at 660 — a heading runs a
+     little wider than the body under it. But a fixed cap plus fixed padding
+     produces wildly different margins: at 1280 the cap alone leaves 22% of the
+     screen empty each side, while at 768 the cap is never reached and the
+     margin is whatever the padding was, about 3%. Desktop looked composed and
+     tablet looked like text jammed against the glass.
+     
+     Making the column fluid puts them on the same footing. 62vw between a
+     300px floor and the 720px cap lands the boundary at roughly 10% on a
+     phone, 19% on a tablet and 19-22% on a desktop, so the proportion holds
+     from tablet up and a phone keeps the wider column it needs to stay
+     readable. */
+  /* Running text. Was 20px at the top end, straight from Framer, which read
+     heavy on screen, and 18 was still a shade loud; 17 sits right. One value, because
+     body copy, callouts and lists all have to agree. */
+  --f-body-size: clamp(15px, 1.35vw, 17px);
+
+  --f-measure: clamp(300px, 62vw, 720px);
+  --f-measure-body: min(660px, 100%);
+
+  background: var(--f-cream);
+  color: var(--f-ink);
+  font-family: var(--f-body);
+}

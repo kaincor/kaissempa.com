@@ -16,6 +16,21 @@ export type RidgeLayerProps = {
    * usually a clamp(), so the effective height shrinks on narrow viewports.
    */
   drop?: number;
+  /**
+   * Percent to stretch the silhouette past each side of the screen.
+   *
+   * These paths stop a little short of their viewBox edges, so the outermost
+   * pixels carry no fill at any height. Against the sky that is invisible; just
+   * above the filler it is a bare wedge with black on two sides of it, which is
+   * exactly where the eye picks it up. Measured on range 12 at 1800px wide, 4px
+   * at the right foot, tapering out over 25px of height.
+   *
+   * Raising the filler to swallow it would work too, but it would have to rise
+   * by the full height of the wedge and would start squaring off the
+   * silhouette's own valleys on narrow screens, where the ridge is a third the
+   * height. Moving the feet off screen costs nothing but a fraction of stretch.
+   */
+  overscan?: number;
 };
 
 /**
@@ -29,6 +44,7 @@ export default function RidgeLayer({
   color = "#000000",
   rise = 60,
   drop = 0,
+  overscan = 1,
 }: RidgeLayerProps) {
   const reduced = useReducedMotion();
   const { scrollY } = useScroll();
@@ -58,11 +74,15 @@ export default function RidgeLayer({
       <svg
         viewBox={range.viewBox}
         preserveAspectRatio="none"
-        width="100%"
+        width={`${100 + overscan * 2}%`}
         height={height}
         // Same one-pixel drop as MountainRange: buries the sub-pixel seam
         // where the path stops short of its viewBox floor.
-        style={{ display: "block", transform: "translateY(1px)" }}
+        style={{
+          display: "block",
+          marginLeft: `${-overscan}%`,
+          transform: "translateY(1px)",
+        }}
         aria-hidden="true"
         focusable="false"
       >
@@ -80,7 +100,12 @@ export default function RidgeLayer({
           left: 0,
           right: 0,
           height: "100vh",
-          marginTop: -1,
+          // Four rather than one. Where two black layers merely touch, each is
+          // antialiased against the backdrop separately and the two partial
+          // coverages do not add up to opaque — on a fractionally scaled
+          // display that reads as a hairline. Overlap costs nothing here,
+          // because what it covers is the silhouette's own solid baseline.
+          marginTop: -4,
           background: color,
         }}
       />

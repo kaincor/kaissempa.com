@@ -6,13 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "globe": "node scripts/generate-globe.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
-    "@splinetool/react-spline": "^4.1.0",
-    "@splinetool/runtime": "^2.0.55",
     "@types/three": "^0.186.0",
     "motion": "^13.4.0",
     "next": "16.3.5",
@@ -25,6 +24,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotted-map": "^3.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
