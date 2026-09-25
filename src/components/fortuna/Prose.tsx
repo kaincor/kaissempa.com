@@ -66,6 +66,16 @@ function blockAlign(align: Align) {
   return null;
 }
 
+/**
+ * How far the star field hangs past the band's top edge.
+ *
+ * Far enough to carry on behind the heading and the line under it, and to run
+ * out in the gap before the numbered goals start. Measured on the rendered
+ * page rather than guessed: the intro line's baseline sits about 120px below
+ * the band's top and the list begins about 50px after that.
+ */
+const SKY_DROP = 200;
+
 /** Forest is the one band dark enough to flip a component's whole treatment. */
 function toneIsDark(tone: Tone) {
   return tone === "forest";
@@ -166,7 +176,9 @@ export function Band({
       }}
     >
       {rise ? (
-        <BandRise color={TONE_BG[tone]}>{sky ? <NightSky /> : null}</BandRise>
+        <BandRise color={TONE_BG[tone]} drop={sky ? SKY_DROP : 1}>
+          {sky ? <NightSky /> : null}
+        </BandRise>
       ) : null}
       {/* The column carries the boundary rather than padding on the band, so
           the margin scales with the viewport instead of sitting at one value.
@@ -176,6 +188,11 @@ export function Band({
         style={{
           width: "min(var(--f-measure), 100% - 28px)",
           margin: "0 auto",
+          // Above the riser. An absolutely positioned block paints over static
+          // in-flow content in the same stacking context, so once the tongue
+          // hangs down over the band it would otherwise cover the words.
+          position: "relative",
+          zIndex: 1,
         }}
       >
         {children}

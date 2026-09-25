@@ -36,9 +36,16 @@ const RISE = "76vh";
 
 export default function BandRise({
   color,
+  drop = 1,
   children,
 }: {
   color: string;
+  /**
+   * Pixels the tongue hangs past the band's top edge, down over its own
+   * content. One by default, which is only there to bury the seam; more when
+   * something is painted in the tongue that should carry on behind the words.
+   */
+  drop?: number;
   /** Painted inside the tongue, so it is revealed by the same sweep. */
   children?: ReactNode;
 }) {
@@ -82,8 +89,8 @@ export default function BandRise({
           // positioned edge (measured at 365.53) that reads as a hairline
           // across the page. Lapping into a block of identical colour costs
           // nothing and removes the seam.
-          bottom: -1,
-          height: RISE,
+          bottom: -drop,
+          height: `calc(${RISE} + ${drop}px)`,
           background: color,
           clipPath: clip,
           pointerEvents: "none",

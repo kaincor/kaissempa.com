@@ -154,13 +154,24 @@ const FIGURES: Figure[] = [
 ];
 
 /**
- * Fades at both ends. The bottom one matters: the tongue has to meet the band
- * in the band's own flat colour or the join reads as a line across the page.
- * The top one keeps the field from butting hard against the cream section
- * above once the sweep has finished.
+ * Fades at both ends.
+ *
+ * The bottom one is measured in pixels up from the bottom edge, not as a share
+ * of the height, because what it has to clear is a fixed run of type — the
+ * heading and the line under it — and not a fraction of a viewport. The field
+ * carries on behind those and runs out in the gap before the numbered goals.
+ *
+ * That gap is the whole budget, and it is narrow. Measured from the band's top
+ * edge, the intro line ends as low as 120px on a desktop and the list starts
+ * as high as 161px on a phone, so the fade has 41px to live in. It is 32 wide
+ * and sits in the middle of that.
+ *
+ * The top one keeps it from butting hard against the cream section above once
+ * the sweep has finished.
  */
 const SKY_MASK =
-  "linear-gradient(to bottom, transparent 0%, #000 16%, #000 86%, transparent 100%)";
+  "linear-gradient(to bottom, transparent 0%, #000 14%, " +
+  "#000 calc(100% - 78px), transparent calc(100% - 46px))";
 
 /** Deterministic, so the field does not reshuffle on every resize. */
 function rng(seed: number) {
