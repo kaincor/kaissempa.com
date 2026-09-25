@@ -5,6 +5,7 @@ import FadeIn from "./FadeIn";
 import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
 import GoalList from "./GoalList";
+import Persona from "./Persona";
 import type { Align, Block, Rich, Token, Tone } from "@/content/fortuna";
 
 /**
@@ -585,6 +586,8 @@ export function renderBlock(
       return <Figure key={i} note={block.note} dark={dark} />;
     case "globe":
       return <MiamiGlobe key={i} caption={block.caption} />;
+    case "persona":
+      return <Persona key={i} persona={block.persona} />;
   }
 }
 

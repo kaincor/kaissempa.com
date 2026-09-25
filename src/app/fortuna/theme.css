@@ -160,3 +160,117 @@
 .fortuna {
   overflow-x: clip;
 }
+
+/* ---- the persona panels -------------------------------------------------
+
+   Two ramps rather than one. Needs are cool and Frustrations are warm, which
+   is the same distinction the original persona sheet drew in yellow and red —
+   without leaving the palette. Both walk from the band's deep forest toward
+   its lighter neighbours and stop while cream type still clears AA on the last
+   step: 5.88:1 on the coolest, 5.45:1 on the warmest. Going any further hits
+   petrol, where neither cream nor forest is readable. */
+.fortuna {
+  --f-need-1: #2a3a35;
+  --f-need-2: #36483f;
+  --f-need-3: #42564a;
+  --f-need-4: #4e6455;
+
+  --f-frus-1: #45403a;
+  --f-frus-2: #524b41;
+  --f-frus-3: #5f5748;
+  --f-frus-4: #6c634f;
+}
+
+/* The row. One panel takes the slack, the rest sit at a fixed pill width.
+   `flex-grow` is the animated property, so nothing is measured in JavaScript
+   and the row reflows itself at any container width. */
+.f-panels {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  min-height: 132px;
+}
+
+.f-panel {
+  position: relative;
+  flex: 0 0 auto;
+  flex-grow: var(--grow, 0);
+  flex-basis: 54px;
+  min-width: 54px;
+  border: 0;
+  border-radius: 16px;
+  padding: 0;
+  color: var(--f-cream);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    flex-grow 460ms cubic-bezier(0.22, 0.61, 0.24, 1),
+    flex-basis 460ms cubic-bezier(0.22, 0.61, 0.24, 1);
+}
+
+.f-panel:focus-visible {
+  outline: 2px solid var(--f-cream);
+  outline-offset: 3px;
+}
+
+/* The body copy of the open panel. Held at full size and faded rather than
+   unmounted, so the text does not reflow while the panel is still widening. */
+.f-panel-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  font-family: var(--f-body);
+  font-size: var(--f-body-size);
+  line-height: 1.55;
+  letter-spacing: -0.02em;
+  opacity: 0;
+  transition: opacity 260ms ease;
+  pointer-events: none;
+}
+.f-panel[data-open="true"] .f-panel-body {
+  opacity: 1;
+  transition: opacity 300ms ease 160ms;
+}
+
+/* The numeral on a closed panel, upright and centred in the pill. */
+.f-panel-tab {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--f-grotesk);
+  font-weight: 700;
+  font-size: 14px;
+  opacity: 0.85;
+  transition: opacity 200ms ease;
+}
+.f-panel[data-open="true"] .f-panel-tab {
+  opacity: 0;
+}
+
+/* Below tablet the row becomes a stack and every panel is simply open. There
+   is nothing to discover in four short lines, and on a phone an accordion
+   only charges the reader taps to read them. */
+@media (max-width: 767px) {
+  .f-panels {
+    flex-direction: column;
+    min-height: 0;
+  }
+  .f-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    cursor: default;
+  }
+  .f-panel-body {
+    position: static;
+    opacity: 1;
+    transition: none;
+  }
+  .f-panel-tab {
+    display: none;
+  }
+}

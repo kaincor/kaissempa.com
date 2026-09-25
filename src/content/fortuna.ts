@@ -72,7 +72,62 @@ export type Block =
    * The Miami globe. Its caption belongs to it rather than sitting above it
    * as its own paragraph, because the globe's animation is what lights it.
    */
-  | { kind: "globe"; caption: Rich };
+  | { kind: "globe"; caption: Rich }
+  /** A research persona: who they are, then what they want and what stops them. */
+  | { kind: "persona"; persona: Persona };
+
+/**
+ * A persona, as the research wrote it up.
+ *
+ * Goals are short and there are two, so they are simply shown. Needs and
+ * frustrations are longer and there are four of each, so they are panels the
+ * reader opens — sixteen lines of someone else's research is a wall, and four
+ * labels they can choose between is an invitation.
+ */
+export type Persona = {
+  name: string;
+  /** Rendered as a definition list beside the portrait. */
+  facts: { label: string; value: string }[];
+  portrait: { src: string; alt: string; width: number; height: number };
+  bio: string[];
+  goals: string[];
+  needs: string[];
+  frustrations: string[];
+};
+
+export const SARAH: Persona = {
+  name: "Sarah Anderson",
+  facts: [
+    { label: "Age", value: "31" },
+    { label: "Job", value: "Unemployed" },
+    // The persona sheet this came from said Chicago, which is a leftover from
+    // its template: the seven interviews behind Sarah were all in Miami.
+    { label: "Located", value: "Miami, FL" },
+  ],
+  portrait: {
+    src: "/images/sarah-persona.png",
+    alt: "Sarah, the job seeker persona",
+    width: 375,
+    height: 375,
+  },
+  bio: [
+    "Sarah is a 31-year-old administrative assistant and former receptionist who recently lost her job. As a single mother of a two year old, time is tight and childcare is expensive, so finding work nearby would give her more time with her daughter.",
+    "She's eager to find a gig quickly while continuing her search for a longer-term job.",
+  ],
+  goals: ["Being a present mother for her daughter", "Economic stability"],
+  needs: [
+    "Find a job near her home, so she can be available in case of an emergency.",
+    "Have an assured income while looking for a long term job.",
+    "Find a short term job fast.",
+    "Have free time to spend with her daughter.",
+  ],
+  frustrations: [
+    "She doesn't know where to start searching, and feels overwhelmed by how many job apps there are.",
+    "Conventional recruiting apps take too long — she has to think about, and then hunt for, the specific kind of job she needs.",
+    "Applying and then waiting to hear back makes her anxious, because she needs an income as soon as possible.",
+    "Going to an interview means paying a babysitter while she is out, and she doesn't have the income to cover it.",
+  ],
+};
 
 export type Section = {
   id: string;
@@ -224,6 +279,7 @@ export const SECTIONS: Section[] = [
         kind: "text",
         text: "I partnered with our other product designer Yvonne, to explore how job seekers go about applying for work. We spoke to seven job seekers based in Miami and drew up Sarah, a persona based on our collection of insights.",
       },
+      { kind: "persona", persona: SARAH },
       {
         kind: "callout",
         text: "Sarah didn't think the job applications were horrid. They just assumed she had time to search when she didn't.",
