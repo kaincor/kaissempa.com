@@ -59,7 +59,7 @@ const GLOW = 0.07;
  * The canvas is this much taller than its window at both ends, so sliding it
  * never drags an empty edge into view.
  */
-const DRIFT = 28;
+const DRIFT = 85;
 
 /** How quickly the lit state follows the cursor, and when to call it settled. */
 const EASE = 0.16;
@@ -87,7 +87,12 @@ type Figure = {
 const FIGURES: Figure[] = [
   {
     // Ursa Major, the Plough. Bowl of four, handle of three.
-    at: [0.06, 0.34],
+    //
+    // Down in the bottom-left corner, out past the left edge of the text
+    // column, where there is empty band for it to sit in. It has to clear the
+    // taper at the foot of the sky and the drift at both ends of its travel,
+    // which is most of why it is not lower.
+    at: [0.02, 0.7],
     scale: 0.26,
     stars: [
       [0, 0.35],

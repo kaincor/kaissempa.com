@@ -21,6 +21,7 @@ export type BrandColor =
   | "brown"
   | "cream"
   | "forest-deep"
+  | "red"
   | "ink";
 
 /**
@@ -47,7 +48,8 @@ export type Rich = string | Token[];
 export type Block =
   | { kind: "text"; text: Rich }
   /** Set in italics in the doc — rendered as a serif pull-quote. */
-  | { kind: "quote"; text: Rich }
+  /** `tone` picks a brand colour for a line that has to land harder. */
+  | { kind: "quote"; text: Rich; tone?: BrandColor }
   /** The tinted box: one line that needs to land harder than body copy. */
   | { kind: "callout"; text: Rich; reveal?: boolean }
   | { kind: "subheading"; text: string }
@@ -73,52 +75,8 @@ export type Block =
    * as its own paragraph, because the globe's animation is what lights it.
    */
   | { kind: "globe"; caption: Rich }
-  /** A research persona: who they are, then what they want and what stops them. */
-  | { kind: "persona"; persona: Persona };
-
-/**
- * A persona, as the research wrote it up.
- *
- * Goals are short and there are two, so they are simply shown. Needs and
- * frustrations are longer and there are four of each, so they are panels the
- * reader opens — sixteen lines of someone else's research is a wall, and four
- * labels they can choose between is an invitation.
- */
-export type Persona = {
-  name: string;
-  portrait: { src: string; alt: string; width: number; height: number };
-  bio: string[];
-  goals: string[];
-  needs: string[];
-  frustrations: string[];
-};
-
-export const SARAH: Persona = {
-  name: "Sarah Anderson",
-  portrait: {
-    src: "/images/sarah-persona.png",
-    alt: "Sarah, the job seeker persona",
-    width: 375,
-    height: 375,
-  },
-  bio: [
-    "Sarah is a 31-year-old administrative assistant and former receptionist who recently lost her job. As a single mother of a two year old, time is tight and childcare is expensive, so finding work nearby would give her more time with her daughter.",
-    "She's eager to find a gig quickly while continuing her search for a longer-term job.",
-  ],
-  goals: ["Being a present mother for her daughter", "Economic stability"],
-  needs: [
-    "Find a job near her home, so she can be available in case of an emergency.",
-    "Have an assured income while looking for a long term job.",
-    "Find a short term job fast.",
-    "Have free time to spend with her daughter.",
-  ],
-  frustrations: [
-    "She doesn't know where to start searching, and feels overwhelmed by how many job apps there are.",
-    "Conventional recruiting apps take too long — she has to think about, and then hunt for, the specific kind of job she needs.",
-    "Applying and then waiting to hear back makes her anxious, because she needs an income as soon as possible.",
-    "Going to an interview means paying a babysitter while she is out, and she doesn't have the income to cover it.",
-  ],
-};
+  /** The research persona, rebuilt as the sheet it came from. */
+  | { kind: "persona"; persona: PersonaSheet }
 
 export type Section = {
   id: string;
@@ -127,7 +85,7 @@ export type Section = {
   headingPending?: boolean;
   tone: Tone;
   /** Centred sections read as a statement; left ones read as an argument. */
-  align?: "left" | "center" | "right";
+  align?: Align;
   /** Fade the heading and paragraphs in, staggered, as the section arrives. */
   reveal?: boolean;
   draft?: string;
@@ -147,6 +105,83 @@ export type Section = {
   /** Close the band right up around its content. */
   tight?: boolean;
   blocks: Block[];
+};
+
+/**
+ * The persona sheet, as the research produced it.
+ *
+ * Rebuilt rather than dropped in as a picture: a screenshot of a deliverable
+ * is unreadable on a phone, unselectable, invisible to search and impossible
+ * to animate. The colours, the wording and the spacing are the artefact's own.
+ */
+export type PersonaSheet = {
+  eyebrow: string;
+  name: string;
+  facts: { label: string; value: string }[];
+  portrait: { src: string; alt: string };
+  /** The two prose columns at the top of the sheet. */
+  notes: { title: string; body: string[] }[];
+  /** Goals, needs, frustrations — the three card columns underneath. */
+  columns: { title: string; tone: "white" | "amber" | "rose"; items: string[] }[];
+};
+
+export const SARAH: PersonaSheet = {
+  eyebrow: "Persona / Job seeker",
+  name: "Sarah Anderson",
+  facts: [
+    { label: "Age", value: "31" },
+    { label: "Job", value: "Unemployed" },
+    // The sheet said Chicago, which was left over from its template: the
+    // seven interviews behind Sarah were all in Miami.
+    { label: "Located", value: "Miami, FL" },
+  ],
+  portrait: {
+    src: "/images/sarah-persona.png",
+    alt: "Sarah, the job seeker persona",
+  },
+  notes: [
+    {
+      title: "User-persona situation:",
+      body: [
+        "Sarah is a 31-year-old administrative assistant. She worked as a receptionist for the last 4 years but recently lost her job. Sarah is a fast learner who can adapt to different work environments. As a people person, she has excellent communication skills, and is always ready to face the day with a positive attitude — in her last job she was voted the smiliest worker.",
+        "Sarah is a single mother of a 2-year-old girl, and lack of time is a daily worry as she is currently paying for a babysitter. Finding a job within the neighbourhood would mean spending more time with her daughter. She wants to get a gig as fast as possible while looking for another job.",
+      ],
+    },
+    {
+      title: "Situation related needs:",
+      body: [
+        "Sarah needs to find a job as fast as possible given the fact she is a single mother. In the meantime, getting a gig seems a really good idea.",
+        "As she wants to spend more time with her daughter, Sarah needs to find a job that's not far from the neighbourhood.",
+      ],
+    },
+  ],
+  columns: [
+    {
+      title: "Goals",
+      tone: "white",
+      items: ["Being a present mother for her daughter", "Economic stability"],
+    },
+    {
+      title: "Needs",
+      tone: "amber",
+      items: [
+        "Find a job near her home as she needs to be available in case of an emergency",
+        "Have an assured income while looking for a long term job",
+        "Find a short term job fast",
+        "Having free time to spend with her daughter",
+      ],
+    },
+    {
+      title: "Frustrations",
+      tone: "rose",
+      items: [
+        "Doesn't know where to start searching, and feels overwhelmed by all the different job searching apps",
+        "Searching in conventional recruiting apps takes her too much time, as she has to think about and then search for the specific type of job she needs",
+        "Applying for each job and waiting to hear back makes her anxious, as she needs an income as soon as possible",
+        "Attending an interview means paying for a babysitter while she is gone, and she doesn't have the income to cover that",
+      ],
+    },
+  ],
 };
 
 export const HERO = {
@@ -278,7 +313,8 @@ export const SECTIONS: Section[] = [
       },
       { kind: "persona", persona: SARAH },
       {
-        kind: "callout",
+        kind: "quote",
+        tone: "red",
         text: "Sarah didn't think the job applications were horrid. They just assumed she had time to search when she didn't.",
       },
       { kind: "figure", note: "Draw up framework" },

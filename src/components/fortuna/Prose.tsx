@@ -309,10 +309,12 @@ export function Quote({
   children,
   dark,
   align = "left",
+  color,
 }: {
   children: ReactNode;
   dark?: boolean;
   align?: Align;
+  color?: string;
 }) {
   return (
     <p
@@ -326,8 +328,9 @@ export function Quote({
         letterSpacing: "-0.02em",
         textWrap: "balance",
         textAlign: align,
-        // Inherits the band's ink on green, where neither of these is right.
-        color: dark ? "var(--f-cream)" : undefined,
+        // Inherits the band's ink unless a tone is named; neither the cream
+        // nor the page ink is right on green.
+        color: color ?? (dark ? "var(--f-cream)" : undefined),
       }}
     >
       {children}
@@ -563,7 +566,12 @@ export function renderBlock(
     }
     case "quote":
       return (
-        <Quote key={i} dark={dark} align={align}>
+        <Quote
+          key={i}
+          dark={dark}
+          align={align}
+          color={block.tone ? `var(--f-${block.tone})` : undefined}
+        >
           <Inline nodes={block.text} />
         </Quote>
       );

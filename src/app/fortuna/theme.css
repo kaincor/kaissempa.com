@@ -103,6 +103,8 @@
   --f-green: #69bd45;        /* PRIMARY.GREEN */
   --f-green-dark: #298800;   /* COMPLEMENTARY.DARK_GREEN */
   --f-green-light: #ade495;  /* COMPLEMENTARY.LIGHT_GREEN */
+  --f-red: #f34545;          /* PRIMARY.RED */
+  --f-red-light: #ff8989;    /* COMPLEMENTARY.LIGHT_RED */
   --f-orange: #f58120;       /* PRIMARY.ORANGE — was #ff8100 in Framer */
   --f-brown: #736f5c;        /* PRIMARY.BROWN */
   --f-brown-dark: #63604f;   /* COMPLEMENTARY.DARK_BROWN */
