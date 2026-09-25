@@ -1,5 +1,6 @@
 import Image from "next/image";
 import PanelRow from "./PanelRow";
+import SlideIn from "./SlideIn";
 import type { Persona as PersonaData } from "@/content/fortuna";
 
 /**
@@ -35,76 +36,63 @@ export default function Persona({ persona }: { persona: PersonaData }) {
         }}
       >
         <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-          <h3
-            style={{
-              margin: "0 0 4px",
-              fontFamily: "var(--f-display)",
-              fontWeight: 600,
-              fontSize: "clamp(22px, 2.8vw, 30px)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {persona.name}
-          </h3>
-
-          <dl
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "4px 18px",
-              margin: "0 0 18px",
-              fontFamily: "var(--f-grotesk)",
-              fontSize: 13,
-              letterSpacing: "0.02em",
-            }}
-          >
-            {persona.facts.map((f) => (
-              <div key={f.label} style={{ display: "flex", gap: 6 }}>
-                <dt style={{ opacity: 0.6 }}>{f.label}</dt>
-                <dd style={{ margin: 0, fontWeight: 500 }}>{f.value}</dd>
-              </div>
-            ))}
-          </dl>
-
-          {persona.bio.map((para) => (
-            <p
-              key={para}
+          <SlideIn>
+            <h3
               style={{
-                margin: "0 0 14px",
-                maxWidth: "46ch",
+                margin: "0 0 16px",
+                // The sans, not the display face. This is a label on a
+                // research artefact rather than a heading in the argument.
                 fontFamily: "var(--f-body)",
-                fontSize: "var(--f-body-size)",
-                lineHeight: 1.7,
-                letterSpacing: "-0.02em",
+                fontWeight: 500,
+                fontSize: "clamp(21px, 2.4vw, 27px)",
+                letterSpacing: "-0.03em",
               }}
             >
-              {para}
-            </p>
+              {persona.name}
+            </h3>
+          </SlideIn>
+
+          {persona.bio.map((para, i) => (
+            <SlideIn key={para} delay={0.14 + i * 0.16}>
+              <p
+                style={{
+                  margin: "0 0 14px",
+                  maxWidth: "46ch",
+                  fontFamily: "var(--f-body)",
+                  fontSize: "var(--f-body-size)",
+                  lineHeight: 1.7,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {para}
+              </p>
+            </SlideIn>
           ))}
         </div>
 
-        <div
-          style={{
-            flex: "0 0 auto",
-            width: PORTRAIT,
-            aspectRatio: "1",
-            borderRadius: "50%",
-            // The cream ring is what lifts her off the green; without it the
-            // photograph's own edge is the only boundary and it reads as a
-            // hole punched in the band.
-            border: "6px solid var(--f-cream)",
-            overflow: "hidden",
-            position: "relative",
-          }}
-        >
-          <Image
-            src={persona.portrait.src}
-            alt={persona.portrait.alt}
-            fill
-            sizes="186px"
-            style={{ objectFit: "cover" }}
-          />
-        </div>
+        <SlideIn delay={0.06} from={34} style={{ flex: "0 0 auto" }}>
+          <div
+            style={{
+              width: PORTRAIT,
+              aspectRatio: "1",
+              borderRadius: "50%",
+              // The cream ring is what lifts her off the green; without it the
+              // photograph's own edge is the only boundary and it reads as a
+              // hole punched in the band.
+              border: "6px solid var(--f-cream)",
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            <Image
+              src={persona.portrait.src}
+              alt={persona.portrait.alt}
+              fill
+              sizes="186px"
+              style={{ objectFit: "cover" }}
+            />
+          </div>
+        </SlideIn>
       </div>
 
       <Group title="Goals">
@@ -151,7 +139,13 @@ export default function Persona({ persona }: { persona: PersonaData }) {
   );
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function Group({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section style={{ marginTop: "clamp(26px, 4vh, 44px)" }}>
       <h4

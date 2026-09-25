@@ -86,8 +86,6 @@ export type Block =
  */
 export type Persona = {
   name: string;
-  /** Rendered as a definition list beside the portrait. */
-  facts: { label: string; value: string }[];
   portrait: { src: string; alt: string; width: number; height: number };
   bio: string[];
   goals: string[];
@@ -97,13 +95,6 @@ export type Persona = {
 
 export const SARAH: Persona = {
   name: "Sarah Anderson",
-  facts: [
-    { label: "Age", value: "31" },
-    { label: "Job", value: "Unemployed" },
-    // The persona sheet this came from said Chicago, which is a leftover from
-    // its template: the seven interviews behind Sarah were all in Miami.
-    { label: "Located", value: "Miami, FL" },
-  ],
   portrait: {
     src: "/images/sarah-persona.png",
     alt: "Sarah, the job seeker persona",
@@ -293,8 +284,9 @@ export const SECTIONS: Section[] = [
   {
     id: "reflections",
     heading: "Personal reflections on issues",
-    headingPending: true,
-    tone: "card",
+    // Green as well, so the research runs as one stretch of colour from the
+    // goals to here. Data frameworks below it keeps its cream and ends the run.
+    tone: "green",
     blocks: [
       {
         kind: "text",

@@ -36,16 +36,18 @@ const RISE = "76vh";
 
 export default function BandRise({
   color,
-  drop = 1,
+  drop = "1px",
   children,
 }: {
   color: string;
   /**
-   * Pixels the tongue hangs past the band's top edge, down over its own
-   * content. One by default, which is only there to bury the seam; more when
-   * something is painted in the tongue that should carry on behind the words.
+   * How far the tongue hangs past the band's top edge, down over its own
+   * content. Any CSS length; a percentage resolves against the band's height,
+   * which is what lets the star field scale with however much content the band
+   * is carrying instead of guessing at a pixel figure that only fits one
+   * viewport. One pixel by default, purely to bury the seam.
    */
-  drop?: number;
+  drop?: string;
   /** Painted inside the tongue, so it is revealed by the same sweep. */
   children?: ReactNode;
 }) {
@@ -75,22 +77,29 @@ export default function BandRise({
     <div
       ref={mark}
       aria-hidden="true"
-      style={{ position: "absolute", top: 0, left: 0, right: 0, height: 0 }}
+      // Full height, not zero: the tongue's percentages resolve against this,
+      // so it needs to be the size of the band. Nothing is painted here and it
+      // takes no pointer events, so spanning the band costs nothing.
+      style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
     >
       <motion.div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          // The marker has no height, so its bottom edge is the band's top —
-          // and a pixel past it. Where two same-coloured blocks merely touch,
-          // each antialiases against the backdrop separately and the two
-          // partial coverages do not add up to opaque; on a fractionally
+          // Hangs past the band's top edge by `drop`. Even at its smallest
+          // that is a pixel, because where two same-coloured blocks merely
+          // touch each antialiases against the backdrop separately and the
+          // two partial coverages do not add up to opaque — on a fractionally
           // positioned edge (measured at 365.53) that reads as a hairline
-          // across the page. Lapping into a block of identical colour costs
-          // nothing and removes the seam.
-          bottom: -drop,
-          height: `calc(${RISE} + ${drop}px)`,
+          // across the page.
+          top: "auto",
+          // The marker spans the band, so its own bottom edge is the band's
+          // bottom. Coming back up by everything except `drop` puts the
+          // tongue's bottom edge `drop` below the band's TOP, which is what
+          // the name means and what a percentage has to measure from.
+          bottom: `calc(100% - ${drop})`,
+          height: `calc(${RISE} + ${drop})`,
           background: color,
           clipPath: clip,
           pointerEvents: "none",

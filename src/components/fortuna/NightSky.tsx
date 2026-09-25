@@ -161,17 +161,17 @@ const FIGURES: Figure[] = [
  * heading and the line under it — and not a fraction of a viewport. The field
  * carries on behind those and runs out in the gap before the numbered goals.
  *
- * That gap is the whole budget, and it is narrow. Measured from the band's top
- * edge, the intro line ends as low as 120px on a desktop and the list starts
- * as high as 161px on a phone, so the fade has 41px to live in. It is 32 wide
- * and sits in the middle of that.
+ * The budget is narrow. Measured from the band's top edge, the goals end as
+ * low as 385px on a phone, where every one of them wraps, while the band
+ * itself is only 427px tall on a tablet. So the fade has about forty pixels to
+ * finish in, between the last goal and the bottom of the band.
  *
  * The top one keeps it from butting hard against the cream section above once
  * the sweep has finished.
  */
 const SKY_MASK =
   "linear-gradient(to bottom, transparent 0%, #000 14%, " +
-  "#000 calc(100% - 78px), transparent calc(100% - 46px))";
+  "#000 calc(100% - 48px), transparent calc(100% - 8px))";
 
 /** Deterministic, so the field does not reshuffle on every resize. */
 function rng(seed: number) {
@@ -183,6 +183,9 @@ function rng(seed: number) {
 }
 
 type Star = { x: number; y: number; r: number; base: number; lit: number };
+type Seg = { x1: number; y1: number; x2: number; y2: number; lit: number };
+/** A constellation at runtime: its own stars and lines, lit as one thing. */
+type Group = { stars: Star[]; segs: Seg[]; lit: number };
 
 export default function NightSky() {
   const wrap = useRef<HTMLDivElement>(null);
@@ -201,9 +204,10 @@ export default function NightSky() {
     let h = 0;
     let dpr = 1;
     let reach = REACH_MIN;
+    /** Field stars only. Each catches the light on its own. */
     let stars: Star[] = [];
-    /** Constellation segments, in pixels, with their own eased brightness. */
-    let segs: { x1: number; y1: number; x2: number; y2: number; lit: number }[] = [];
+    /** The constellations. Each lights as a whole. */
+    let groups: Group[] = [];
     let cursor: { x: number; y: number } | null = null;
     let raf = 0;
 
@@ -221,32 +225,31 @@ export default function NightSky() {
 
       const rand = rng(20220601);
       stars = [];
-      segs = [];
+      groups = [];
 
       for (const fig of FIGURES) {
         const pts = fig.stars.map(([fx, fy]) => ({
           x: (fig.at[0] + fx * fig.scale) * w,
           y: (fig.at[1] + fy * fig.scale) * h,
         }));
-        for (const p of pts) {
-          stars.push({
+        groups.push({
+          stars: pts.map((p) => ({
             x: p.x,
             y: p.y,
             // A touch larger than the field, so the figures hold together.
             r: 1.1 + rand() * 0.7,
             base: 0.4 + rand() * 0.2,
             lit: 0,
-          });
-        }
-        for (const [a, b] of fig.lines) {
-          segs.push({
+          })),
+          segs: fig.lines.map(([a, b]) => ({
             x1: pts[a].x,
             y1: pts[a].y,
             x2: pts[b].x,
             y2: pts[b].y,
             lit: 0,
-          });
-        }
+          })),
+          lit: 0,
+        });
       }
 
       for (let i = 0; i < STAR_COUNT; i++) {
@@ -282,13 +285,22 @@ export default function NightSky() {
       }
 
       ctx.lineWidth = 1;
-      for (const s of segs) {
-        const a = LINE_REST + (LINE_LIT - LINE_REST) * s.lit;
+      for (const g of groups) {
+        const a = LINE_REST + (LINE_LIT - LINE_REST) * g.lit;
         ctx.strokeStyle = `rgba(247, 245, 240, ${a})`;
         ctx.beginPath();
-        ctx.moveTo(s.x1, s.y1);
-        ctx.lineTo(s.x2, s.y2);
+        for (const s of g.segs) {
+          ctx.moveTo(s.x1, s.y1);
+          ctx.lineTo(s.x2, s.y2);
+        }
         ctx.stroke();
+        for (const s of g.stars) {
+          const sa = s.base * (STAR_REST + (STAR_LIT - STAR_REST) * g.lit);
+          ctx.fillStyle = `rgba(247, 245, 240, ${sa})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r * (1 + 0.5 * g.lit), 0, 6.2832);
+          ctx.fill();
+        }
       }
 
       for (const s of stars) {
@@ -318,18 +330,22 @@ export default function NightSky() {
         if (Math.abs(t - s.lit) > SETTLED) moving = true;
       }
 
-      for (const s of segs) {
+      for (const g of groups) {
         let t = 0;
         if (cursor) {
-          // Measured to the segment's middle: a line lights as a whole, which
-          // is what makes the figure read rather than a piece of it.
-          const mx = (s.x1 + s.x2) / 2;
-          const my = (s.y1 + s.y2) / 2;
-          const d2 = (mx - cx) ** 2 + (my - cy) ** 2;
-          if (d2 < r2) t = (1 - Math.sqrt(d2) / reach) ** 2;
+          // Distance to the nearest star in the figure, not to each line on
+          // its own. Lighting the parts separately makes a constellation
+          // arrive in pieces and flicker as the cursor crosses it; one value
+          // for the whole figure gives it a single steady glow.
+          let best = Infinity;
+          for (const s of g.stars) {
+            const d2 = (s.x - cx) ** 2 + (s.y - cy) ** 2;
+            if (d2 < best) best = d2;
+          }
+          if (best < r2) t = (1 - Math.sqrt(best) / reach) ** 2;
         }
-        s.lit += (t - s.lit) * EASE;
-        if (Math.abs(t - s.lit) > SETTLED) moving = true;
+        g.lit += (t - g.lit) * EASE;
+        if (Math.abs(t - g.lit) > SETTLED) moving = true;
       }
 
       return moving;
@@ -337,12 +353,15 @@ export default function NightSky() {
 
     const tick = () => {
       const moving = settle();
-      if (!moving) {
-        // The easing approaches zero without reaching it, and stopping the
-        // loop mid-approach leaves the field fractionally brighter than rest
-        // forever. Measured at 223 changed samples before this.
+      if (!moving && !cursor) {
+        // Only with the pointer gone. The easing approaches zero without
+        // reaching it, and stopping the loop mid-approach leaves the field
+        // fractionally brighter than rest forever — 223 changed samples,
+        // measured. Doing it whenever the loop stops is what made a
+        // constellation glow up and then blink out under a resting cursor:
+        // "settled" there means it has reached full brightness, not zero.
         for (const s of stars) s.lit = 0;
-        for (const s of segs) s.lit = 0;
+        for (const g of groups) g.lit = 0;
       }
       draw();
       raf = moving && !still ? requestAnimationFrame(tick) : 0;

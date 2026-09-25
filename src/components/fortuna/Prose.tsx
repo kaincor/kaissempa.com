@@ -74,7 +74,7 @@ function blockAlign(align: Align) {
  * page rather than guessed: the intro line's baseline sits about 120px below
  * the band's top and the list begins about 50px after that.
  */
-const SKY_DROP = 200;
+const SKY_DROP = "92%";
 
 /** Forest is the one band dark enough to flip a component's whole treatment. */
 function toneIsDark(tone: Tone) {
@@ -151,6 +151,12 @@ export function Band({
       style={{
         // The riser hangs off the top edge, so the band has to be its origin.
         position: "relative",
+        // And its own stacking context. The column below is lifted above the
+        // riser, and without this that z-index is measured against the whole
+        // page rather than against this band — which put the globe, sitting in
+        // a lifted column two sections up, on top of the green sweeping over
+        // it. Isolating each band keeps those z-indexes local.
+        isolation: "isolate",
         background: TONE_BG[tone],
         color: ink ?? TONE_INK[tone],
         // An overridden ink takes the numerals with it: an accent chosen to
@@ -176,7 +182,7 @@ export function Band({
       }}
     >
       {rise ? (
-        <BandRise color={TONE_BG[tone]} drop={sky ? SKY_DROP : 1}>
+        <BandRise color={TONE_BG[tone]} drop={sky ? SKY_DROP : "1px"}>
           {sky ? <NightSky /> : null}
         </BandRise>
       ) : null}
