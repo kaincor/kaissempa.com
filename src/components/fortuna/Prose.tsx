@@ -6,6 +6,7 @@ import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
 import GoalList from "./GoalList";
 import Persona from "./Persona";
+import NightSky from "./NightSky";
 import type { Align, Block, Rich, Token, Tone } from "@/content/fortuna";
 
 /**
@@ -113,6 +114,7 @@ export function Band({
   children,
   id,
   rise,
+  sky,
   full,
   tight,
   ink,
@@ -123,6 +125,8 @@ export function Band({
   id?: string;
   /** Sweep this colour up over the band above instead of butting against it. */
   rise?: boolean;
+  /** Put a star field in the swept colour. Only meaningful alongside `rise`. */
+  sky?: boolean;
   /** Hold the whole screen, with the content centred in it. */
   full?: boolean;
   /** Close the band right up around its content. */
@@ -161,7 +165,9 @@ export function Band({
         ...style,
       }}
     >
-      {rise ? <BandRise color={TONE_BG[tone]} /> : null}
+      {rise ? (
+        <BandRise color={TONE_BG[tone]}>{sky ? <NightSky /> : null}</BandRise>
+      ) : null}
       {/* The column carries the boundary rather than padding on the band, so
           the margin scales with the viewport instead of sitting at one value.
           The 28px subtraction is only a floor for very narrow screens, where

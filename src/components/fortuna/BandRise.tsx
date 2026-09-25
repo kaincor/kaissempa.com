@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 
 /**
  * A band's colour, swept up over the one above it.
@@ -14,6 +14,9 @@ import { useRef } from "react";
  * `clip-path` rather than height or a transform. Height would relayout every
  * frame; a transform would drag the tongue's far edge into view and show its
  * seam. A clip repaints nothing and has no far edge to show.
+ *
+ * Anything passed as children is painted inside the tongue, so it arrives
+ * with the colour instead of fading in on top of it afterwards.
  *
  * Scrubbed, deliberately. The reader is doing the pulling here — the colour
  * arriving under their thumb is the whole effect, and a timed version would
@@ -31,7 +34,14 @@ import { useRef } from "react";
  */
 const RISE = "76vh";
 
-export default function BandRise({ color }: { color: string }) {
+export default function BandRise({
+  color,
+  children,
+}: {
+  color: string;
+  /** Painted inside the tongue, so it is revealed by the same sweep. */
+  children?: ReactNode;
+}) {
   const reduced = useReducedMotion();
   // A zero-height marker pinned to the band's top edge, so this component can
   // scrub off its own position instead of being handed a ref from a server
@@ -65,15 +75,23 @@ export default function BandRise({ color }: { color: string }) {
           position: "absolute",
           left: 0,
           right: 0,
-          // The marker has no height, so its bottom edge is the band's top.
-          bottom: 0,
+          // The marker has no height, so its bottom edge is the band's top —
+          // and a pixel past it. Where two same-coloured blocks merely touch,
+          // each antialiases against the backdrop separately and the two
+          // partial coverages do not add up to opaque; on a fractionally
+          // positioned edge (measured at 365.53) that reads as a hairline
+          // across the page. Lapping into a block of identical colour costs
+          // nothing and removes the seam.
+          bottom: -1,
           height: RISE,
           background: color,
           clipPath: clip,
           pointerEvents: "none",
           willChange: "clip-path",
         }}
-      />
+      >
+        {children}
+      </motion.div>
     </div>
   );
 }

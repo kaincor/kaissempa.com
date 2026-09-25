@@ -145,6 +145,8 @@ export type Section = {
    * instead of letting the boundary simply scroll past.
    */
   rise?: boolean;
+  /** Put a star field in the colour that sweeps up. Needs `rise`. */
+  sky?: boolean;
   /** Hold the whole screen, with the content centred in it. */
   full?: boolean;
   /** Paint the heading in a brand colour rather than the band's running ink. */
@@ -244,6 +246,7 @@ export const SECTIONS: Section[] = [
     align: "left",
     reveal: true,
     rise: true,
+    sky: true,
     // Not `full`: holding a whole screen left the goals swimming in green.
     // The sweep is what makes the moment, and it happens above this band
     // regardless of how tall the band itself is.

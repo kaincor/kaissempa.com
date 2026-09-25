@@ -98,6 +98,7 @@ export default function FortunaPage() {
         const dark = toneIsDark(section.tone);
         return (
           <Band key={section.id} id={section.id} tone={section.tone} rise={section.rise}
+            sky={section.sky}
             full={section.full}
             tight={section.tight}
             ink={section.bodyTone ? `var(--f-${section.bodyTone})` : undefined}
