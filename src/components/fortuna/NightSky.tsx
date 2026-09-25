@@ -32,13 +32,20 @@ const REACH = 0.34;
 const REACH_MIN = 170;
 const REACH_MAX = 330;
 
-/** Resting and lit strengths. The gap between them is the whole effect. */
-const STAR_REST = 0.42;
-const STAR_LIT = 0.95;
-const LINE_REST = 0.1;
-const LINE_LIT = 0.36;
+/**
+ * Resting and lit strengths. The gap between them is the whole effect.
+ *
+ * Raised from a first pass that was too discreet — at rest the brightest star
+ * peaked at 76 of 255 and the field read as a faint texture rather than as
+ * stars. The gap still has to survive the lift, so the lit end went up with
+ * the resting one rather than being eaten by it.
+ */
+const STAR_REST = 0.62;
+const STAR_LIT = 1;
+const LINE_REST = 0.16;
+const LINE_LIT = 0.46;
 /** The glow itself, at its centre. Barely there on purpose. */
-const GLOW = 0.055;
+const GLOW = 0.07;
 
 /** How quickly the lit state follows the cursor, and when to call it settled. */
 const EASE = 0.16;
@@ -256,7 +263,7 @@ export default function NightSky() {
         stars.push({
           x: rand() * w,
           y: rand() * h,
-          r: 0.5 + rand() * 0.9,
+          r: 0.6 + rand() * 1,
           base: 0.35 + rand() * 0.65,
           lit: 0,
         });

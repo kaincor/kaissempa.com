@@ -232,7 +232,7 @@ export const SECTIONS: Section[] = [
     // The brief's one full-colour moment. Green sweeps up over the cream as
     // the reader leaves the globe, and the goals arrive on it.
     id: "goals",
-    heading: "Four North Stars",
+    heading: "Our North Stars",
     tone: "green",
     align: "left",
     reveal: true,
