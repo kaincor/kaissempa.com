@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useEffect, useRef } from "react";
 
 /**
@@ -46,6 +47,19 @@ const LINE_REST = 0.16;
 const LINE_LIT = 0.46;
 /** The glow itself, at its centre. Barely there on purpose. */
 const GLOW = 0.07;
+
+/**
+ * How far the field slides against the page, in pixels each way.
+ *
+ * Downward as the reader scrolls down, which is the opposite of what the
+ * goals list does. A block that travels up faster than the page reads as
+ * nearer; one that travels down reads as further off, and the sky should be
+ * the furthest thing on the page.
+ *
+ * The canvas is this much taller than its window at both ends, so sliding it
+ * never drags an empty edge into view.
+ */
+const DRIFT = 28;
 
 /** How quickly the lit state follows the cursor, and when to call it settled. */
 const EASE = 0.16;
@@ -197,9 +211,17 @@ type Group = { stars: Star[]; segs: Seg[]; lit: number };
 export default function NightSky() {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const field = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
+
+  const { scrollYProgress } = useScroll({
+    target: wrap,
+    offset: ["start end", "end start"],
+  });
+  const drift = useTransform(scrollYProgress, [0, 1], [-DRIFT, DRIFT]);
 
   useEffect(() => {
-    const box = wrap.current;
+    const box = field.current;
     const el = canvas.current;
     if (!box || !el) return;
     const ctx = el.getContext("2d");
@@ -215,10 +237,34 @@ export default function NightSky() {
     let stars: Star[] = [];
     /** The constellations. Each lights as a whole. */
     let groups: Group[] = [];
+    /**
+     * Where the pointer is on screen, not on the canvas.
+     *
+     * The canvas slides underneath it as the page scrolls, so a position
+     * stored in canvas coordinates would go stale the moment the reader
+     * scrolled without moving the mouse — the light would stick to the stars
+     * it happened to be on. Converted against the canvas's live box each
+     * frame instead.
+     */
+    let cursorClient: { x: number; y: number } | null = null;
     let cursor: { x: number; y: number } | null = null;
     let raf = 0;
 
+    /** Brings `cursor` up to date with where the canvas currently is. */
+    const locate = () => {
+      if (!cursorClient) {
+        cursor = null;
+        return;
+      }
+      const r = el.getBoundingClientRect();
+      cursor = { x: cursorClient.x - r.left, y: cursorClient.y - r.top };
+    };
+
     const build = () => {
+      // The sliding layer, not the canvas inside it. Measuring the canvas
+      // would be circular: this function also sets the canvas's own height,
+      // so the second call reads back whatever the first one wrote and the
+      // field collapses — measured at 150px against a 1027px window.
       const rect = box.getBoundingClientRect();
       w = Math.max(1, Math.round(rect.width));
       h = Math.max(1, Math.round(rect.height));
@@ -359,6 +405,7 @@ export default function NightSky() {
     };
 
     const tick = () => {
+      locate();
       const moving = settle();
       if (!moving && !cursor) {
         // Only with the pointer gone. The easing approaches zero without
@@ -382,7 +429,7 @@ export default function NightSky() {
 
     const move = (e: PointerEvent) => {
       if (still) return;
-      const rect = box.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       // A margin either side, so the light arrives before the pointer does
@@ -391,15 +438,21 @@ export default function NightSky() {
       const near =
         x > -pad && x < rect.width + pad && y > -pad && y < rect.height + pad;
       if (!near) {
-        if (!cursor) return;
-        cursor = null;
+        if (!cursorClient) return;
+        cursorClient = null;
       } else {
-        cursor = { x, y };
+        cursorClient = { x: e.clientX, y: e.clientY };
       }
       kick();
     };
 
     window.addEventListener("pointermove", move, { passive: true });
+
+    // Scrolling slides the canvas under the pointer, so the lit patch has to
+    // be recomputed — but only while there is a pointer on it to light one.
+    const unsub = drift.on("change", () => {
+      if (cursorClient) kick();
+    });
 
     const ro = new ResizeObserver(() => {
       build();
@@ -410,9 +463,10 @@ export default function NightSky() {
     return () => {
       if (raf) cancelAnimationFrame(raf);
       window.removeEventListener("pointermove", move);
+      unsub();
       ro.disconnect();
     };
-  }, []);
+  }, [drift]);
 
   return (
     <div
@@ -432,17 +486,36 @@ export default function NightSky() {
             "linear-gradient(to bottom, rgba(41, 136, 0, 0.16) 0%, rgba(41, 136, 0, 0.06) 45%, rgba(41, 136, 0, 0) 78%)",
         }}
       />
-      <canvas
-        ref={canvas}
+      {/* The window. It holds still against the band, carries the taper and
+          clips the field sliding behind it — the fade has to stay welded to
+          the foot of the band, so it cannot travel with the stars. */}
+      <div
         style={{
           position: "absolute",
           inset: 0,
-          display: "block",
-          // Thins out toward the title rather than stopping at a line.
+          overflow: "hidden",
           maskImage: SKY_MASK,
           WebkitMaskImage: SKY_MASK,
         }}
-      />
+      >
+        <motion.div
+          ref={field}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: -DRIFT,
+            bottom: -DRIFT,
+            y: reducedMotion ? 0 : drift,
+            willChange: "transform",
+          }}
+        >
+          <canvas
+            ref={canvas}
+            style={{ position: "absolute", inset: 0, display: "block" }}
+          />
+        </motion.div>
+      </div>
     </div>
   );
 }
