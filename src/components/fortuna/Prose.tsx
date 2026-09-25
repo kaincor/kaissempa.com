@@ -74,7 +74,7 @@ function blockAlign(align: Align) {
  * page rather than guessed: the intro line's baseline sits about 120px below
  * the band's top and the list begins about 50px after that.
  */
-const SKY_DROP = "92%";
+const SKY_DROP = "100%";
 
 /** Forest is the one band dark enough to flip a component's whole treatment. */
 function toneIsDark(tone: Tone) {

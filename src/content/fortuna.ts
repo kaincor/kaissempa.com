@@ -268,6 +268,9 @@ export const SECTIONS: Section[] = [
     // so there is nothing for a sweep to reveal.
     tone: "green",
     align: "right",
+    // The heading arrives, then the paragraph under it. Only those two: the
+    // persona below them brings its own entrance.
+    reveal: true,
     blocks: [
       {
         kind: "text",

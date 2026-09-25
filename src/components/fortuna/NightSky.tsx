@@ -161,17 +161,17 @@ const FIGURES: Figure[] = [
  * heading and the line under it — and not a fraction of a viewport. The field
  * carries on behind those and runs out in the gap before the numbered goals.
  *
- * The budget is narrow. Measured from the band's top edge, the goals end as
- * low as 385px on a phone, where every one of them wraps, while the band
- * itself is only 427px tall on a tablet. So the fade has about forty pixels to
- * finish in, between the last goal and the bottom of the band.
+ * The field now runs the full height of the band, so the bottom fade is a long
+ * taper that reaches nothing exactly at the foot of it. The sky thins out as
+ * the goals run out and is gone by the boundary with the section below, rather
+ * than stopping somewhere in the middle of the band's padding.
  *
  * The top one keeps it from butting hard against the cream section above once
  * the sweep has finished.
  */
 const SKY_MASK =
   "linear-gradient(to bottom, transparent 0%, #000 14%, " +
-  "#000 calc(100% - 48px), transparent calc(100% - 8px))";
+  "#000 calc(100% - 115px), transparent 100%)";
 
 /** Deterministic, so the field does not reshuffle on every resize. */
 function rng(seed: number) {
