@@ -2,12 +2,47 @@
    rather than sampled by eye. Scoped to .fortuna so each case study can carry
    its own brand without leaking into the rest of the site.
 
-   Two of the twenty-three text styles use licensed faces Kai owns — Tiempos
-   Headline for the display and Graphik for body copy. Those are declared here
-   and self-hosted. Everything else was already on Google Fonts and is loaded
-   in the layout. Until the two woff2 files are dropped into public/fonts the
-   browser falls through to the next family in each stack, which is the
-   pairing the rest of the system already uses, so nothing breaks in between. */
+   The sans is Aktiv Grotesk, which is what Fortuna's own Figma file uses, so
+   the case study is set in the product's face rather than an approximation of
+   it. Tiempos Headline carries the display. Both are licensed faces and are
+   self-hosted here; everything else was already on Google Fonts and is loaded
+   in the layout. */
+
+/* Aktiv Grotesk — Fortuna's own sans, from the product's Figma file.
+   
+   Three weights, because that is all the page asks for: 400 for running text,
+   500 for the small caps-y labels and 700 for numerals and eyebrows. The two
+   places that ask for 600 resolve up to 700, since the family ships Medium and
+   Bold either side of it and no Semibold between them.
+   
+   Subset to Latin from the retail OTFs, which carry 751 glyphs apiece and
+   weigh 73KB each as WOFF2. Trimmed to the ranges this page can actually
+   produce they are 21KB, so the whole family costs less than Graphik and
+   Tiempos did together. Nothing here falls through the way the Tiempos trial
+   cut does — the subset covers every character on the page. */
+@font-face {
+  font-family: "Aktiv Grotesk";
+  src: url("/fonts/AktivGrotesk-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aktiv Grotesk";
+  src: url("/fonts/AktivGrotesk-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aktiv Grotesk";
+  src: url("/fonts/AktivGrotesk-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 @font-face {
   font-family: "Graphik";
@@ -85,10 +120,17 @@
   /* Graphik catches what the trial cut is missing, as asked. Source Serif sits
      behind it as a last resort — it is a serif, so if a heading ever needs an
      apostrophe or a question mark it will blend better than the grotesk will. */
-  --f-display: "Tiempos Headline", "Graphik", var(--font-serif), Georgia, serif;
+  --f-display: "Tiempos Headline", "Aktiv Grotesk", var(--font-serif), Georgia,
+    serif;
   --f-serif: var(--font-serif), Georgia, serif;
-  --f-body: "Graphik", var(--font-grotesk), system-ui, sans-serif;
-  --f-grotesk: var(--font-grotesk), system-ui, sans-serif;
+  /* Aktiv first, Graphik behind it. Graphik was the stand-in while the real
+     brand face was unknown; it stays in the stack as the nearest fallback
+     rather than being deleted, so a failed font load degrades to something
+     with the same proportions instead of to system-ui. */
+  --f-body: "Aktiv Grotesk", "Graphik", var(--font-grotesk), system-ui,
+    sans-serif;
+  --f-grotesk: "Aktiv Grotesk", "Graphik", var(--font-grotesk), system-ui,
+    sans-serif;
 
   /* The measure, and with it the boundary.
      
