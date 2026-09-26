@@ -75,10 +75,9 @@ const CASE_THEMES: {
     // identical, so the same number would have been the same apparent size
     // rather than the smaller one asked for.
     size: 16,
-    // Medium rather than the Semibold the headings use. One step down, and
-    // a real cut: font-synthesis is off, so a weight with no file behind it
-    // would silently round back to Semibold.
-    weight: 500,
+    // Semibold, the same weight the headings are set in. The size stays
+    // down at 16.
+    weight: 600,
   },
 ];
 

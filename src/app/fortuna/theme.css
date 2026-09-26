@@ -90,21 +90,6 @@
   font-display: swap;
 }
 
-/* Medium, for the navbar and nothing else yet.
-
-   One step down from the Semibold the headings are set in. A real cut rather
-   than a lighter-looking one: font-synthesis is off site-wide, so without the
-   file the browser would simply serve Semibold and the weight would not
-   change at all. Subset from the trial family to exactly the same 66
-   characters as the Semibold above, so the two behave identically if this
-   ever gets used for anything longer than a menu. */
-@font-face {
-  font-family: "Tiempos Headline";
-  src: url("/fonts/TiemposHeadline-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
 
 /* The two stacks, published outside .fortuna as well as in it.
 
