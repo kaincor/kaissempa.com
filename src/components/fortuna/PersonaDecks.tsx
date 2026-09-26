@@ -86,6 +86,26 @@ const CARD_BG: Record<string, string> = {
   rose: "#999999",
 };
 
+/**
+ * Tallest card first, so the pile has a clean silhouette.
+ *
+ * The cards are stacked by their top edges, which means a card taller than
+ * the one in front of it hangs out below the bottom of the pile — measured at
+ * 40px on Frustrations, whose first card is 107 tall and whose second is 148.
+ * Putting the tallest at the front makes every other card fall inside its
+ * footprint, so the deck reads as one card until it starts dealing. It also
+ * means the biggest card is the one that stays put and the smaller ones fan
+ * out beneath it.
+ *
+ * Sorted by how much text a card carries rather than by its measured height.
+ * Every card in a column is the same width in the same face, so the two agree
+ * — checked against all ten — and this needs no layout pass, so nothing
+ * reflows after the first paint.
+ */
+function tallestFirst(items: string[]) {
+  return [...items].sort((a, b) => b.length - a.length);
+}
+
 /** Deterministic, so a card does not pick a new angle on every render. */
 function wobble(seed: number, spread: number) {
   const n = Math.sin(seed * 12.9898) * 43758.5453;
@@ -174,7 +194,7 @@ export default function PersonaDecks({
           </h4>
 
           <div style={{ display: "grid", gap: 12 }}>
-            {col.items.map((item, i) => (
+            {tallestFirst(col.items).map((item, i) => (
               <Card
                 key={item}
                 ref={(el) => {
