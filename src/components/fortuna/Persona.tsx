@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
+import PersonaBoard from "./PersonaBoard";
 import PersonaDecks from "./PersonaDecks";
 import SheetFrame from "./SheetFrame";
 import type { PersonaSheet } from "@/content/fortuna";
@@ -169,7 +170,14 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
           </div>
         </div>
 
-        <PersonaDecks columns={persona.columns} />
+        {/* Three dealt columns on a desktop, one tabbed board on anything
+            narrower. Both are rendered and CSS chooses — see theme.css. */}
+        <div className="f-persona-decks">
+          <PersonaDecks columns={persona.columns} />
+        </div>
+        <div className="f-persona-board">
+          <PersonaBoard columns={persona.columns} />
+        </div>
       </div>
     </div>
   );
