@@ -46,14 +46,15 @@ const CASE_THEMES: {
    */
   font?: string;
   /**
-   * Point size to go with it.
+   * Point size and weight to go with it.
    *
    * Kaicords is drawn small for its em — twenty is what it takes to read as
    * a menu — and any face set on a normal body pattern looks oversized at
-   * the same number. Carried with the face so the two cannot be changed
+   * the same number. Carried with the face so the three cannot be changed
    * apart.
    */
   size?: number;
+  weight?: number;
 }[] = [
   {
     prefix: "/fortuna",
@@ -65,10 +66,19 @@ const CASE_THEMES: {
     bar: "rgba(105, 189, 69, 0.42)",
     menu: "linear-gradient(270deg, rgba(105, 189, 69, 0.46) 0%, rgba(105, 189, 69, 0.52) 100%)",
     blur: 8,
-    // Aktiv Grotesk, the face Fortuna's own Figma file is built on, in
-    // place of Kaicords. Defined in src/app/fortuna/theme.css.
-    font: "var(--f-body-stack)",
-    size: 17,
+    // Tiempos Headline, the case study's own display face, in place of
+    // Kaicords. Defined in src/app/fortuna/theme.css.
+    font: "var(--f-display-stack)",
+    // Sixteen, not the seventeen Aktiv was sitting at. Measured off the two
+    // files: Tiempos Medium's cap height is 0.702em against Aktiv Medium's
+    // 0.714, and "Work" sets 2.522em wide against 2.502 — near enough
+    // identical, so the same number would have been the same apparent size
+    // rather than the smaller one asked for.
+    size: 16,
+    // Medium rather than the Semibold the headings use. One step down, and
+    // a real cut: font-synthesis is off, so a weight with no file behind it
+    // would silently round back to Semibold.
+    weight: 500,
   },
 ];
 
@@ -279,6 +289,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
             href={l.href}
             font={theme?.font}
             size={theme?.size}
+            weight={theme?.weight}
             onNavigate={() => setOpen(false)}
           >
             {l.label}
@@ -294,6 +305,7 @@ function MenuLink({
   children,
   font,
   size,
+  weight,
   onNavigate,
 }: {
   href: string;
@@ -301,6 +313,7 @@ function MenuLink({
   /** The route theme's face, if it has one. Falls back to .display. */
   font?: string;
   size?: number;
+  weight?: number;
   onNavigate: () => void;
 }) {
   const [hot, setHot] = useState(false);
@@ -318,9 +331,7 @@ function MenuLink({
         // alone everywhere else. The menu is never open while the route
         // changes, so there is nothing to animate between the two faces.
         fontFamily: font,
-        // Aktiv's Medium. Regular disappears against the glass at this size
-        // and Bold reads as a button label rather than a link.
-        fontWeight: font ? 500 : undefined,
+        fontWeight: weight,
         // .display uppercases because Kaicords' capitals are its heavy style
         // and its lowercase is the light one. No other face has that quirk,
         // and a case study set in mixed case should not have a shouting menu.
