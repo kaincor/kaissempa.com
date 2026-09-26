@@ -1,9 +1,14 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "motion/react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  type MotionValue,
+} from "motion/react";
 import { useRef } from "react";
 import FortunaWordmark from "./FortunaWordmark";
-import { hasFill, type Rich, type Token } from "@/content/fortuna";
+import type { Rich, Token } from "@/content/fortuna";
 
 /**
  * Inline runs that can flood with colour on cue.
@@ -235,15 +240,141 @@ function Run({ nodes, ghost }: { nodes: Rich; ghost: boolean }) {
 }
 
 /**
- * A filling line scrubbed by the scroll rather than fired by a cue.
+ * A run that fills word by word, in reading order, scrubbed by the scroll.
+ *
+ * The first version of this clipped the whole paragraph with one rectangle
+ * travelling left to right. That is correct only when the filled run starts
+ * at the paragraph's left edge, which this one does not: it begins mid-line
+ * after "but rather" and carries over onto the next line. A single vertical
+ * edge sweeping the block reaches the *second* line's opening words — which
+ * sit hard against the left margin — long before it reaches the first line's
+ * fragment, so the run lit up from its middle outwards.
+ *
+ * So the sweep is handed to the words themselves. Each takes a slice of the
+ * progress in the order it is read, which is the one order a line break
+ * cannot disturb, and fills across its own width inside that slice. The
+ * result still reads as one continuous front travelling through the
+ * sentence, and it starts on the first word and ends on the last wherever
+ * those happen to fall.
+ *
+ * Slices are weighted by how many characters a word carries rather than by
+ * its measured width. Close enough that the front does not visibly change
+ * pace, and it needs no layout pass — so nothing reflows after first paint
+ * and there is nothing to re-measure on resize.
+ */
+function FillChunk({
+  text,
+  color,
+  from,
+  to,
+  progress,
+  italic,
+}: {
+  text: string;
+  color: string;
+  from: number;
+  to: number;
+  progress: MotionValue<number>;
+  italic?: boolean;
+}) {
+  const clip = useTransform(
+    progress,
+    [from, to],
+    ["inset(0 100% 0 0)", "inset(0 0% 0 0)"],
+  );
+  return (
+    <span
+      style={{
+        position: "relative",
+        // Its own box, so the coloured copy on top of it is guaranteed to
+        // occupy exactly the same space. This is what the whole-line overlay
+        // could never promise \u2014 a word cannot wrap inside itself.
+        display: "inline-block",
+        fontStyle: italic ? "italic" : undefined,
+      }}
+    >
+      {text}
+      <motion.span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          color,
+          clipPath: clip,
+          pointerEvents: "none",
+        }}
+      >
+        {text}
+      </motion.span>
+    </span>
+  );
+}
+
+/** Splits a run into words and spaces, keeping both. */
+function words(text: string) {
+  return text.split(/(\s+)/).filter((t) => t.length > 0);
+}
+
+function FillRun({
+  text,
+  color,
+  progress,
+  italic,
+}: {
+  text: string;
+  color: string;
+  progress: MotionValue<number>;
+  italic?: boolean;
+}) {
+  const parts = words(text);
+  const total = parts.reduce((n, t) => n + t.length, 0);
+  // Each word's slice of the run: a prefix sum of the lengths, built as a
+  // value rather than tallied into a variable as the list is walked.
+  const edges = parts.reduce<number[]>(
+    (acc, t) => [...acc, acc[acc.length - 1] + t.length],
+    [0],
+  );
+  const spans = parts.map((t, i) => ({
+    text: t,
+    from: edges[i] / total,
+    to: edges[i + 1] / total,
+  }));
+
+  return (
+    <>
+      {spans.map((s, i) =>
+        // Spaces carry no ink, so there is nothing to reveal in them \u2014 but
+        // they still take their share of the run so the front keeps its pace
+        // across the gaps.
+        s.text.trim() === "" ? (
+          <span key={i}>{s.text}</span>
+        ) : (
+          <FillChunk
+            key={i}
+            text={s.text}
+            color={color}
+            from={s.from}
+            to={s.to}
+            progress={progress}
+            italic={italic}
+          />
+        ),
+      )}
+    </>
+  );
+}
+
+/**
+ * A paragraph whose filling runs are scrubbed by the reader's scroll.
  *
  * `FillLine` floods on a boolean, which is right where something else decides
- * the moment — the pin landing, the billboard standing up. Here the reader
+ * the moment \u2014 the pin landing, the billboard standing up. Here the reader
  * decides: the colour arrives under their thumb as they pull the line up the
  * screen, and reverses if they scroll back.
  *
- * The window is the line's own travel from low on the screen to the upper
- * third, so it is full well before the paragraph leaves — a fill still
+ * The window is the paragraph's own travel from low on the screen to the
+ * upper third, so the run is full well before it leaves \u2014 a fill still
  * finishing at the top of the viewport reads as lag, not as control.
  */
 export function ScrollFillLine({ nodes }: { nodes: Rich }) {
@@ -252,28 +383,49 @@ export function ScrollFillLine({ nodes }: { nodes: Rich }) {
     target: mark,
     offset: ["start 0.92", "end 0.42"],
   });
-  const clip = useTransform(
-    scrollYProgress,
-    [0, 1],
-    ["inset(0 100% 0 0)", "inset(0 0% 0 0)"],
-  );
 
-  if (!hasFill(nodes)) return <Run nodes={nodes} ghost={false} />;
+  if (typeof nodes === "string") return <>{nodes}</>;
 
   return (
-    <span ref={mark} style={{ position: "relative", display: "block" }}>
-      <Run nodes={nodes} ghost={false} />
-      <motion.span
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: 0,
-          clipPath: clip,
-          pointerEvents: "none",
-        }}
-      >
-        <Run nodes={nodes} ghost />
-      </motion.span>
+    <span ref={mark} style={{ display: "block" }}>
+      {nodes.map((node: Token, i) => {
+        if (typeof node === "string") return <span key={i}>{node}</span>;
+        if ("wordmark" in node)
+          return (
+            <FortunaWordmark
+              key={i}
+              dot={node.dot}
+              color={node.tone ? `var(--f-${node.tone})` : undefined}
+              title="fortuna"
+            />
+          );
+        if ("br" in node) return <br key={i} />;
+        if (node.fill)
+          return (
+            <FillRun
+              key={i}
+              text={node.text}
+              color={TONE_COLOR[node.tone ?? ""] ?? "var(--f-orange)"}
+              progress={scrollYProgress}
+              italic={node.italic}
+            />
+          );
+        return (
+          <span
+            key={i}
+            style={{
+              ...(node.italic ? { fontStyle: "italic" } : null),
+              ...(node.tone === "dim"
+                ? { opacity: 0.5 }
+                : node.tone
+                  ? { color: TONE_COLOR[node.tone] }
+                  : null),
+            }}
+          >
+            {node.text}
+          </span>
+        );
+      })}
     </span>
   );
 }
