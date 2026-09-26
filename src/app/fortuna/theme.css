@@ -1,0 +1,356 @@
+/* Fortuna's identity, lifted from the Framer project's colour and text styles
+   rather than sampled by eye. Scoped to .fortuna so each case study can carry
+   its own brand without leaking into the rest of the site.
+
+   The sans is Aktiv Grotesk, which is what Fortuna's own Figma file uses, so
+   the case study is set in the product's face rather than an approximation of
+   it. Tiempos Headline carries the display. Both are licensed faces and are
+   self-hosted here; everything else was already on Google Fonts and is loaded
+   in the layout. */
+
+/* Aktiv Grotesk — Fortuna's own sans, from the product's Figma file.
+   
+   Three weights, because that is all the page asks for: 400 for running text,
+   500 for the small caps-y labels and 700 for numerals and eyebrows. The two
+   places that ask for 600 resolve up to 700, since the family ships Medium and
+   Bold either side of it and no Semibold between them.
+   
+   Subset to Latin from the retail OTFs, which carry 751 glyphs apiece and
+   weigh 73KB each as WOFF2. Trimmed to the ranges this page can actually
+   produce they are 21KB, so the whole family costs less than Graphik and
+   Tiempos did together. Nothing here falls through the way the Tiempos trial
+   cut does — the subset covers every character on the page. */
+@font-face {
+  font-family: "Aktiv Grotesk";
+  src: url("/fonts/AktivGrotesk-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aktiv Grotesk";
+  src: url("/fonts/AktivGrotesk-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aktiv Grotesk";
+  src: url("/fonts/AktivGrotesk-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-RegularItalic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Tiempos Headline — the trial cut, standing in until the retail file arrives.
+   
+   It names itself "Test Tiempos Headline SmB" and carries 66 glyphs against
+   Graphik's 375: no apostrophe, question mark, brackets, ampersand or dashes.
+   That is survivable because a font stack falls back per GLYPH, not per
+   element — the browser sets each character in the first family that has it,
+   so the letters come from Tiempos and anything it lacks comes from the next
+   family along without the heading changing face wholesale.
+   
+   Across every heading on the page today exactly one character falls through:
+   the + in "Promotional video shoots + flyers".
+   
+   Swapping in the licensed file means replacing this one URL. Nothing else
+   changes, because the family name stays the same. */
+@font-face {
+  font-family: "Tiempos Headline";
+  src: url("/fonts/TiemposHeadline-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* The two stacks, published outside .fortuna as well as in it.
+
+   The navbar is a sibling of the page in the root layout, not a descendant of
+   it, so a variable scoped to .fortuna cannot reach it — and the bar already
+   travels with the case study's colour, so it should travel with its face
+   too. Declared once here and referenced from .fortuna below, so swapping in
+   the retail Tiempos file is still a single edit. This sheet only loads on
+   this route, so nothing else on the site can pick it up. */
+:root {
+  --f-display-stack: "Tiempos Headline", "Aktiv Grotesk", var(--font-serif),
+    Georgia, serif;
+  --f-body-stack: "Aktiv Grotesk", "Graphik", var(--font-grotesk), system-ui,
+    sans-serif;
+}
+
+.fortuna {
+  /* Straight from Fortuna's own colors.js, which is the authority — the Framer
+     styles had drifted from it in two places. Nothing on this page may use a
+     colour that is not in here. */
+  --f-cream: #f7f5f0;        /* PRIMARY.BACKGROUND */
+  --f-cream-deep: #f2f0eb;   /* COMPLEMENTARY.DARK_BACKGROUND */
+  --f-card: #ebe9e4;         /* COMPLEMENTARY.DISABLED_BACKGROUND */
+  --f-forest: #32443e;       /* COMPLEMENTARY.DARK_PETROL_GREEN */
+  --f-petrol: #6f8b81;       /* PRIMARY.PETROL_GREEN */
+  --f-petrol-light: #aec6ba; /* COMPLEMENTARY.LIGHT_PETROL_GREEN */
+  --f-green: #69bd45;        /* PRIMARY.GREEN */
+  --f-green-dark: #298800;   /* COMPLEMENTARY.DARK_GREEN */
+  --f-green-light: #ade495;  /* COMPLEMENTARY.LIGHT_GREEN */
+  --f-red: #f34545;          /* PRIMARY.RED */
+  --f-red-light: #ff8989;    /* COMPLEMENTARY.LIGHT_RED */
+  --f-orange: #f58120;       /* PRIMARY.ORANGE — was #ff8100 in Framer */
+  --f-brown: #736f5c;        /* PRIMARY.BROWN */
+  --f-brown-dark: #63604f;   /* COMPLEMENTARY.DARK_BROWN */
+  --f-ring: #c6c6c6;         /* PRIMARY.GREY */
+  --f-muted: #999999;        /* COMPLEMENTARY.MEDIUM_DARK_GREY */
+
+  /* Running text. Nearest brand colour to the 6D716F you quoted: DARK_GREY is
+     a neutral like that value is, and clears contrast on cream at 6.4:1.
+     BROWN (#736f5c) is marginally closer arithmetically but reads khaki. */
+  --f-ink: #616161;          /* COMPLEMENTARY.DARK_GREY */
+
+  /* The tinted box behind a pull-out. Forest at 6%, straight from Framer. */
+  --f-callout: rgba(50, 68, 62, 0.06);
+
+  /* Graphik catches what the trial cut is missing, as asked. Source Serif sits
+     behind it as a last resort — it is a serif, so if a heading ever needs an
+     apostrophe or a question mark it will blend better than the grotesk will. */
+  --f-display: var(--f-display-stack);
+  --f-serif: var(--font-serif), Georgia, serif;
+  /* Aktiv first, Graphik behind it. Graphik was the stand-in while the real
+     brand face was unknown; it stays in the stack as the nearest fallback
+     rather than being deleted, so a failed font load degrades to something
+     with the same proportions instead of to system-ui. */
+  --f-body: var(--f-body-stack);
+  --f-grotesk: var(--f-body-stack);
+
+  /* The measure, and with it the boundary.
+     
+     Framer caps the column at 720 and the paragraph at 660 — a heading runs a
+     little wider than the body under it. But a fixed cap plus fixed padding
+     produces wildly different margins: at 1280 the cap alone leaves 22% of the
+     screen empty each side, while at 768 the cap is never reached and the
+     margin is whatever the padding was, about 3%. Desktop looked composed and
+     tablet looked like text jammed against the glass.
+     
+     Making the column fluid puts them on the same footing. 62vw between a
+     300px floor and the 720px cap lands the boundary at roughly 10% on a
+     phone, 19% on a tablet and 19-22% on a desktop, so the proportion holds
+     from tablet up and a phone keeps the wider column it needs to stay
+     readable. */
+  /* Running text. Was 20px at the top end, straight from Framer, which read
+     heavy on screen, and 18 was still a shade loud; 17 sits right. One value, because
+     body copy, callouts and lists all have to agree. */
+  --f-body-size: clamp(15px, 1.35vw, 17px);
+
+  /* Type for the green band.
+     
+     Forest itself lands at 4.41:1 on #69bd45 — a hair under AA, which is a
+     silly place to stop. Fifteen per cent deeper takes it to 5.11:1 and still
+     reads as the same colour. Nothing lighter works: cream on Fortuna green is
+     2.15:1 and white is worse, so a green band has to carry dark type. */
+  --f-forest-deep: #2a3a35;
+
+  --f-measure: clamp(300px, 62vw, 720px);
+  --f-measure-body: min(660px, 100%);
+
+  background: var(--f-cream);
+  color: var(--f-ink);
+  font-family: var(--f-body);
+}
+
+/* The globe's frame.
+   
+   On anything wider than a phone it behaves: it sits inside the column and
+   stops at 760. On a phone the column is 300px wide, which renders the globe
+   at 40% of the size it was drawn for and the pin at thirteen pixels — legible
+   in theory, nothing anyone would look at.
+   
+   So on a phone it breaks out of the column and runs 125vw wide, which puts
+   exactly a tenth of the globe past each edge of the screen. (120vw would be
+   the obvious number and is the wrong one: the overflow is a share of the
+   viewport, and what gets clipped is a share of the globe — 8.3%, not 10.) `50%` resolves against the column, so the left edge lands at the
+   column's centre and the negative half-width pulls it back: centred on the
+   viewport without a transform, which matters because the entrance is already
+   using this element's transform for the lift and the growth. */
+.fortuna .f-globe-frame {
+  width: min(var(--f-globe-max, 760px), 100%);
+  /* Tight to the caption above — the line names what the picture shows, so
+     they should read as one unit — and open underneath, so the green sweeping
+     up from the next band has some empty cream to cross first. */
+  margin: 8px auto clamp(28px, 5vh, 64px);
+}
+
+@media (max-width: 640px) {
+  .fortuna .f-globe-frame {
+    width: 125vw;
+    margin: 6px 0 clamp(24px, 4vh, 48px) calc(50% - 62.5vw);
+  }
+}
+
+/* The bleed would otherwise be a horizontal scrollbar. `clip` rather than
+   `hidden`: `hidden` turns the element into a scroll container, which would
+   take over as the containing block for anything sticky inside it. */
+.fortuna {
+  overflow-x: clip;
+}
+
+/* ---- the persona panels -------------------------------------------------
+
+   Two ramps rather than one. Needs are cool and Frustrations are warm, which
+   is the same distinction the original persona sheet drew in yellow and red —
+   without leaving the palette. Both walk from the band's deep forest toward
+   its lighter neighbours and stop while cream type still clears AA on the last
+   step: 5.88:1 on the coolest, 5.45:1 on the warmest. Going any further hits
+   petrol, where neither cream nor forest is readable. */
+.fortuna {
+  --f-need-1: #2a3a35;
+  --f-need-2: #36483f;
+  --f-need-3: #42564a;
+  --f-need-4: #4e6455;
+
+  --f-frus-1: #45403a;
+  --f-frus-2: #524b41;
+  --f-frus-3: #5f5748;
+  --f-frus-4: #6c634f;
+}
+
+/* The row. One panel takes the slack, the rest sit at a fixed pill width.
+   `flex-grow` is the animated property, so nothing is measured in JavaScript
+   and the row reflows itself at any container width. */
+.f-panels {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  min-height: 132px;
+}
+
+.f-panel {
+  position: relative;
+  flex: 0 0 auto;
+  flex-grow: var(--grow, 0);
+  flex-basis: 54px;
+  min-width: 54px;
+  border: 0;
+  border-radius: 16px;
+  padding: 0;
+  color: var(--f-cream);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    flex-grow 460ms cubic-bezier(0.22, 0.61, 0.24, 1),
+    flex-basis 460ms cubic-bezier(0.22, 0.61, 0.24, 1);
+}
+
+.f-panel:focus-visible {
+  outline: 2px solid var(--f-cream);
+  outline-offset: 3px;
+}
+
+/* The body copy of the open panel. Held at full size and faded rather than
+   unmounted, so the text does not reflow while the panel is still widening. */
+.f-panel-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  font-family: var(--f-body);
+  font-size: var(--f-body-size);
+  line-height: 1.55;
+  letter-spacing: -0.02em;
+  opacity: 0;
+  transition: opacity 260ms ease;
+  pointer-events: none;
+}
+.f-panel[data-open="true"] .f-panel-body {
+  opacity: 1;
+  transition: opacity 300ms ease 160ms;
+}
+
+/* The numeral on a closed panel, upright and centred in the pill. */
+.f-panel-tab {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--f-grotesk);
+  font-weight: 700;
+  font-size: 14px;
+  opacity: 0.85;
+  transition: opacity 200ms ease;
+}
+.f-panel[data-open="true"] .f-panel-tab {
+  opacity: 0;
+}
+
+/* Below tablet the row becomes a stack and every panel is simply open. There
+   is nothing to discover in four short lines, and on a phone an accordion
+   only charges the reader taps to read them. */
+@media (max-width: 767px) {
+  .f-panels {
+    flex-direction: column;
+    min-height: 0;
+  }
+  .f-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    cursor: default;
+  }
+  .f-panel-body {
+    position: static;
+    opacity: 1;
+    transition: none;
+  }
+  .f-panel-tab {
+    display: none;
+  }
+}
+
+/* The persona sheet's two card treatments, swapped at the tablet boundary.
+
+   A media query rather than a matchMedia hook in the component. The hook
+   cannot know the viewport during the server render, so the first paint would
+   always be the desktop decks and a phone would visibly swap them out for the
+   board once JavaScript arrived. Both are in the markup and CSS picks; the
+   hidden one is display:none, so it is out of the accessibility tree and its
+   entrance never triggers.
+
+   1024 rather than the point where the three columns actually break (about
+   646px). Above that the columns are fine on their own, and an iPad held
+   either way should get the board — it is a touch interaction. */
+@media (max-width: 1024px) {
+  .f-persona-decks {
+    display: none;
+  }
+}
+
+@media (min-width: 1025px) {
+  .f-persona-board {
+    display: none;
+  }
+}

@@ -75,7 +75,9 @@ export default function About() {
         flexDirection: "column",
         alignItems: "center",
         gap: 55,
-        padding: "0 30px 35px",
+        // The bottom value scales: 35px is right under desktop-sized copy and
+        // reads as a hole under the much smaller type on a phone.
+        padding: "0 30px clamp(10px, 2.2vw, 35px)",
       }}
     >
       <FanDeck cards={PHOTOS} frameHeight={460} />

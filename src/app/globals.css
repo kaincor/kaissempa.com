@@ -66,7 +66,11 @@ body {
    life. Inside @supports the declaration is passed through untouched. */
 @supports (backdrop-filter: blur(1px)) {
   .glass {
-    backdrop-filter: blur(32px);
+    /* Saturation alongside the blur. A heavy blur averages everything behind
+       it towards grey, which is what makes a tinted bar read as flat paint;
+       pushing saturation back up keeps the colours that are passing underneath
+       legible as colours, which is the thing the eye reads as glass. */
+    backdrop-filter: blur(26px) saturate(180%);
   }
 }
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Geist } from "next/font/google";
+import { Geist, Hanken_Grotesk, Source_Serif_4 } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import "./globals.css";
 
@@ -16,6 +16,23 @@ const kaicords = localFont({
 
 const geist = Geist({
   variable: "--font-body",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+// Fortuna's pairing. Twenty-one of that project's twenty-three text styles are
+// built on these two, so they are the case study's real typography rather than
+// a fallback — Tiempos Headline and Graphik cover only the display and body
+// styles on top. Loaded here because next/font has to run at module scope.
+const sourceSerif = Source_Serif_4({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const hanken = Hanken_Grotesk({
+  variable: "--font-grotesk",
   subsets: ["latin"],
   display: "swap",
 });
@@ -48,7 +65,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${kaicords.variable} ${geist.variable} h-full antialiased`}
+      className={`${kaicords.variable} ${geist.variable} ${sourceSerif.variable} ${hanken.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Navbar />

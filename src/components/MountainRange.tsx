@@ -14,6 +14,17 @@ export type MountainRangeProps = {
   /** Pixels to sink the ridge below the fold, so less of it shows at rest. */
   drop?: number;
   /**
+   * Percent to stretch the silhouette past each side of the screen.
+   *
+   * Range 1's path stops short of its viewBox edges — measured at 1280 wide,
+   * 8px bare at the left foot and 12px at the right, at every height. Those
+   * columns are a window onto whatever is layered behind, and behind them at
+   * the bottom of the hero is the seam between the back ridge and its filler.
+   * Everywhere else this silhouette hides that seam; in those two columns it
+   * does not, which is the one place a hairline could show through.
+   */
+  overscan?: number;
+  /**
    * Padding under the section's content. Defaults to `rise`, which stops the
    * lift exposing page background when nothing follows. Pass 0 when the next
    * section already extends this colour upward behind itself.
@@ -22,6 +33,32 @@ export type MountainRangeProps = {
   /** Content for the solid section below the ridge. */
   children?: ReactNode;
 };
+
+/**
+ * The lift MountainRange applies, as a motion value.
+ *
+ * Exported because anything that has to stay welded to the bottom of a
+ * MountainRange has to move by exactly this, and a hard-coded number will not
+ * do it. The lift saturates after one viewport of scrolling, so on a tall
+ * screen a block further down the page can assume it has already finished and
+ * cancel it with a constant. On a short screen the section above is short too,
+ * the next block reaches the viewport after a couple of hundred pixels of
+ * scrolling, and that assumption is simply false — the constant overshoots by
+ * whatever the lift has not done yet.
+ */
+export function useRangeLift(rise: number) {
+  const { scrollY } = useScroll();
+  const [vh, setVh] = useState(0);
+
+  useEffect(() => {
+    const sync = () => setVh(window.innerHeight);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
+
+  return useTransform(scrollY, [0, vh || 1], [0, -rise]);
+}
 
 /**
  * A full-bleed ridge whose base rests on the bottom of the viewport at rest,
@@ -39,21 +76,14 @@ export default function MountainRange({
   color = "#000000",
   rise = 140,
   drop = 28,
+  overscan = 0,
   padBottom,
   children,
 }: MountainRangeProps) {
   const reduced = useReducedMotion();
-  const { scrollY } = useScroll();
-  const [vh, setVh] = useState(0);
-
-  useEffect(() => {
-    const sync = () => setVh(window.innerHeight);
-    sync();
-    window.addEventListener("resize", sync);
-    return () => window.removeEventListener("resize", sync);
-  }, []);
-
-  const y = useTransform(scrollY, [0, vh || 1], [0, -rise]);
+  const y = useRangeLift(rise);
+  // Pins the skirt below to the hero's edge while this block parallaxes.
+  const counter = useTransform(y, (v) => -v);
 
   return (
     <motion.div
@@ -64,13 +94,46 @@ export default function MountainRange({
         willChange: "transform",
       }}
     >
+      {/* The skirt.
+
+          The layer behind the 3D scene hangs a full viewport of black under
+          its own silhouette, and that is what keeps the bottom of the hero
+          covered. But the hero clips it, and once `drop` sinks this ridge far
+          enough that its section starts below the hero's edge, the strip in
+          between is backed by nothing at all: the only black there is this
+          silhouette, so every valley in it shows page grey. Measured at
+          drop 56, that was a 55px strip with 108px of its width bare.
+
+          So this fills exactly that strip. It is pinned to the hero's edge
+          rather than carried along with the parallax — the block it belongs to
+          rides up as the reader scrolls, and a skirt that rode with it would
+          climb into the sky and black out the valleys of the ridge behind.
+          Three pixels of overlap upward, into territory the layer behind is
+          already painting black, to bury the seam. */}
+      {drop > 0 ? (
+        <motion.div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: -3,
+            left: 0,
+            right: 0,
+            height: drop + 3,
+            background: color,
+            y: reduced ? 0 : counter,
+            pointerEvents: "none",
+          }}
+        />
+      ) : null}
+
       <svg
         viewBox={range.viewBox}
         preserveAspectRatio="none"
-        width="100%"
+        width={`${100 + overscan * 2}%`}
         height={height}
         style={{
           display: "block",
+          marginLeft: `${-overscan}%`,
           // Pulls the ridge up over the section above so its base lands on the
           // bottom edge of the viewport at scroll 0, less `drop` to sink it.
           marginTop: `calc(${drop}px - (${height}))`,
@@ -91,9 +154,10 @@ export default function MountainRange({
       <section
         style={{
           background: color,
-          // Covers sub-pixel rounding where the path stops a fraction short of
-          // the viewBox floor, which would otherwise show as a hairline seam.
-          marginTop: -1,
+          // Four rather than one, for the same reason the layer behind laps
+          // four: two black edges that merely touch each antialias against the
+          // backdrop and leave a light line between them.
+          marginTop: -4,
           // The whole block rides upward, so without this the lift would expose
           // page background below the last section.
           paddingBottom: Math.max(padBottom ?? rise, 0),
