@@ -269,7 +269,7 @@ export const SECTIONS: Section[] = [
     id: "goals",
     heading: "Our North Stars",
     tone: "green",
-    align: "left",
+    align: "center",
     reveal: true,
     rise: true,
     sky: true,
@@ -302,7 +302,7 @@ export const SECTIONS: Section[] = [
     // stretch of the page. No `rise` — the band above is already this colour,
     // so there is nothing for a sweep to reveal.
     tone: "green",
-    align: "right",
+    align: "center",
     // The heading arrives, then the paragraph under it. Only those two: the
     // persona below them brings its own entrance.
     reveal: true,
@@ -313,8 +313,7 @@ export const SECTIONS: Section[] = [
       },
       { kind: "persona", persona: SARAH },
       {
-        kind: "quote",
-        tone: "red",
+        kind: "text",
         text: "Sarah didn't think the job applications were horrid. They just assumed she had time to search when she didn't.",
       },
       { kind: "figure", note: "Draw up framework" },
