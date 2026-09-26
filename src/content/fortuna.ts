@@ -345,11 +345,15 @@ export const SECTIONS: Section[] = [
     blocks: [
       {
         kind: "text",
-        text: "Job seekers were vexed by the apply → wait → hear nothing → apply again hamster wheel.",
+        text: "We expanded Sarah's persona to get a clearer picture of Job Seekers in Miami. Job Seekers were vexed by the apply ➡️ wait ➡️ hear nothing ➡️ apply again hamster wheel.",
       },
       {
         kind: "text",
-        text: "Searching for work had become work itself. Every step demanded something from the job seeker: attention to search, judgement to filter, effort to tailor, patience to wait. So by the time someone finally reached an application, they had already spent hours working just to get there. We didn't just want to make applying faster. We wanted to make the work of looking for work feel lighter.",
+        text: "Searching for work had become work itself. Every step demanded something from the Job Seeker: attention to search, judgement to filter, patience to wait. So basically by the time someone finally reached an application, they'd already spent hours working just to get there.",
+      },
+      {
+        kind: "text",
+        text: "We didn't just want to make applying faster. We wanted Fortuna to make the work of looking for work feel lighter.",
       },
       {
         kind: "quote",
