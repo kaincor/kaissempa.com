@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 import PersonaDecks from "./PersonaDecks";
+import SheetFrame from "./SheetFrame";
 import type { PersonaSheet } from "@/content/fortuna";
 
 /**
@@ -38,6 +39,9 @@ const SHEET = {
  * It holds across the top and down both sides as far as the cards, then trails
  * away — so there is no bottom edge, and the frame reads as something the
  * cards are dealt out of rather than a box they are shut inside.
+ *
+ * This is also where the drawing animation appears to finish: the outline
+ * keeps going to the bottom corners, but the reader never sees past here.
  */
 const FRAME_FADE =
   "linear-gradient(to bottom, #000 0%, #000 44%, rgba(0,0,0,0.35) 72%, transparent 92%)";
@@ -92,18 +96,7 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
     >
       {/* The outline. Its own layer, because the mask that fades it out would
           otherwise take the contents of the sheet with it. */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: 0,
-          border: `2px solid ${SHEET.stroke}`,
-          borderRadius: 12,
-          maskImage: FRAME_FADE,
-          WebkitMaskImage: FRAME_FADE,
-          pointerEvents: "none",
-        }}
-      />
+      <SheetFrame radius={12} width={2} color={SHEET.stroke} fade={FRAME_FADE} />
       <div style={{ padding: "clamp(20px, 3.4vw, 34px)" }}>
         {/* Who she is, then her situation. Two columns where there is room for
             two — the sheet's own three do not survive a 620px measure, and the
