@@ -36,19 +36,37 @@ const DOT_COLOR = "64, 68, 67";
 /**
  * The pin's impact.
  *
- * A ring that travels out from Miami and dies, rather than a patch that
- * swells and shrinks: a ring is what a surface actually does when something
- * lands on it, and it costs the same. Deliberately small and short — this is
- * a flinch, not an event.
+ * Rings that travel out from Miami and die, rather than a patch that swells
+ * and shrinks: a ring is what a surface actually does when something lands on
+ * it, and it costs the same.
+ *
+ * It was a flinch and is now a strike. The first pass was deliberately small
+ * — six pixels of throw over a hundred, gone in six hundred milliseconds —
+ * and read as the dots being jostled rather than as something landing on
+ * them. Everything here is roughly doubled, and the crest brightens the dots
+ * it passes through as well as moving them, which is what carries the wave
+ * out to where the displacement alone has gone too small to see.
  */
-const SHOCK_MS = 620;
-/** How far the ring gets, in frame units. */
-const SHOCK_REACH = 104;
+const SHOCK_MS = 1000;
+/** How far the leading ring gets, in frame units. */
+const SHOCK_REACH = 178;
 /** Peak displacement of a dot sitting exactly on the ring, in frame units. */
-const SHOCK_AMP = 6.2;
+const SHOCK_AMP = 13;
 /** Thickness of the ring. Wider reads as a wobble, tighter as a glitch. */
-const SHOCK_BAND = 15;
-/** Everything the ring can ever touch, squared, for one cheap early-out. */
+const SHOCK_BAND = 19;
+/**
+ * The wake: a second, weaker ring following the first.
+ *
+ * One ring is an edge travelling outward; two are a wave. It trails by rather
+ * more than a band width, so the two crests never merge into one thick one,
+ * and it carries a third of the throw — enough to read as the surface still
+ * settling behind the front, not as a second impact.
+ */
+const SHOCK_WAKE = 46;
+const SHOCK_WAKE_AMP = 0.34;
+/** How much brighter and fatter a dot at the crest is drawn. */
+const SHOCK_FLARE = 0.85;
+/** Everything the rings can ever touch, squared, for one cheap early-out. */
 const SHOCK_MAX_SQ = (SHOCK_REACH + SHOCK_BAND * 2) ** 2;
 
 export default function GlobeCanvas({
@@ -83,6 +101,8 @@ export default function GlobeCanvas({
     // running it through the cursor's spring would smear the ring into a blur.
     const rx = new Float32Array(n);
     const ry = new Float32Array(n);
+    /** How hard the crest is currently sitting on each dot, 0–1. */
+    const rf = new Float32Array(n);
 
     let cursor: { x: number; y: number } | null = null;
     let spin = still ? SPIN_RAD : 0;
@@ -134,12 +154,16 @@ export default function GlobeCanvas({
         const fy = CY + sy;
         if (fy > H + 8) continue;
 
-        ctx.globalAlpha = 0.06 + 0.92 * z;
+        // A dot the wave is passing through lifts as well as moves. Zero for
+        // every dot at rest, so this costs two multiplies and a clamp on a
+        // loop that is already doing an arc and a fill.
+        const flare = rf[i] * SHOCK_FLARE;
+        ctx.globalAlpha = Math.min(1, (0.06 + 0.92 * z) * (1 + flare));
         ctx.beginPath();
         ctx.arc(
           (CX + sx + ox[i] + rx[i]) * k,
           (fy + oy[i] + ry[i]) * k,
-          (0.3 + 0.95 * z) * k,
+          (0.3 + 0.95 * z) * (1 + flare * 0.6) * k,
           0,
           6.2832,
         );
@@ -160,12 +184,19 @@ export default function GlobeCanvas({
         shockFrom = 0;
         rx.fill(0);
         ry.fill(0);
+        rf.fill(0);
         return false;
       }
 
       const ring = age * SHOCK_REACH;
-      // Squared falloff, so it leaves quietly rather than switching off.
-      const amp = SHOCK_AMP * (1 - age) ** 2;
+      // The wake starts behind the impact point and only becomes a ring once
+      // the front has travelled far enough to leave room for it.
+      const wake = ring - SHOCK_WAKE;
+      // Falls off between linear and squared. Squared alone spends almost
+      // everything in the first third of the travel — measured at a quarter
+      // of the peak by the halfway mark — which made the far half of a wider
+      // ring invisible and wasted the extra reach. It still leaves quietly.
+      const amp = SHOCK_AMP * (1 - age) ** 1.5;
       const ca = Math.cos(spin);
       const sa = Math.sin(spin);
 
@@ -179,6 +210,7 @@ export default function GlobeCanvas({
         if (sq > SHOCK_MAX_SQ) {
           rx[i] = 0;
           ry[i] = 0;
+          rf[i] = 0;
           continue;
         }
         const dist = Math.sqrt(sq);
@@ -186,14 +218,21 @@ export default function GlobeCanvas({
         // A triangular band instead of a gaussian: an exp per dot per frame
         // buys nothing the eye can see at this size.
         const band = off > 1 || off < -1 ? 0 : 1 - Math.abs(off);
-        if (band === 0 || dist < 0.001) {
+        const woff = (dist - wake) / SHOCK_BAND;
+        const wband = woff > 1 || woff < -1 ? 0 : 1 - Math.abs(woff);
+        const pull = band + wband * SHOCK_WAKE_AMP;
+        if (pull === 0 || dist < 0.001) {
           rx[i] = 0;
           ry[i] = 0;
+          rf[i] = 0;
           continue;
         }
-        const f = (amp * band) / dist;
+        const f = (amp * pull) / dist;
         rx[i] = dx * f;
         ry[i] = dy * f;
+        // The light rides the front only. Putting it on the wake as well
+        // would read as two impacts rather than one wave.
+        rf[i] = band * (1 - age);
       }
       return true;
     };
