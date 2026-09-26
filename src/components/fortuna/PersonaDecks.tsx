@@ -63,6 +63,8 @@ const HEAD_GAP = LIFT + 20;
 /** One card's flight, and the gap between one leaving and the next. */
 const FLIGHT = 1.05;
 const STAGGER = 0.3;
+/** How far behind Goals each pile starts. */
+const COLUMN_LEAD = 0.13;
 
 /**
  * A neutral ramp rather than the sheet's yellow and red.
@@ -133,18 +135,14 @@ export default function PersonaDecks({
     };
   }, [measure]);
 
-  // One dealing order across all three piles: the first card of every pile,
-  // then the second of every pile, and so on. Counted densely, skipping the
-  // piles that have run out — a place kept for a card that does not exist
-  // would show up as a pause in the middle of the deal.
-  const rows = Math.max(...columns.map((c) => c.items.length));
-  const order = new Map<string, number>();
-  let k = 0;
-  for (let i = 1; i < rows; i++) {
-    for (let ci = 0; ci < columns.length; ci++) {
-      if (i < columns[ci].items.length) order.set(`${ci}:${i}`, k++);
-    }
-  }
+  // Each pile deals its own cards in turn, with the piles set going a beat
+  // apart. One strict queue across all three read better in principle — one
+  // dealer going round — but it put the last card of the longest pile seventh
+  // in line, which left it hanging in the air for nearly three seconds after
+  // the first had landed. Long enough that a reader scrolling at any pace
+  // arrived to find two cards still up. Dealing the piles alongside each other
+  // keeps every card's own flight as slow as it was and gets the whole hand
+  // down in under two.
 
   return (
     <motion.div
@@ -184,7 +182,8 @@ export default function PersonaDecks({
                 }}
                 started={started}
                 from={tops[ci]?.[i] ?? 0}
-                order={i === 0 ? -1 : (order.get(`${ci}:${i}`) ?? 0)}
+                order={i === 0 ? -1 : i - 1}
+                lead={ci * COLUMN_LEAD}
                 seed={ci * 17 + i * 5 + 1}
                 bg={CARD_BG[col.tone]}
                 still={!!reduced}
@@ -204,6 +203,7 @@ function Card({
   started,
   from,
   order,
+  lead,
   seed,
   bg,
   still,
@@ -213,8 +213,10 @@ function Card({
   started: boolean;
   /** Pixels this card sits below the top of its column when laid out. */
   from: number;
-  /** Place in the dealing order, or -1 for the card already on the table. */
+  /** Place in this pile's dealing order, or -1 for the card already down. */
   order: number;
+  /** Seconds this whole pile waits before it starts dealing. */
+  lead: number;
   seed: number;
   bg: string;
   still: boolean;
@@ -232,10 +234,10 @@ function Card({
       duration: FLIGHT,
       // Away from the pile without hurry, then a long glide onto the table.
       ease: [0.28, 0.72, 0.2, 1],
-      delay: order < 0 ? 0 : order * STAGGER,
+      delay: order < 0 ? 0 : lead + order * STAGGER,
     });
     return () => controls.stop();
-  }, [started, order, still, dealt]);
+  }, [started, order, lead, still, dealt]);
 
   // The top card of a pile is already home; it only has the lift to give back.
   const rise = order < 0 ? LIFT : from + LIFT;
