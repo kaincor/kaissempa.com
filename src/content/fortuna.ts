@@ -34,11 +34,16 @@ export type BrandColor =
  */
 export type Token =
   | string
-  /** `dot: false` drops the lockup's orange full stop, for mid-sentence use. */
-  | { wordmark: true; dot?: boolean }
+  /**
+   * `dot: false` drops the lockup's orange full stop, for mid-sentence use.
+   *
+   * The lockup is drawn in brand green, which is right on cream and invisible
+   * on the green band — same colour, exactly. `tone` overrides it there.
+   */
+  | { wordmark: true; dot?: boolean; tone?: BrandColor }
   | {
       text: string;
-      tone: "orange" | "green" | "brown" | "dim";
+      tone: "orange" | "green" | "brown" | "cream" | "dim";
       /** Starts the colour of the sentence and floods in, left to right. */
       fill?: boolean;
     };
@@ -57,7 +62,13 @@ export type Block =
     }
   /** Set in italics in the doc — rendered as a serif pull-quote. */
   /** `tone` picks a brand colour for a line that has to land harder. */
-  | { kind: "quote"; text: Rich; tone?: BrandColor }
+  | {
+      kind: "quote";
+      text: Rich;
+      tone?: BrandColor;
+      /** The same centred rules a ruled finding gets, above and below. */
+      rules?: boolean;
+    }
   /** The tinted box: one line that needs to land harder than body copy. */
   | { kind: "callout"; text: Rich; reveal?: boolean }
   | { kind: "subheading"; text: string }
@@ -311,7 +322,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "reflections",
-    heading: "Personal reflections on issues",
+    heading: "Seeing Sarah",
     // Green as well, so the research runs as one stretch of colour from the
     // goals to here. Data frameworks below it keeps its cream and ends the run.
     tone: "green",
@@ -322,15 +333,29 @@ export const SECTIONS: Section[] = [
     blocks: [
       {
         kind: "text",
-        text: "If you really get into the nitty gritty of what Sarah needs, it isn't really a job. The jobs? They're out there. Sarah? She's there too. But between these two things are lengthy commutes, childcare stuff, a carousel of applications, a waiting game. But all that really just boils down to friction. Sarah just needs to reduce the friction between her current reality and the life she wants to build.",
-      },
-      {
-        kind: "quote",
-        text: "So the challenge is not to “help Sarah apply to jobs”, but “how do we reduce the cognitive, emotional and logistical costs of getting back to work?”",
+        text: "If you really get into the nitty gritty of what Sarah needs, it isn't really a job. The jobs? They're out there. But sitting between Sarah and a job are lengthy commutes, childcare stuff, a carousel of applications, a waiting game (that may all lead to nothing). It all really just boils down to friction. Sarah just needs to reduce the friction between her current reality and the life she wants to build.",
       },
       {
         kind: "text",
-        text: "What I find most compelling about Sarah is how she changed the way I understood the product itself. Fortuna isn't fundamentally in the business of matching people to jobs: it's more in the business of reducing the friction between someone's current reality and the life they want to build.",
+        // The question is lifted out of the running ink into the band's cream,
+        // so the line the section turns on is the one thing on the page that
+        // is not the colour of everything around it — and the quote below
+        // repeats it back.
+        text: [
+          "I feel like I was finally seeing Sarah's situation, she changed the way I wanted the product to work. Fundamentally, ",
+          // Green on the green band would be the same colour as the band.
+          { wordmark: true, dot: false, tone: "forest-deep" },
+          " isn't just job matching. It's more of a means to reduce the friction between someone's current reality and the life they want to build. So the challenge is not to just “help Sarah apply to jobs”, but rather ",
+          {
+            text: "“how do we reduce the cognitive, emotional, and logistical costs of getting back to work?”",
+            tone: "cream",
+          },
+        ],
+      },
+      {
+        kind: "quote",
+        rules: true,
+        text: "How do we reduce the cost of getting back to work?",
       },
     ],
   },

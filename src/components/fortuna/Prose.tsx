@@ -85,6 +85,7 @@ const TONE_COLOR: Record<string, string> = {
   orange: "var(--f-orange)",
   green: "var(--f-green)",
   brown: "var(--f-brown)",
+  cream: "var(--f-cream)",
 };
 
 /**
@@ -101,7 +102,14 @@ export function Inline({ nodes }: { nodes: Rich }) {
       {nodes.map((node: Token, i) => {
         if (typeof node === "string") return <span key={i}>{node}</span>;
         if ("wordmark" in node)
-          return <FortunaWordmark key={i} dot={node.dot} title="fortuna" />;
+          return (
+            <FortunaWordmark
+              key={i}
+              dot={node.dot}
+              color={node.tone ? `var(--f-${node.tone})` : undefined}
+              title="fortuna"
+            />
+          );
         return (
           <span
             key={i}
@@ -354,12 +362,29 @@ export function Quote({
   dark,
   align = "left",
   color,
+  rules = false,
 }: {
   children: ReactNode;
   dark?: boolean;
   align?: Align;
   color?: string;
+  rules?: boolean;
 }) {
+  // The same rules a ruled finding gets. Its own margin rather than the
+  // quote's, so the space belongs to the rules and the quote keeps sitting
+  // the distance it always did from the line above it.
+  if (rules) {
+    return (
+      <div style={{ margin: "clamp(46px, 7vh, 82px) 0" }}>
+        <Rule />
+        <Quote dark={dark} align={align} color={color}>
+          {children}
+        </Quote>
+        <Rule />
+      </div>
+    );
+  }
+
   return (
     <p
       style={{
@@ -614,6 +639,7 @@ export function renderBlock(
           key={i}
           dark={dark}
           align={align}
+          rules={block.rules}
           color={block.tone ? `var(--f-${block.tone})` : undefined}
         >
           <Inline nodes={block.text} />
