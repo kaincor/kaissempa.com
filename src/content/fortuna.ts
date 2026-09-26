@@ -41,14 +41,43 @@ export type Token =
    * on the green band — same colour, exactly. `tone` overrides it there.
    */
   | { wordmark: true; dot?: boolean; tone?: BrandColor }
+  /**
+   * A line break inside a paragraph.
+   *
+   * Not a paragraph of its own: the two clauses belong to the same thought
+   * and should sit on the same block of text, a line apart rather than a
+   * paragraph apart.
+   */
+  | { br: true }
   | {
       text: string;
-      tone: "orange" | "green" | "brown" | "cream" | "dim";
-      /** Starts the colour of the sentence and floods in, left to right. */
+      /** Left off to keep the sentence's own colour. */
+      tone?: "orange" | "green" | "brown" | "cream" | "dim";
+      italic?: boolean;
+      /**
+       * Starts the colour of the sentence and floods in, left to right, as
+       * the reader scrolls the line up the screen.
+       */
       fill?: boolean;
     };
 
 export type Rich = string | Token[];
+
+/**
+ * Whether a run has anything in it that floods with colour.
+ *
+ * Here rather than beside the component that does the flooding, because the
+ * server renderer has to ask the question in order to decide which renderer
+ * to use — and a plain function exported from a "use client" module is a
+ * client reference, not a function the server can call. It typechecks and
+ * lints clean either way; it fails at request time.
+ */
+export function hasFill(nodes: Rich) {
+  return (
+    typeof nodes !== "string" &&
+    nodes.some((n) => typeof n !== "string" && "fill" in n && n.fill === true)
+  );
+}
 
 export type Block =
   | {
@@ -330,32 +359,44 @@ export const SECTIONS: Section[] = [
     // reads as one held statement rather than an argument that changes its
     // mind about where the left edge is halfway down.
     align: "center",
+    // Title, the first half, the question, then the second half — four beats
+    // a third of a second apart, so the section states its problem before it
+    // answers it.
+    reveal: true,
     blocks: [
       {
         kind: "text",
-        text: "If you really get into the nitty gritty of what Sarah needs, it isn't really a job. The jobs? They're out there. But sitting between Sarah and a job are lengthy commutes, childcare stuff, a carousel of applications, a waiting game (that may all lead to nothing). It all really just boils down to friction. Sarah just needs to reduce the friction between her current reality and the life she wants to build.",
-      },
-      {
-        kind: "text",
-        // The question is lifted out of the running ink into the band's cream,
-        // so the line the section turns on is the one thing on the page that
-        // is not the colour of everything around it — and the quote below
-        // repeats it back.
+        // Broken on its own turns rather than run together. The three clauses
+        // are one thought, so they stay in one paragraph and are separated by
+        // a line rather than by a paragraph's worth of air.
         text: [
-          "I feel like I was finally seeing Sarah's situation, she changed the way I wanted the product to work. Fundamentally, ",
-          // Green on the green band would be the same colour as the band.
-          { wordmark: true, dot: false, tone: "forest-deep" },
-          " isn't just job matching. It's more of a means to reduce the friction between someone's current reality and the life they want to build. So the challenge is not to just “help Sarah apply to jobs”, but rather ",
-          {
-            text: "“how do we reduce the cognitive, emotional, and logistical costs of getting back to work?”",
-            tone: "cream",
-          },
+          "If you really get into the nitty gritty of what Sarah needs, it isn't really a job.",
+          { br: true },
+          "The jobs? They're out there. But sitting between Sarah and a job are lengthy commutes, childcare stuff, a carousel of applications, a waiting game (that may all lead to nothing). It all really just boils down to friction.",
+          { br: true },
+          "Sarah just needs to reduce the friction between her current reality and the life she wants to build.",
         ],
       },
       {
         kind: "quote",
         rules: true,
         text: "How do we reduce the cost of getting back to work?",
+      },
+      {
+        kind: "text",
+        text: [
+          "I feel like I was finally seeing Sarah's situation, she changed the way I wanted the product to work. Fundamentally, Fortuna isn't just job matching. It's more of a means to reduce the friction between someone's current reality and the life they want to build.",
+          { br: true },
+          "So the challenge is not to just ",
+          { text: "“help Sarah apply to jobs”", italic: true },
+          ", but rather ",
+          {
+            text: "“how do we reduce the cognitive, emotional, and logistical costs of getting back to work?”",
+            tone: "cream",
+            italic: true,
+            fill: true,
+          },
+        ],
       },
     ],
   },

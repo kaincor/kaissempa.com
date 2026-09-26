@@ -1,8 +1,9 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useScroll, useTransform } from "motion/react";
+import { useRef } from "react";
 import FortunaWordmark from "./FortunaWordmark";
-import type { Rich, Token } from "@/content/fortuna";
+import { hasFill, type Rich, type Token } from "@/content/fortuna";
 
 /**
  * Inline runs that can flood with colour on cue.
@@ -17,6 +18,7 @@ const TONE_COLOR: Record<string, string> = {
   orange: "var(--f-orange)",
   green: "var(--f-green)",
   brown: "var(--f-brown)",
+  cream: "var(--f-cream)",
 };
 
 /**
@@ -78,13 +80,22 @@ export default function FillInline({
       {nodes.map((node: Token, i) => {
         if (typeof node === "string") return <span key={i}>{node}</span>;
         if ("wordmark" in node)
-          return <FortunaWordmark key={i} dot={node.dot} title="fortuna" />;
+          return (
+            <FortunaWordmark
+              key={i}
+              dot={node.dot}
+              color={node.tone ? `var(--f-${node.tone})` : undefined}
+              title="fortuna"
+            />
+          );
+        if ("br" in node) return <br key={i} />;
+        const slant = node.italic ? { fontStyle: "italic" as const } : null;
         if (node.fill)
           return (
             <FillWord
               key={i}
               text={node.text}
-              color={TONE_COLOR[node.tone] ?? "var(--f-orange)"}
+              color={TONE_COLOR[node.tone ?? ""] ?? "var(--f-orange)"}
               go={filled}
               duration={fillDuration}
             />
@@ -92,11 +103,14 @@ export default function FillInline({
         return (
           <span
             key={i}
-            style={
-              node.tone === "dim"
+            style={{
+              ...slant,
+              ...(node.tone === "dim"
                 ? { opacity: 0.5 }
-                : { color: TONE_COLOR[node.tone] }
-            }
+                : node.tone
+                  ? { color: TONE_COLOR[node.tone] }
+                  : null),
+            }}
           >
             {node.text}
           </span>
@@ -173,16 +187,25 @@ function Run({ nodes, ghost }: { nodes: Rich; ghost: boolean }) {
         if ("wordmark" in node)
           return (
             <span key={i} style={ghost ? { visibility: "hidden" } : undefined}>
-              <FortunaWordmark dot={node.dot} title={ghost ? undefined : "fortuna"} />
+              <FortunaWordmark
+                dot={node.dot}
+                color={node.tone ? `var(--f-${node.tone})` : undefined}
+                title={ghost ? undefined : "fortuna"}
+              />
             </span>
           );
+        // A break has to happen in both passes or the overlay stops lining up
+        // with the line underneath it from that point on.
+        if ("br" in node) return <br key={i} />;
+        const slant = node.italic ? { fontStyle: "italic" as const } : null;
         if (node.fill)
           return (
             <span
               key={i}
               style={{
+                ...slant,
                 color: ghost
-                  ? (TONE_COLOR[node.tone] ?? "var(--f-orange)")
+                  ? (TONE_COLOR[node.tone ?? ""] ?? "var(--f-orange)")
                   : "inherit",
               }}
             >
@@ -192,18 +215,65 @@ function Run({ nodes, ghost }: { nodes: Rich; ghost: boolean }) {
         return (
           <span
             key={i}
-            style={
-              ghost
+            style={{
+              ...slant,
+              ...(ghost
                 ? { color: "transparent" }
                 : node.tone === "dim"
                   ? { opacity: 0.5 }
-                  : { color: TONE_COLOR[node.tone] }
-            }
+                  : node.tone
+                    ? { color: TONE_COLOR[node.tone] }
+                    : null),
+            }}
           >
             {node.text}
           </span>
         );
       })}
     </>
+  );
+}
+
+/**
+ * A filling line scrubbed by the scroll rather than fired by a cue.
+ *
+ * `FillLine` floods on a boolean, which is right where something else decides
+ * the moment — the pin landing, the billboard standing up. Here the reader
+ * decides: the colour arrives under their thumb as they pull the line up the
+ * screen, and reverses if they scroll back.
+ *
+ * The window is the line's own travel from low on the screen to the upper
+ * third, so it is full well before the paragraph leaves — a fill still
+ * finishing at the top of the viewport reads as lag, not as control.
+ */
+export function ScrollFillLine({ nodes }: { nodes: Rich }) {
+  const mark = useRef<HTMLSpanElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: mark,
+    offset: ["start 0.92", "end 0.42"],
+  });
+  const clip = useTransform(
+    scrollYProgress,
+    [0, 1],
+    ["inset(0 100% 0 0)", "inset(0 0% 0 0)"],
+  );
+
+  if (!hasFill(nodes)) return <Run nodes={nodes} ghost={false} />;
+
+  return (
+    <span ref={mark} style={{ position: "relative", display: "block" }}>
+      <Run nodes={nodes} ghost={false} />
+      <motion.span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          clipPath: clip,
+          pointerEvents: "none",
+        }}
+      >
+        <Run nodes={nodes} ghost />
+      </motion.span>
+    </span>
   );
 }

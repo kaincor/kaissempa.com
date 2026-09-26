@@ -1,12 +1,14 @@
 import type { CSSProperties, ReactNode } from "react";
 import FortunaWordmark from "./FortunaWordmark";
 import BillboardCallout from "./BillboardCallout";
+import { ScrollFillLine } from "./FillText";
 import FadeIn from "./FadeIn";
 import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
 import GoalList from "./GoalList";
 import Persona from "./Persona";
 import NightSky from "./NightSky";
+import { hasFill } from "@/content/fortuna";
 import type { Align, Block, Rich, Token, Tone } from "@/content/fortuna";
 
 /**
@@ -95,6 +97,24 @@ const TONE_COLOR: Record<string, string> = {
  * from whatever it is inside without leaving the palette, and half strength of
  * the running colour does that at any tone.
  */
+/**
+ * Colour and slant for one run. Shared so the plain renderer and the filling
+ * one cannot disagree about what a token looks like.
+ */
+export function runStyle(node: {
+  tone?: string;
+  italic?: boolean;
+}): CSSProperties {
+  return {
+    ...(node.tone === "dim"
+      ? { opacity: 0.5 }
+      : node.tone
+        ? { color: TONE_COLOR[node.tone] }
+        : null),
+    ...(node.italic ? { fontStyle: "italic" } : null),
+  };
+}
+
 export function Inline({ nodes }: { nodes: Rich }) {
   if (typeof nodes === "string") return <>{nodes}</>;
   return (
@@ -110,15 +130,9 @@ export function Inline({ nodes }: { nodes: Rich }) {
               title="fortuna"
             />
           );
+        if ("br" in node) return <br key={i} />;
         return (
-          <span
-            key={i}
-            style={
-              node.tone === "dim"
-                ? { opacity: 0.5 }
-                : { color: TONE_COLOR[node.tone] }
-            }
-          >
+          <span key={i} style={runStyle(node)}>
             {node.text}
           </span>
         );
@@ -622,7 +636,11 @@ export function renderBlock(
     case "text": {
       const body = (
         <Body key={i} align={align} rules={block.rules}>
-          <Inline nodes={block.text} />
+          {hasFill(block.text) ? (
+            <ScrollFillLine nodes={block.text} />
+          ) : (
+            <Inline nodes={block.text} />
+          )}
         </Body>
       );
       return reveal ? (
@@ -633,8 +651,8 @@ export function renderBlock(
         body
       );
     }
-    case "quote":
-      return (
+    case "quote": {
+      const quote = (
         <Quote
           key={i}
           dark={dark}
@@ -645,6 +663,14 @@ export function renderBlock(
           <Inline nodes={block.text} />
         </Quote>
       );
+      return reveal ? (
+        <FadeIn key={i} delay={order * STEP}>
+          {quote}
+        </FadeIn>
+      ) : (
+        quote
+      );
+    }
     case "callout":
       // The revealing one is a client component; the plain one stays static so
       // a page full of pull-outs does not become a page full of scroll
