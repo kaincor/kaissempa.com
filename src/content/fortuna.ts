@@ -315,6 +315,10 @@ export const SECTIONS: Section[] = [
     // Green as well, so the research runs as one stretch of colour from the
     // goals to here. Data frameworks below it keeps its cream and ends the run.
     tone: "green",
+    // Centred, like the two green sections above it. The whole green run now
+    // reads as one held statement rather than an argument that changes its
+    // mind about where the left edge is halfway down.
+    align: "center",
     blocks: [
       {
         kind: "text",
