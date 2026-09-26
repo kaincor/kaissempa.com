@@ -189,7 +189,7 @@ const LINKS: Social[] = [
   },
   {
     name: "Dribbble",
-    href: "https://dribbble.com/",
+    href: "https://dribbble.com/kitalala",
     rgb: "234 76 137",
     // Kai's drawing. Every stroke is an outlined path rather than a stroke, so
     // it scales without the weight drifting.
