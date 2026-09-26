@@ -41,8 +41,24 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 const THROWN = 3.4;
 const SETTLED = 1.4;
 
-/** Pixels the pile is held above its resting place before the deal. */
-const LIFT = 34;
+/**
+ * Pixels the pile is held above its resting place before the deal.
+ *
+ * Whatever this is, the column heading has to be cleared by it — a deck held
+ * above its slot reaches up into the space above, and at 34 against a 12px
+ * gap the Needs and Frustrations piles were sitting on top of their own
+ * titles. The gap below the heading is derived from this rather than set
+ * next to it, so the two cannot drift apart again.
+ */
+const LIFT = 22;
+/**
+ * Room under the heading: the lift, plus air.
+ *
+ * More air than looks necessary, because a card on the pile is rotated and a
+ * rotated box is taller than the card in it. At ten the measured clearance
+ * came out at five pixels rather than ten; the throw was eating half of it.
+ */
+const HEAD_GAP = LIFT + 20;
 
 /** One card's flight, and the gap between one leaving and the next. */
 const FLIGHT = 1.05;
@@ -51,16 +67,21 @@ const STAGGER = 0.3;
 /**
  * A neutral ramp rather than the sheet's yellow and red.
  *
- * All three are straight out of Fortuna's palette — WHITE, then
- * DISABLED_BACKGROUND, then GREY — so the three piles read as escalating
- * weight instead of a traffic light. Goals are the lightest thing on the
- * table and frustrations the heaviest, which is the same ordering the colour
- * coding was making, without borrowing meaning from red.
+ * All three are straight out of Fortuna's palette — DISABLED_BACKGROUND,
+ * GREY, MEDIUM_DARK_GREY — so the piles read as escalating weight instead of
+ * a traffic light. Goals are the lightest thing on the table and frustrations
+ * the heaviest, which is the ordering the colour coding was making, without
+ * borrowing meaning from red.
+ *
+ * This is as dark as the set goes while one ink still serves all three. On
+ * #999999 the cards' near-black measures 5.79:1; the next step down in the
+ * palette is brown at 3.26, which would mean flipping the type to cream for
+ * that column alone.
  */
 const CARD_BG: Record<string, string> = {
-  white: "#ffffff",
-  amber: "#ebe9e4",
-  rose: "#c6c6c6",
+  white: "#ebe9e4",
+  amber: "#c6c6c6",
+  rose: "#999999",
 };
 
 /** Deterministic, so a card does not pick a new angle on every render. */
@@ -144,7 +165,7 @@ export default function PersonaDecks({
         <div key={col.title}>
           <h4
             style={{
-              margin: "0 0 12px",
+              margin: `0 0 ${HEAD_GAP}px`,
               textAlign: "center",
               fontSize: 16,
               fontWeight: 600,
