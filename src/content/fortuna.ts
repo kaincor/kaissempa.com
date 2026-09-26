@@ -123,8 +123,6 @@ export type Section = {
  * to animate. The colours, the wording and the spacing are the artefact's own.
  */
 export type PersonaSheet = {
-  name: string;
-  facts: { label: string; value: string }[];
   portrait: { src: string; alt: string };
   /** The two prose columns at the top of the sheet. */
   notes: { title: string; body: string[] }[];
@@ -133,14 +131,6 @@ export type PersonaSheet = {
 };
 
 export const SARAH: PersonaSheet = {
-  name: "Sarah Anderson",
-  facts: [
-    { label: "Age", value: "31" },
-    { label: "Job", value: "Unemployed" },
-    // The sheet said Chicago, which was left over from its template: the
-    // seven interviews behind Sarah were all in Miami.
-    { label: "Located", value: "Miami, FL" },
-  ],
   portrait: {
     src: "/images/sarah-persona.png",
     alt: "Sarah, the job seeker persona",

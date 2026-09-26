@@ -31,8 +31,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
  * its column.
  */
 
-/** How far a card can be out of true on the pile, and once it has landed. */
-const THROWN = 7;
+/**
+ * How far a card can be out of true on the pile, and once it has landed.
+ *
+ * Small. These cards are tall, and a few degrees at the top of one throws its
+ * bottom corners a long way out — at seven the frustrations pile, the tallest
+ * of the three, splayed out into a blob before it had dealt anything.
+ */
+const THROWN = 3.4;
 const SETTLED = 1.4;
 
 /** Pixels the pile is held above its resting place before the deal. */
@@ -42,10 +48,19 @@ const LIFT = 34;
 const FLIGHT = 1.05;
 const STAGGER = 0.3;
 
+/**
+ * A neutral ramp rather than the sheet's yellow and red.
+ *
+ * All three are straight out of Fortuna's palette — WHITE, then
+ * DISABLED_BACKGROUND, then GREY — so the three piles read as escalating
+ * weight instead of a traffic light. Goals are the lightest thing on the
+ * table and frustrations the heaviest, which is the same ordering the colour
+ * coding was making, without borrowing meaning from red.
+ */
 const CARD_BG: Record<string, string> = {
   white: "#ffffff",
-  amber: "#ffe1a6",
-  rose: "#ffbbbb",
+  amber: "#ebe9e4",
+  rose: "#c6c6c6",
 };
 
 /** Deterministic, so a card does not pick a new angle on every render. */
@@ -118,7 +133,7 @@ export default function PersonaDecks({
       viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: 0.7, ease: "easeOut" }}
       style={{
-        marginTop: "clamp(26px, 4vw, 42px)",
+        marginTop: "clamp(16px, 2.4vw, 26px)",
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(178px, 1fr))",
         gap: "clamp(14px, 2.2vw, 22px)",
@@ -208,9 +223,9 @@ function Card({
     still ? 0 : wobble(seed, THROWN) * (1 - d) + wobble(seed + 99, SETTLED) * d,
   );
   // Deepest in the middle of the flight, back to a resting card once it lands.
-  const lift = useTransform(dealt, [0, 0.5, 1], [0.34, 1, 0.2]);
+  const lift = useTransform(dealt, [0, 0.5, 1], [0.55, 1, 0.42]);
   const shadow = useTransform(lift as MotionValue<number>, (l) =>
-    still ? 0.2 : l,
+    still ? 0.42 : l,
   );
 
   return (
@@ -234,7 +249,8 @@ function Card({
           position: "absolute",
           inset: 0,
           borderRadius: 8,
-          boxShadow: "0 12px 26px rgba(31, 43, 38, 0.38)",
+          boxShadow:
+            "0 3px 8px rgba(31, 43, 38, 0.3), 0 16px 34px rgba(31, 43, 38, 0.5)",
           opacity: shadow,
           pointerEvents: "none",
         }}
@@ -245,9 +261,9 @@ function Card({
           margin: 0,
           background: bg,
           borderRadius: 8,
-          padding: "16px 18px",
+          padding: "14px 16px",
           fontSize: 13.5,
-          lineHeight: 1.5,
+          lineHeight: 1.45,
           letterSpacing: "-0.01em",
           color: "#1f1f1f",
         }}

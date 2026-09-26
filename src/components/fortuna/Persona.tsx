@@ -113,7 +113,10 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
             gap: "clamp(18px, 3vw, 32px)",
-            alignItems: "start",
+            // Centred, not top-aligned. With the name and facts gone the left
+            // column is just the portrait, and hanging a circle from the top
+            // of a block of text leaves a wedge of band under it.
+            alignItems: "center",
           }}
         >
           <Rise at={next()} still={still}>
@@ -128,7 +131,7 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
                 aspectRatio: "1",
                 borderRadius: "50%",
                 overflow: "hidden",
-                marginBottom: 18,
+                marginBottom: 0,
               }}
             >
               <Image
@@ -140,18 +143,6 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
               />
             </div>
 
-            <dl style={{ margin: 0, fontSize: 14, lineHeight: 1.75 }}>
-              <div style={{ display: "flex", gap: 6 }}>
-                <dt style={{ fontWeight: 600 }}>Name:</dt>
-                <dd style={{ margin: 0 }}>{persona.name}</dd>
-              </div>
-              {persona.facts.map((f) => (
-                <div key={f.label} style={{ display: "flex", gap: 6 }}>
-                  <dt style={{ fontWeight: 600 }}>{f.label}:</dt>
-                  <dd style={{ margin: 0 }}>{f.value}</dd>
-                </div>
-              ))}
-            </dl>
           </Rise>
 
           <div style={{ display: "grid", gap: "clamp(16px, 2.4vw, 24px)" }}>

@@ -32,9 +32,7 @@ const STAGGER = 0.36;
  */
 const LEAD = 0.9;
 
-/** How long the glint behind a goal lasts, and how strong it gets. */
-const SHIMMER_MS = 1.5;
-const SHIMMER_PEAK = 0.5;
+
 
 /**
  * How far the block drifts against the page, in pixels each way.
@@ -112,34 +110,6 @@ export default function GoalList({
                 align === "center" ? "center left" : "left center",
             }}
           >
-            {/* The glint. A soft wash behind the line that comes up as it
-                arrives and goes again, so a goal lands the way a star does
-                rather than simply being switched on. Behind the text and deaf
-                to the pointer; it is lighting, not an object. */}
-            <motion.span
-              aria-hidden="true"
-              initial={reduced ? false : { opacity: 0 }}
-              whileInView={{ opacity: [0, SHIMMER_PEAK, 0] }}
-              viewport={{ once: true, amount: 0.6 }}
-              transition={{
-                duration: SHIMMER_MS,
-                times: [0, 0.35, 1],
-                ease: "easeOut",
-                delay: LEAD + i * STAGGER,
-              }}
-              style={{
-                position: "absolute",
-                left: -24,
-                right: -24,
-                top: -14,
-                bottom: -14,
-                borderRadius: 999,
-                background:
-                  "radial-gradient(ellipse at 28% 50%, rgba(247,245,240,0.5) 0%, rgba(247,245,240,0.16) 38%, rgba(247,245,240,0) 72%)",
-                pointerEvents: "none",
-              }}
-            />
-
             <span
               aria-hidden="true"
               style={{
@@ -150,7 +120,6 @@ export default function GoalList({
                 fontWeight: 600,
                 fontSize: "1.05em",
                 color: "var(--f-accent)",
-                opacity: 0.45,
                 position: "relative",
               }}
             >
