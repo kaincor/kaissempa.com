@@ -55,29 +55,21 @@ const TILT_IN = 1.9;
 const POP = 0.075;
 
 /**
- * How wide a note is, as a percentage of the board, by how much it carries.
+ * How wide a note is, as a percentage of the board.
  *
- * A flat range does not work. Set every note at about half, and the four
- * frustrations — all of them over a hundred characters — become columns
- * seventeen characters wide and nine lines deep; the board measured 485px
- * tall against Goals' 123. Widen everything instead and nothing ever pairs.
+ * Just under half, always, so every note pairs with its neighbour and the
+ * board reads as two columns of pinned squares. The small spread is what
+ * keeps the right-hand edge of each pair ragged; the gutter is counted in,
+ * so even two at their widest still share a line.
  *
- * So width follows length. Short notes take under half and always find each
- * other, middling ones take just over half and pair with a short one but not
- * with each other, and long ones take the line. The board falls into pairs
- * and singletons on its own rather than being laid out in a grid, and no
- * note ends up narrower than its sentence can stand.
- *
- * The bands are chosen against the real copy: both goals are short, so they
- * are guaranteed to sit up together even at their widest (48 + 48 plus the
- * gutter is still inside the board).
+ * This replaces a length-driven version that gave long notes the whole line.
+ * That kept every note's line length comfortable, but it meant the four
+ * frustrations — all of them over a hundred characters — never paired with
+ * anything.
  */
-const BANDS: { upTo: number; from: number; span: number }[] = [
-  { upTo: 45, from: 40, span: 8 },
-  { upTo: 85, from: 52, span: 14 },
-  { upTo: Infinity, from: 78, span: 16 },
-];
-/** Gutter between two notes that do share a line. */
+const NOTE_MIN = 44;
+const NOTE_SPAN = 5;
+/** Gutter between the two notes sharing a line. */
 const GUTTER = 8;
 /** How far a note can hang below the top of its line. */
 const DROP = 16;
@@ -98,11 +90,10 @@ function hash01(seed: number) {
  * mismatch on every note. Two decimal places is finer than a screen can
  * show and survives the round trip unchanged.
  */
-function pin(seed: number, length: number) {
+function pin(seed: number) {
   const round = (n: number) => Math.round(n * 100) / 100;
-  const band = BANDS.find((b) => length <= b.upTo) ?? BANDS[BANDS.length - 1];
   return {
-    width: round(band.from + hash01(seed) * band.span),
+    width: round(NOTE_MIN + hash01(seed) * NOTE_SPAN),
     tilt: round((hash01(seed + 5) * 2 - 1) * TILT),
     /** Hangs this far below its line, so a pair never reads as a table row. */
     drop: Math.round(hash01(seed + 17) * DROP),
@@ -203,7 +194,7 @@ export default function PersonaBoard({
               }}
             >
               {col.items.map((item, i) => {
-                const p = pin(ci * 41 + i * 7 + 1, item.length);
+                const p = pin(ci * 41 + i * 7 + 1);
                 return (
                   <li
                     key={item}
@@ -244,9 +235,14 @@ export default function PersonaBoard({
                         background: NOTE_BG,
                         color: NOTE_INK,
                         borderRadius: RADIUS,
-                        padding: "10px 12px",
-                        fontSize: 11.5,
-                        lineHeight: 1.4,
+                        // Ten and a half in tighter padding. At 11.5 a note
+                        // half the board wide fits sixteen characters to the
+                        // line, and the longest frustration ran to nine of
+                        // them; this brings the set down to between two and
+                        // eight, and every need to four or fewer.
+                        padding: "9px 11px",
+                        fontSize: 10.5,
+                        lineHeight: 1.35,
                         letterSpacing: "-0.01em",
                         boxShadow:
                           "0 2px 6px rgba(18, 26, 23, 0.24), 0 12px 26px rgba(18, 26, 23, 0.3)",
