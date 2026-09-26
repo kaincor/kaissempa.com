@@ -74,6 +74,17 @@ const DRIFT = 85;
  * is off screen.
  */
 const SHOOT_EVERY = 7500;
+/**
+ * The wait for the first one.
+ *
+ * Shorter than the interval that follows it. A reader arriving at the section
+ * scrolls, stops, and reads the title — and on the old timing the sky did
+ * nothing for seven and a half seconds, by which point most of them had
+ * scrolled on having seen a still field of dots. Three and a half puts the
+ * first streak inside the time it takes to read the heading and the line
+ * under it, and the cadence settles to its own rate after that.
+ */
+const SHOOT_FIRST = 3500;
 const SHOOT_MS = 950;
 /** How long the streak is at full stretch, and how far it travels. */
 const SHOOT_TAIL = 130;
@@ -542,13 +553,21 @@ export default function NightSky() {
       kick();
     };
 
+    // The lead-in is spent once, on the first arrival. A reader who scrolls
+    // away and back does not get another one — they have already seen the
+    // sky, and re-running the short wait on every re-entry would bunch the
+    // streaks up for anyone moving back and forth over the section.
+    let greeted = false;
+
     const schedule = () => {
       clearTimeout(timer);
       if (still || !onScreen) return;
+      const wait = greeted ? SHOOT_EVERY : SHOOT_FIRST;
       timer = setTimeout(() => {
+        greeted = true;
         fire();
         schedule();
-      }, SHOOT_EVERY);
+      }, wait);
     };
 
     const io = new IntersectionObserver(
