@@ -90,6 +90,19 @@
   font-display: swap;
 }
 
+/* The display stack, published outside .fortuna as well as in it.
+
+   The navbar is a sibling of the page in the root layout, not a descendant of
+   it, so a variable scoped to .fortuna cannot reach it — and the bar already
+   travels with the case study's colour, so it should travel with its face
+   too. Declared once here and referenced by --f-display below, so swapping in
+   the retail Tiempos file is still a single edit. This sheet only loads on
+   this route, so nothing else on the site can pick it up. */
+:root {
+  --f-display-stack: "Tiempos Headline", "Aktiv Grotesk", var(--font-serif),
+    Georgia, serif;
+}
+
 .fortuna {
   /* Straight from Fortuna's own colors.js, which is the authority — the Framer
      styles had drifted from it in two places. Nothing on this page may use a
@@ -122,8 +135,7 @@
   /* Graphik catches what the trial cut is missing, as asked. Source Serif sits
      behind it as a last resort — it is a serif, so if a heading ever needs an
      apostrophe or a question mark it will blend better than the grotesk will. */
-  --f-display: "Tiempos Headline", "Aktiv Grotesk", var(--font-serif), Georgia,
-    serif;
+  --f-display: var(--f-display-stack);
   --f-serif: var(--font-serif), Georgia, serif;
   /* Aktiv first, Graphik behind it. Graphik was the stand-in while the real
      brand face was unknown; it stays in the stack as the nearest fallback
