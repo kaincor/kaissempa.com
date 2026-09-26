@@ -12,6 +12,11 @@ import Parallax from "./Parallax";
  * movement: they arrive one at a time, and the block drifts against the page
  * as the reader scrolls. Timing and depth rather than size and weight.
  *
+ * Nothing but opacity moves. They used to arrive on a soft spring, scaling up
+ * from 0.82 so each one popped; four lines popping in turn is a lot of event
+ * for what is a list of four sentences, and the parallax is already giving
+ * the block its own plane. A fade leaves the pace as the only effect.
+ *
  * Kept apart from `List` rather than bolted onto it with flags. The plain list
  * is a server component with no JavaScript behind it, which is right for the
  * half-dozen ordinary lists in the piece; this one is a client component with
@@ -19,8 +24,15 @@ import Parallax from "./Parallax";
  * else.
  */
 
-/** Seconds between one goal landing and the next starting. */
-const STAGGER = 0.36;
+/**
+ * The pace of the four.
+ *
+ * Budgeted to 2.5 seconds for the whole list rather than set per line: three
+ * gaps of 0.5 plus a 1s fade puts the last goal at rest exactly on the mark.
+ * Change either and the other has to give.
+ */
+const STAGGER = 0.5;
+const FADE = 1;
 
 /**
  * Seconds the first goal waits.
@@ -75,39 +87,19 @@ export default function GoalList({
         {items.map((item, i) => (
           <motion.li
             key={item}
-            initial={reduced ? false : { opacity: 0, scale: 0.82, y: 10 }}
-            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            initial={reduced ? false : { opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{
-              // Enough overshoot to read as a bubble arriving rather than a
-              // box fading up, but slow and soft: a goal should drift into
-              // place, not snap.
-              default: {
-                type: "spring",
-                stiffness: 84,
-                damping: 16,
-                mass: 1.2,
-                delay: LEAD + i * STAGGER,
-              },
-              // Opacity gets a tween, not the spring. A spring this soft is
-              // underdamped enough to overshoot, and on a transform that reads
-              // as bounce — which is the point — while on opacity it is a
-              // visible flicker back to 90% after the line has already arrived.
-              opacity: {
-                duration: 0.7,
-                ease: "easeOut",
-                delay: LEAD + i * STAGGER,
-              },
+              duration: FADE,
+              ease: "easeOut",
+              delay: LEAD + i * STAGGER,
             }}
             style={{
               position: "relative",
               display: "grid",
               gridTemplateColumns: "34px 1fr",
               alignItems: "baseline",
-              // Each bubbles about its own leading edge, so the column of
-              // numerals stays put while the lines pop.
-              transformOrigin:
-                align === "center" ? "center left" : "left center",
             }}
           >
             <span
