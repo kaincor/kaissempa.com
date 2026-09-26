@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  animate,
   motion,
+  useInView,
+  useMotionValue,
   useReducedMotion,
-  useScroll,
   useTransform,
   type MotionValue,
 } from "motion/react";
@@ -12,26 +14,33 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 /**
  * Goals, needs and frustrations as three decks that get dealt out.
  *
- * Each column starts as a pile at the top of its slot, cards squared up only
- * roughly — a few degrees either way, the way a hand actually looks when it is
- * put down. Scrolling deals them: one card at a time, across the three piles,
- * each sliding down into the place it would occupy anyway and straightening as
- * it goes, with its shadow deepening while it is off the pile and settling
- * again when it lands.
+ * Each column starts as a pile held a little above where it will land, cards
+ * squared up only roughly — a few degrees either way, the way a hand actually
+ * looks when it is put down. Once the piles reach two thirds of the way up the
+ * screen the whole hand is dealt in one movement: a card at a time, row by row
+ * across the three piles, each gliding down into the place it would occupy
+ * anyway and straightening as it goes.
  *
- * The cards stay in normal flow. That is what makes this tractable: the layout
- * already knows where every card belongs and how tall each one is, so the only
- * thing to work out is where each card came FROM, which is its own distance
- * from the top of its column. Positioning them absolutely would mean measuring
- * and maintaining all of that by hand.
+ * Timed, not scrubbed. A deal has a pace of its own — the reader's thumb
+ * should not be able to make it snap or crawl, and a scrubbed version runs
+ * backwards the moment they scroll up.
+ *
+ * The cards stay in normal flow, which is what makes this tractable. The
+ * layout already knows where every card belongs and how tall each one is, so
+ * the only unknown is where each came FROM: its own distance from the top of
+ * its column.
  */
-
-/** Cards that stay put. The top of each pile is already where it belongs. */
-const STUCK = 0;
 
 /** How far a card can be out of true on the pile, and once it has landed. */
 const THROWN = 7;
 const SETTLED = 1.4;
+
+/** Pixels the pile is held above its resting place before the deal. */
+const LIFT = 34;
+
+/** One card's flight, and the gap between one leaving and the next. */
+const FLIGHT = 1.05;
+const STAGGER = 0.3;
 
 const CARD_BG: Record<string, string> = {
   white: "#ffffff",
@@ -52,13 +61,10 @@ export default function PersonaDecks({
 }) {
   const reduced = useReducedMotion();
   const wrap = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: wrap,
-    // Begins as the decks clear the bottom of the screen and finishes well
-    // before they leave the top, so the whole hand is dealt while it is being
-    // looked at rather than on the way past.
-    offset: ["start 0.92", "start 0.28"],
-  });
+  // Shrinking the root's bottom by a third means the piles count as arrived
+  // when they cross two thirds of the way up the screen, rather than the
+  // moment their first pixel appears at the bottom of it.
+  const started = useInView(wrap, { once: true, margin: "0px 0px -35% 0px" });
 
   /** Each card's distance from the top of its column, once laid out. */
   const [tops, setTops] = useState<number[][]>(() => columns.map(() => []));
@@ -91,11 +97,18 @@ export default function PersonaDecks({
     };
   }, [measure]);
 
-  // One dealing order across all three piles: the first card of each, then the
-  // second of each, and so on. That is what makes it read as one dealer going
-  // round rather than three columns animating on their own.
+  // One dealing order across all three piles: the first card of every pile,
+  // then the second of every pile, and so on. Counted densely, skipping the
+  // piles that have run out — a place kept for a card that does not exist
+  // would show up as a pause in the middle of the deal.
   const rows = Math.max(...columns.map((c) => c.items.length));
-  const dealt = columns.reduce((n, c) => n + Math.max(0, c.items.length - 1), 0);
+  const order = new Map<string, number>();
+  let k = 0;
+  for (let i = 1; i < rows; i++) {
+    for (let ci = 0; ci < columns.length; ci++) {
+      if (i < columns[ci].items.length) order.set(`${ci}:${i}`, k++);
+    }
+  }
 
   return (
     <motion.div
@@ -133,12 +146,9 @@ export default function PersonaDecks({
                 ref={(el) => {
                   cards.current[ci][i] = el;
                 }}
-                progress={scrollYProgress}
+                started={started}
                 from={tops[ci]?.[i] ?? 0}
-                // Row-major: every pile's first card, then every second, and
-                // so on, left to right within each round.
-                order={i === STUCK ? -1 : (i - 1) * columns.length + ci}
-                total={Math.max(1, (rows - 1) * columns.length)}
+                order={i === 0 ? -1 : (order.get(`${ci}:${i}`) ?? 0)}
                 seed={ci * 17 + i * 5 + 1}
                 bg={CARD_BG[col.tone]}
                 still={!!reduced}
@@ -149,53 +159,59 @@ export default function PersonaDecks({
           </div>
         </div>
       ))}
-      <span hidden>{dealt}</span>
     </motion.div>
   );
 }
 
 function Card({
   ref,
-  progress,
+  started,
   from,
   order,
-  total,
   seed,
   bg,
   still,
   children,
 }: {
   ref: (el: HTMLDivElement | null) => void;
-  progress: MotionValue<number>;
+  started: boolean;
   /** Pixels this card sits below the top of its column when laid out. */
   from: number;
-  /** Place in the dealing order, or -1 for a card that never moves. */
+  /** Place in the dealing order, or -1 for the card already on the table. */
   order: number;
-  total: number;
   seed: number;
   bg: string;
   still: boolean;
   children: React.ReactNode;
 }) {
-  // Windows overlap by one slot, so the next card leaves the pile while the
-  // last is still landing. A strict queue looks mechanical.
-  const span = 1 / (total + 1);
-  const start = order < 0 ? 0 : order * span;
-  const end = order < 0 ? 1 : Math.min(1, start + span * 2);
+  const dealt = useMotionValue(still ? 1 : 0);
 
-  const dealt = useTransform(progress, [start, end], [0, 1], { clamp: true });
+  useEffect(() => {
+    if (still) {
+      dealt.set(1);
+      return;
+    }
+    if (!started) return;
+    const controls = animate(dealt, 1, {
+      duration: FLIGHT,
+      // Away from the pile without hurry, then a long glide onto the table.
+      ease: [0.28, 0.72, 0.2, 1],
+      delay: order < 0 ? 0 : order * STAGGER,
+    });
+    return () => controls.stop();
+  }, [started, order, still, dealt]);
 
-  const y = useTransform(dealt, (d) => (order < 0 || still ? 0 : -from * (1 - d)));
+  // The top card of a pile is already home; it only has the lift to give back.
+  const rise = order < 0 ? LIFT : from + LIFT;
+  const y = useTransform(dealt, (d) => (still ? 0 : -rise * (1 - d)));
   const rotate = useTransform(dealt, (d) =>
-    still
-      ? 0
-      : order < 0
-        ? wobble(seed, SETTLED)
-        : wobble(seed, THROWN) * (1 - d) + wobble(seed + 99, SETTLED) * d,
+    still ? 0 : wobble(seed, THROWN) * (1 - d) + wobble(seed + 99, SETTLED) * d,
   );
   // Deepest in the middle of the flight, back to a resting card once it lands.
-  const lift = useTransform(dealt, [0, 0.5, 1], [0, 1, 0]);
-  const shadow = useTransform(lift, (l) => (order < 0 || still ? 0.2 : 0.2 + l * 0.6));
+  const lift = useTransform(dealt, [0, 0.5, 1], [0.34, 1, 0.2]);
+  const shadow = useTransform(lift as MotionValue<number>, (l) =>
+    still ? 0.2 : l,
+  );
 
   return (
     <motion.div
@@ -204,8 +220,8 @@ function Card({
         position: "relative",
         y,
         rotate,
-        // The pile has to sit on top of the empty slots below it, or a card
-        // still waiting to be dealt is covered by the ones it is stacked with.
+        // The pile has to sit above the empty slots below it, or a card still
+        // waiting to be dealt is covered by the ones it is stacked with.
         zIndex: order < 0 ? 2 : 1,
         willChange: "transform",
       }}
@@ -233,6 +249,7 @@ function Card({
           fontSize: 13.5,
           lineHeight: 1.5,
           letterSpacing: "-0.01em",
+          color: "#1f1f1f",
         }}
       >
         {children}

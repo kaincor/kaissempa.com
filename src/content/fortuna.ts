@@ -123,7 +123,6 @@ export type Section = {
  * to animate. The colours, the wording and the spacing are the artefact's own.
  */
 export type PersonaSheet = {
-  eyebrow: string;
   name: string;
   facts: { label: string; value: string }[];
   portrait: { src: string; alt: string };
@@ -134,7 +133,6 @@ export type PersonaSheet = {
 };
 
 export const SARAH: PersonaSheet = {
-  eyebrow: "Persona / Job seeker",
   name: "Sarah Anderson",
   facts: [
     { label: "Age", value: "31" },

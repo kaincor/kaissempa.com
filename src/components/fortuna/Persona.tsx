@@ -21,13 +21,26 @@ import type { PersonaSheet } from "@/content/fortuna";
  * her.
  */
 
-/** Sampled from the source file rather than guessed. */
+/**
+ * The sheet has no fill any more — it is an outline on the green band, so
+ * everything written on it has to work against the band rather than against a
+ * grey ground. The old body grey measured 3.78:1 there; the band's own deep
+ * forest is 5.11 and is what the rest of the section already uses.
+ */
 const SHEET = {
-  strip: "#ffffff",
-  ground: "#f2f2f2",
-  ink: "#1f1f1f",
-  quiet: "#4a4a4a",
+  stroke: "#f2f2f2",
+  ink: "var(--f-forest-deep)",
 };
+
+/**
+ * Where the outline gives out.
+ *
+ * It holds across the top and down both sides as far as the cards, then trails
+ * away — so there is no bottom edge, and the frame reads as something the
+ * cards are dealt out of rather than a box they are shut inside.
+ */
+const FRAME_FADE =
+  "linear-gradient(to bottom, #000 0%, #000 44%, rgba(0,0,0,0.35) 72%, transparent 92%)";
 
 /** Seconds between one piece of the sheet arriving and the next. */
 const STEP = 0.09;
@@ -70,33 +83,27 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
   return (
     <div
       style={{
+        position: "relative",
         marginTop: "clamp(30px, 4.5vh, 56px)",
-        borderRadius: 14,
-        overflow: "hidden",
-        background: SHEET.ground,
         color: SHEET.ink,
         textAlign: "left",
         fontFamily: "var(--f-body)",
-        // Lifts the artefact off the band. It is a document sitting on the
-        // page, not another panel of it.
-        boxShadow: "0 18px 44px rgba(31, 43, 38, 0.16)",
       }}
     >
+      {/* The outline. Its own layer, because the mask that fades it out would
+          otherwise take the contents of the sheet with it. */}
       <div
+        aria-hidden="true"
         style={{
-          background: SHEET.strip,
-          padding: "12px clamp(16px, 3vw, 28px)",
-          fontFamily: "var(--f-grotesk)",
-          fontWeight: 700,
-          fontSize: 11,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: SHEET.ink,
+          position: "absolute",
+          inset: 0,
+          border: `2px solid ${SHEET.stroke}`,
+          borderRadius: 12,
+          maskImage: FRAME_FADE,
+          WebkitMaskImage: FRAME_FADE,
+          pointerEvents: "none",
         }}
-      >
-        {persona.eyebrow}
-      </div>
-
+      />
       <div style={{ padding: "clamp(20px, 3.4vw, 34px)" }}>
         {/* Who she is, then her situation. Two columns where there is room for
             two — the sheet's own three do not survive a 620px measure, and the
@@ -168,7 +175,6 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
                       fontSize: 14,
                       lineHeight: 1.6,
                       letterSpacing: "-0.01em",
-                      color: SHEET.quiet,
                     }}
                   >
                     {para}
