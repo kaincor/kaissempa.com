@@ -45,6 +45,15 @@ const CASE_THEMES: {
    * outside the page's wrapper and cannot see a variable scoped to it.
    */
   font?: string;
+  /**
+   * Point size to go with it.
+   *
+   * Kaicords is drawn small for its em — twenty is what it takes to read as
+   * a menu — and any face set on a normal body pattern looks oversized at
+   * the same number. Carried with the face so the two cannot be changed
+   * apart.
+   */
+  size?: number;
 }[] = [
   {
     prefix: "/fortuna",
@@ -56,9 +65,10 @@ const CASE_THEMES: {
     bar: "rgba(105, 189, 69, 0.42)",
     menu: "linear-gradient(270deg, rgba(105, 189, 69, 0.46) 0%, rgba(105, 189, 69, 0.52) 100%)",
     blur: 8,
-    // Tiempos Headline, the case study's own display face, in place of
-    // Kaicords. Defined in src/app/fortuna/theme.css.
-    font: "var(--f-display-stack)",
+    // Aktiv Grotesk, the face Fortuna's own Figma file is built on, in
+    // place of Kaicords. Defined in src/app/fortuna/theme.css.
+    font: "var(--f-body-stack)",
+    size: 17,
   },
 ];
 
@@ -268,6 +278,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
             key={l.label}
             href={l.href}
             font={theme?.font}
+            size={theme?.size}
             onNavigate={() => setOpen(false)}
           >
             {l.label}
@@ -282,12 +293,14 @@ function MenuLink({
   href,
   children,
   font,
+  size,
   onNavigate,
 }: {
   href: string;
   children: ReactNode;
   /** The route theme's face, if it has one. Falls back to .display. */
   font?: string;
+  size?: number;
   onNavigate: () => void;
 }) {
   const [hot, setHot] = useState(false);
@@ -305,12 +318,14 @@ function MenuLink({
         // alone everywhere else. The menu is never open while the route
         // changes, so there is nothing to animate between the two faces.
         fontFamily: font,
-        fontWeight: font ? 600 : undefined,
+        // Aktiv's Medium. Regular disappears against the glass at this size
+        // and Bold reads as a button label rather than a link.
+        fontWeight: font ? 500 : undefined,
         // .display uppercases because Kaicords' capitals are its heavy style
         // and its lowercase is the light one. No other face has that quirk,
         // and a case study set in mixed case should not have a shouting menu.
         textTransform: font ? "none" : undefined,
-        fontSize: 20,
+        fontSize: size ?? 20,
         lineHeight: 1.1,
         color: hot ? "#ccc" : "#fff",
         textDecoration: "none",

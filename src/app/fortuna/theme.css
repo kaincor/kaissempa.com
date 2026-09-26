@@ -90,17 +90,19 @@
   font-display: swap;
 }
 
-/* The display stack, published outside .fortuna as well as in it.
+/* The two stacks, published outside .fortuna as well as in it.
 
    The navbar is a sibling of the page in the root layout, not a descendant of
    it, so a variable scoped to .fortuna cannot reach it — and the bar already
    travels with the case study's colour, so it should travel with its face
-   too. Declared once here and referenced by --f-display below, so swapping in
+   too. Declared once here and referenced from .fortuna below, so swapping in
    the retail Tiempos file is still a single edit. This sheet only loads on
    this route, so nothing else on the site can pick it up. */
 :root {
   --f-display-stack: "Tiempos Headline", "Aktiv Grotesk", var(--font-serif),
     Georgia, serif;
+  --f-body-stack: "Aktiv Grotesk", "Graphik", var(--font-grotesk), system-ui,
+    sans-serif;
 }
 
 .fortuna {
@@ -141,10 +143,8 @@
      brand face was unknown; it stays in the stack as the nearest fallback
      rather than being deleted, so a failed font load degrades to something
      with the same proportions instead of to system-ui. */
-  --f-body: "Aktiv Grotesk", "Graphik", var(--font-grotesk), system-ui,
-    sans-serif;
-  --f-grotesk: "Aktiv Grotesk", "Graphik", var(--font-grotesk), system-ui,
-    sans-serif;
+  --f-body: var(--f-body-stack);
+  --f-grotesk: var(--f-body-stack);
 
   /* The measure, and with it the boundary.
      
@@ -327,6 +327,30 @@
     transition: none;
   }
   .f-panel-tab {
+    display: none;
+  }
+}
+
+/* The persona sheet's two card treatments, swapped at the tablet boundary.
+
+   A media query rather than a matchMedia hook in the component. The hook
+   cannot know the viewport during the server render, so the first paint would
+   always be the desktop decks and a phone would visibly swap them out for the
+   board once JavaScript arrived. Both are in the markup and CSS picks; the
+   hidden one is display:none, so it is out of the accessibility tree and its
+   entrance never triggers.
+
+   1024 rather than the point where the three columns actually break (about
+   646px). Above that the columns are fine on their own, and an iPad held
+   either way should get the board — it is a touch interaction. */
+@media (max-width: 1024px) {
+  .f-persona-decks {
+    display: none;
+  }
+}
+
+@media (min-width: 1025px) {
+  .f-persona-board {
     display: none;
   }
 }
