@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
+import PersonaDecks from "./PersonaDecks";
 import type { PersonaSheet } from "@/content/fortuna";
 
 /**
@@ -26,15 +27,6 @@ const SHEET = {
   ground: "#f2f2f2",
   ink: "#1f1f1f",
   quiet: "#4a4a4a",
-  white: "#ffffff",
-  amber: "#ffe1a6",
-  rose: "#ffbbbb",
-};
-
-const CARD_BG: Record<string, string> = {
-  white: SHEET.white,
-  amber: SHEET.amber,
-  rose: SHEET.rose,
 };
 
 /** Seconds between one piece of the sheet arriving and the next. */
@@ -121,18 +113,22 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
             <div
               style={{
                 position: "relative",
-                width: "clamp(104px, 15vw, 132px)",
+                // As wide as the column it sits in, up to a cap. The cap is
+                // what keeps the gutter: without it the portrait would grow
+                // until the two halves touched and the sheet would stop
+                // reading as two columns.
+                width: "min(100%, 246px)",
                 aspectRatio: "1",
                 borderRadius: "50%",
                 overflow: "hidden",
-                marginBottom: 16,
+                marginBottom: 18,
               }}
             >
               <Image
                 src={persona.portrait.src}
                 alt={persona.portrait.alt}
                 fill
-                sizes="132px"
+                sizes="246px"
                 style={{ objectFit: "cover" }}
               />
             </div>
@@ -183,53 +179,7 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
           </div>
         </div>
 
-        {/* Goals, needs, frustrations. */}
-        <div
-          style={{
-            marginTop: "clamp(26px, 4vw, 42px)",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(178px, 1fr))",
-            gap: "clamp(14px, 2.2vw, 22px)",
-            alignItems: "start",
-          }}
-        >
-          {persona.columns.map((col) => (
-            <div key={col.title}>
-              <Rise at={next()} still={still}>
-                <h4
-                  style={{
-                    margin: "0 0 12px",
-                    textAlign: "center",
-                    fontSize: 16,
-                    fontWeight: 600,
-                    letterSpacing: "-0.01em",
-                  }}
-                >
-                  {col.title}
-                </h4>
-              </Rise>
-              <div style={{ display: "grid", gap: 12 }}>
-                {col.items.map((item) => (
-                  <Rise key={item} at={next()} still={still}>
-                    <p
-                      style={{
-                        margin: 0,
-                        background: CARD_BG[col.tone],
-                        borderRadius: 8,
-                        padding: "16px 18px",
-                        fontSize: 13.5,
-                        lineHeight: 1.5,
-                        letterSpacing: "-0.01em",
-                      }}
-                    >
-                      {item}
-                    </p>
-                  </Rise>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <PersonaDecks columns={persona.columns} />
       </div>
     </div>
   );

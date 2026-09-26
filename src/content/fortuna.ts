@@ -151,15 +151,8 @@ export const SARAH: PersonaSheet = {
     {
       title: "User-persona situation:",
       body: [
-        "Sarah is a 31-year-old administrative assistant. She worked as a receptionist for the last 4 years but recently lost her job. Sarah is a fast learner who can adapt to different work environments. As a people person, she has excellent communication skills, and is always ready to face the day with a positive attitude — in her last job she was voted the smiliest worker.",
-        "Sarah is a single mother of a 2-year-old girl, and lack of time is a daily worry as she is currently paying for a babysitter. Finding a job within the neighbourhood would mean spending more time with her daughter. She wants to get a gig as fast as possible while looking for another job.",
-      ],
-    },
-    {
-      title: "Situation related needs:",
-      body: [
-        "Sarah needs to find a job as fast as possible given the fact she is a single mother. In the meantime, getting a gig seems a really good idea.",
-        "As she wants to spend more time with her daughter, Sarah needs to find a job that's not far from the neighbourhood.",
+        "Sarah is a 31-year-old administrative assistant and former receptionist who recently lost her job. As a single mother of a two year old, time is tight and childcare is expensive, so finding work nearby would give her more time with her daughter.",
+        "She's eager to find a gig quickly while continuing her search for a longer-term job.",
       ],
     },
   ],
