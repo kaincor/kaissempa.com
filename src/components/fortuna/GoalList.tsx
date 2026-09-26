@@ -20,7 +20,21 @@ import Parallax from "./Parallax";
  */
 
 /** Seconds between one goal landing and the next starting. */
-const STAGGER = 0.26;
+const STAGGER = 0.36;
+
+/**
+ * Seconds the first goal waits.
+ *
+ * Long enough for the line above — "Our high level goals for the app were to:"
+ * — to have arrived and settled first. Its own reveal is a 1.25s fade on a
+ * 0.34s delay, and the two are triggered separately, so this is what keeps
+ * them in order rather than racing.
+ */
+const LEAD = 0.9;
+
+/** How long the glint behind a goal lasts, and how strong it gets. */
+const SHIMMER_MS = 1.5;
+const SHIMMER_PEAK = 0.5;
 
 /**
  * How far the block drifts against the page, in pixels each way.
@@ -67,24 +81,30 @@ export default function GoalList({
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{
-              // Enough overshoot to read as a bubble arriving rather than a box
-              // fading up, but soft: a goal should settle into place, not snap.
+              // Enough overshoot to read as a bubble arriving rather than a
+              // box fading up, but slow and soft: a goal should drift into
+              // place, not snap.
               default: {
                 type: "spring",
-                stiffness: 130,
-                damping: 17,
-                mass: 1.1,
-                delay: i * STAGGER,
+                stiffness: 84,
+                damping: 16,
+                mass: 1.2,
+                delay: LEAD + i * STAGGER,
               },
               // Opacity gets a tween, not the spring. A spring this soft is
               // underdamped enough to overshoot, and on a transform that reads
               // as bounce — which is the point — while on opacity it is a
               // visible flicker back to 90% after the line has already arrived.
-              opacity: { duration: 0.45, ease: "easeOut", delay: i * STAGGER },
+              opacity: {
+                duration: 0.7,
+                ease: "easeOut",
+                delay: LEAD + i * STAGGER,
+              },
             }}
             style={{
+              position: "relative",
               display: "grid",
-              gridTemplateColumns: "28px 1fr",
+              gridTemplateColumns: "34px 1fr",
               alignItems: "baseline",
               // Each bubbles about its own leading edge, so the column of
               // numerals stays put while the lines pop.
@@ -92,14 +112,46 @@ export default function GoalList({
                 align === "center" ? "center left" : "left center",
             }}
           >
+            {/* The glint. A soft wash behind the line that comes up as it
+                arrives and goes again, so a goal lands the way a star does
+                rather than simply being switched on. Behind the text and deaf
+                to the pointer; it is lighting, not an object. */}
+            <motion.span
+              aria-hidden="true"
+              initial={reduced ? false : { opacity: 0 }}
+              whileInView={{ opacity: [0, SHIMMER_PEAK, 0] }}
+              viewport={{ once: true, amount: 0.6 }}
+              transition={{
+                duration: SHIMMER_MS,
+                times: [0, 0.35, 1],
+                ease: "easeOut",
+                delay: LEAD + i * STAGGER,
+              }}
+              style={{
+                position: "absolute",
+                left: -24,
+                right: -24,
+                top: -14,
+                bottom: -14,
+                borderRadius: 999,
+                background:
+                  "radial-gradient(ellipse at 28% 50%, rgba(247,245,240,0.5) 0%, rgba(247,245,240,0.16) 38%, rgba(247,245,240,0) 72%)",
+                pointerEvents: "none",
+              }}
+            />
+
             <span
               aria-hidden="true"
               style={{
-                fontFamily: "var(--f-grotesk)",
-                fontWeight: 700,
-                fontSize: 14,
+                // The display face, not the grotesk. A bold sans numeral read
+                // as a form field next to a sentence about a product's north
+                // star; a serif one reads as a figure in a list.
+                fontFamily: "var(--f-display)",
+                fontWeight: 600,
+                fontSize: "1.05em",
                 color: "var(--f-accent)",
-                opacity: 0.6,
+                opacity: 0.45,
+                position: "relative",
               }}
             >
               {i + 1}
@@ -110,6 +162,7 @@ export default function GoalList({
                 fontSize: "var(--f-body-size)",
                 lineHeight: 1.6,
                 letterSpacing: "-0.02em",
+                position: "relative",
               }}
             >
               {item}

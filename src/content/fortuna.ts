@@ -46,7 +46,15 @@ export type Token =
 export type Rich = string | Token[];
 
 export type Block =
-  | { kind: "text"; text: Rich }
+  | {
+      kind: "text";
+      text: Rich;
+      /**
+       * Short centred rules above and below, with room around them. For a
+       * line that is a finding rather than a step in the argument.
+       */
+      rules?: boolean;
+    }
   /** Set in italics in the doc — rendered as a serif pull-quote. */
   /** `tone` picks a brand colour for a line that has to land harder. */
   | { kind: "quote"; text: Rich; tone?: BrandColor }
@@ -314,6 +322,7 @@ export const SECTIONS: Section[] = [
       { kind: "persona", persona: SARAH },
       {
         kind: "text",
+        rules: true,
         text: "Sarah didn't think the job applications were horrid. They just assumed she had time to search when she didn't.",
       },
       { kind: "figure", note: "Draw up framework" },

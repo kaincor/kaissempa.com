@@ -278,13 +278,57 @@ export function Subheading({
   );
 }
 
+/**
+ * A short centred rule. Two of these bracket a line that has to sit apart from
+ * the argument around it — the mark a printed page uses for the same job,
+ * rather than a box, which would make it a component instead of a pause.
+ */
+function Rule() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 84,
+        height: 1,
+        margin: "0 auto",
+        background: "currentColor",
+        opacity: 0.28,
+      }}
+    />
+  );
+}
+
 export function Body({
   children,
   align = "left",
+  rules = false,
 }: {
   children: ReactNode;
-  align?: "left" | "center" | "right";
+  align?: Align;
+  rules?: boolean;
 }) {
+  if (rules) {
+    return (
+      <div style={{ margin: "clamp(46px, 7vh, 82px) 0" }}>
+        <Rule />
+        <p
+          style={{
+            margin: "clamp(22px, 3.2vh, 34px) auto",
+            maxWidth: "var(--f-measure-body)",
+            textAlign: "center",
+            fontFamily: "var(--f-body)",
+            fontSize: "var(--f-body-size)",
+            lineHeight: 1.7,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {children}
+        </p>
+        <Rule />
+      </div>
+    );
+  }
+
   return (
     <p
       style={{
@@ -552,7 +596,7 @@ export function renderBlock(
   switch (block.kind) {
     case "text": {
       const body = (
-        <Body key={i} align={align}>
+        <Body key={i} align={align} rules={block.rules}>
           <Inline nodes={block.text} />
         </Body>
       );

@@ -61,6 +61,26 @@ const GLOW = 0.07;
  */
 const DRIFT = 85;
 
+/**
+ * The shooting star.
+ *
+ * One every seven and a half seconds, somewhere in whatever part of the sky is
+ * actually on screen at the time — the canvas is far taller than the window it
+ * shows through, so a point picked anywhere in it would mostly fall where
+ * nobody is looking.
+ *
+ * It costs frames only while it is crossing. Between streaks the loop stops
+ * exactly as it did before, and it is not scheduled at all while the section
+ * is off screen.
+ */
+const SHOOT_EVERY = 7500;
+const SHOOT_MS = 950;
+/** How long the streak is at full stretch, and how far it travels. */
+const SHOOT_TAIL = 130;
+const SHOOT_REACH = 360;
+/** Brighter than a resting star, but only just — it is a glint, not a flare. */
+const SHOOT_PEAK = 0.85;
+
 /** How quickly the lit state follows the cursor, and when to call it settled. */
 const EASE = 0.16;
 const SETTLED = 0.004;
@@ -88,11 +108,11 @@ const FIGURES: Figure[] = [
   {
     // Ursa Major, the Plough. Bowl of four, handle of three.
     //
-    // Down in the bottom-left corner, out past the left edge of the text
-    // column, where there is empty band for it to sit in. It has to clear the
-    // taper at the foot of the sky and the drift at both ends of its travel,
-    // which is most of why it is not lower.
-    at: [0.02, 0.7],
+    // Low and out to the right, past the edge of the text column where there
+    // is empty band for it to sit in. It has to clear the taper at the foot of
+    // the sky and the drift at both ends of its travel, which is most of why
+    // it is not lower.
+    at: [0.8, 0.7],
     scale: 0.26,
     stars: [
       [0, 0.35],
@@ -254,6 +274,11 @@ export default function NightSky() {
     let cursorClient: { x: number; y: number } | null = null;
     let cursor: { x: number; y: number } | null = null;
     let raf = 0;
+    /** The streak in flight, if there is one. */
+    let shoot: { t0: number; x: number; y: number; dx: number; dy: number } | null =
+      null;
+    let onScreen = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     /** Brings `cursor` up to date with where the canvas currently is. */
     const locate = () => {
@@ -368,6 +393,44 @@ export default function NightSky() {
         ctx.arc(s.x, s.y, s.r * (1 + 0.5 * s.lit), 0, 6.2832);
         ctx.fill();
       }
+
+      if (shoot) {
+        const age = (performance.now() - shoot.t0) / SHOOT_MS;
+        if (age >= 1) {
+          shoot = null;
+        } else {
+          // In fast, out slow, so it arrives as a glint and leaves as a fade.
+          const fade = age < 0.18 ? age / 0.18 : (1 - age) / 0.82;
+          const a = SHOOT_PEAK * fade;
+          const travel = SHOOT_REACH * age;
+          const hx = shoot.x + shoot.dx * travel;
+          const hy = shoot.y + shoot.dy * travel;
+          // The tail grows out of nothing rather than existing at full length
+          // from the first frame, which would read as a line being wiped on.
+          const tail = SHOOT_TAIL * Math.min(1, age * 3.5);
+          const tx = hx - shoot.dx * tail;
+          const ty = hy - shoot.dy * tail;
+
+          const g = ctx.createLinearGradient(tx, ty, hx, hy);
+          g.addColorStop(0, "rgba(247, 245, 240, 0)");
+          g.addColorStop(1, `rgba(247, 245, 240, ${a})`);
+          ctx.strokeStyle = g;
+          ctx.lineWidth = 1.6;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(hx, hy);
+          ctx.stroke();
+
+          const halo = ctx.createRadialGradient(hx, hy, 0, hx, hy, 9);
+          halo.addColorStop(0, `rgba(247, 245, 240, ${a * 0.55})`);
+          halo.addColorStop(1, "rgba(247, 245, 240, 0)");
+          ctx.fillStyle = halo;
+          ctx.beginPath();
+          ctx.arc(hx, hy, 9, 0, 6.2832);
+          ctx.fill();
+        }
+      }
     };
 
     /** Advances every lit value toward its target. Returns whether any moved. */
@@ -423,7 +486,7 @@ export default function NightSky() {
         for (const g of groups) g.lit = 0;
       }
       draw();
-      raf = moving && !still ? requestAnimationFrame(tick) : 0;
+      raf = (moving || shoot) && !still ? requestAnimationFrame(tick) : 0;
     };
     const kick = () => {
       if (!raf && !still) raf = requestAnimationFrame(tick);
@@ -451,6 +514,53 @@ export default function NightSky() {
       kick();
     };
 
+    /**
+     * Fires a streak somewhere in the part of the sky the reader can see.
+     *
+     * The canvas is more than twice the height of its window and most of it is
+     * off the top of the screen at any moment, so the start point is picked
+     * from the canvas's overlap with the viewport rather than from the canvas.
+     */
+    const fire = () => {
+      const r = el.getBoundingClientRect();
+      const top = Math.max(0, -r.top);
+      const bottom = Math.min(r.height, window.innerHeight - r.top);
+      // Room for the streak to run without starting at the very bottom edge.
+      const span = bottom - top - SHOOT_REACH * 0.6;
+      if (span <= 0) return;
+
+      const leftToRight = Math.random() < 0.5;
+      // A shallow dive, the way they actually look.
+      const angle = (18 + Math.random() * 16) * (Math.PI / 180);
+      shoot = {
+        t0: performance.now(),
+        x: leftToRight ? Math.random() * w * 0.45 : w - Math.random() * w * 0.45,
+        y: top + Math.random() * span,
+        dx: (leftToRight ? 1 : -1) * Math.cos(angle),
+        dy: Math.sin(angle),
+      };
+      kick();
+    };
+
+    const schedule = () => {
+      clearTimeout(timer);
+      if (still || !onScreen) return;
+      timer = setTimeout(() => {
+        fire();
+        schedule();
+      }, SHOOT_EVERY);
+    };
+
+    const io = new IntersectionObserver(
+      ([e]) => {
+        onScreen = e.isIntersecting;
+        if (onScreen) schedule();
+        else clearTimeout(timer);
+      },
+      { rootMargin: "0px" },
+    );
+    io.observe(box);
+
     window.addEventListener("pointermove", move, { passive: true });
 
     // Scrolling slides the canvas under the pointer, so the lit patch has to
@@ -469,6 +579,8 @@ export default function NightSky() {
       if (raf) cancelAnimationFrame(raf);
       window.removeEventListener("pointermove", move);
       unsub();
+      clearTimeout(timer);
+      io.disconnect();
       ro.disconnect();
     };
   }, [drift]);
