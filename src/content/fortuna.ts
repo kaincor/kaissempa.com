@@ -342,7 +342,7 @@ export const SECTIONS: Section[] = [
       },
       { kind: "persona", persona: SARAH },
       {
-        kind: "text",
+        kind: "quote",
         rules: true,
         text: "Sarah didn't think the job applications were horrid. They just assumed she had time to search when she didn't.",
       },
@@ -452,6 +452,7 @@ export const SECTIONS: Section[] = [
     blocks: [
       {
         kind: "quote",
+        rules: true,
         text: "Looking for work shouldn't feel like another job. Apply with a swipe and respond to employer interest with an in-app video introduction.",
       },
       { kind: "figure", note: "More added" },
@@ -503,6 +504,7 @@ export const SECTIONS: Section[] = [
       },
       {
         kind: "quote",
+        rules: true,
         text: "So we'd removed the effort, but we'd also removed some of the intention.",
       },
 
@@ -560,6 +562,7 @@ export const SECTIONS: Section[] = [
       },
       {
         kind: "quote",
+        rules: true,
         text: "If Fortuna was going to make hiring faster, we couldn't optimize only one side. We had to remove work from both.",
       },
     ],
