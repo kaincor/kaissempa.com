@@ -410,6 +410,13 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "hamster-wheel",
+    // Centred and staggered from here down, so the back half of the
+    // piece is read the same way as the front. `align` reaches the
+    // heading, the body, subheadings, callouts and lists; the employer
+    // flow's numbered steps keep their own left-aligned layout, which
+    // is right for a sequence of stages.
+    align: "center",
+    reveal: true,
     heading: "Running on a hamster wheel in a rat race",
     tone: "forest",
     blocks: [
@@ -427,6 +434,7 @@ export const SECTIONS: Section[] = [
       },
       {
         kind: "quote",
+        rules: true,
         text: "How might we make job seeking feel less like work?",
       },
       {
@@ -437,6 +445,8 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "introducing-fortuna",
+    align: "center",
+    reveal: true,
     heading: "Introducing Fortuna",
     tone: "cream",
     blocks: [
@@ -449,6 +459,8 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "how-we-got-there",
+    align: "center",
+    reveal: true,
     heading: "How we got there",
     headingPending: true,
     tone: "cream-deep",
@@ -510,6 +522,8 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "new-feature-ideas",
+    align: "center",
+    reveal: true,
     heading: "New feature ideas",
     headingPending: true,
     tone: "cream",
@@ -518,6 +532,8 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "testing-job-seeker",
+    align: "center",
+    reveal: true,
     heading: "Testing on the job seeker flow",
     tone: "cream",
     blocks: [
@@ -533,6 +549,8 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "two-sided",
+    align: "center",
+    reveal: true,
     heading: "From the job seeker to the employer",
     tone: "forest",
     blocks: [
@@ -548,6 +566,8 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "employer-flow",
+    align: "center",
+    reveal: true,
     heading: "Employer flow",
     tone: "cream",
     blocks: [
@@ -612,15 +632,17 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "branding",
+    align: "center",
+    reveal: true,
     heading: "Branding",
     headingPending: true,
     tone: "cream-deep",
     draft: "Add later — may move to the front",
     blocks: [],
   },
-  { id: "website", heading: "Website", headingPending: true, tone: "cream", draft: "Add later", blocks: [] },
-  { id: "video-resume", heading: "Video resume", headingPending: true, tone: "cream-deep", draft: "Add later", blocks: [] },
-  { id: "app-store", heading: "App Store screens", headingPending: true, tone: "cream", draft: "Add later — A and B testing", blocks: [] },
-  { id: "promo", heading: "Promotional video shoots + flyers", headingPending: true, tone: "card", draft: "Add later", blocks: [] },
-  { id: "closing", heading: "Closing reflection", headingPending: true, tone: "forest", draft: "Add later", blocks: [] },
+  { id: "website", heading: "Website", headingPending: true, tone: "cream", draft: "Add later", align: "center", reveal: true, blocks: [] },
+  { id: "video-resume", heading: "Video resume", headingPending: true, tone: "cream-deep", draft: "Add later", align: "center", reveal: true, blocks: [] },
+  { id: "app-store", heading: "App Store screens", headingPending: true, tone: "cream", draft: "Add later — A and B testing", align: "center", reveal: true, blocks: [] },
+  { id: "promo", heading: "Promotional video shoots + flyers", headingPending: true, tone: "card", draft: "Add later", align: "center", reveal: true, blocks: [] },
+  { id: "closing", heading: "Closing reflection", headingPending: true, tone: "forest", draft: "Add later", align: "center", reveal: true, blocks: [] },
 ];
