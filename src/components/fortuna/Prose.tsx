@@ -7,6 +7,7 @@ import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
 import GoalList from "./GoalList";
 import Persona from "./Persona";
+import Reveal from "./Reveal";
 import NightSky from "./NightSky";
 import { hasFill } from "@/content/fortuna";
 import type { Align, Block, Rich, Token, Tone } from "@/content/fortuna";
@@ -635,6 +636,7 @@ function ownsEntrance(block: Block) {
   return (
     block.kind === "globe" ||
     block.kind === "persona" ||
+    block.kind === "reveal" ||
     (block.kind === "list" && block.emphasis === true) ||
     (block.kind === "callout" && block.reveal === true)
   );
@@ -736,6 +738,8 @@ function blockNode(
       return <MiamiGlobe key={i} caption={block.caption} />;
     case "persona":
       return <Persona key={i} persona={block.persona} />;
+    case "reveal":
+      return <Reveal key={i} />;
   }
 }
 

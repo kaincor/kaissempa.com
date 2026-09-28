@@ -125,6 +125,8 @@ export type Block =
   | { kind: "globe"; caption: Rich }
   /** The research persona, rebuilt as the sheet it came from. */
   | { kind: "persona"; persona: PersonaSheet }
+  /** The pinned, scrolled reveal of the product itself. */
+  | { kind: "reveal" }
 
 export type Section = {
   id: string;
@@ -456,7 +458,7 @@ export const SECTIONS: Section[] = [
         rules: true,
         text: "Looking for work shouldn't feel like another job. Apply with a swipe and respond to employer interest with an in-app video introduction.",
       },
-      { kind: "figure", note: "More added" },
+      { kind: "reveal" },
     ],
   },
   {
