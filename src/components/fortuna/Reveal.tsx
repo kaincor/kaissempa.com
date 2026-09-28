@@ -6,8 +6,8 @@ import {
   motion,
   useMotionValue,
   useMotionValueEvent,
+  useInView,
   useReducedMotion,
-  useScroll,
   useTransform,
   type MotionValue,
 } from "motion/react";
@@ -17,18 +17,27 @@ import FortunaWordmark from "./FortunaWordmark";
 /**
  * The first time Fortuna is actually shown.
  *
- * A pinned stage the reader scrolls through, one chapter at a time, with the
- * product's own f. as the thread: the app icon opens into the phone, the
+ * A stage that plays on its own, round and round, with the product's own f.
+ * as the thread: the app icon opens into the phone, the
  * phone runs the app — splash, the choice between the two users, the swipe —
  * then turns to show the other user's side, pulls back into the website, and
  * gives way to the posters before settling on the wordmark. The stage's own
  * colour changes with each chapter, so the section behind the work is part
  * of the work.
  *
- * Scrubbed rather than timed. Every beat sits under the reader's thumb and
- * runs backwards if they scroll back up — they explore it, which is the point
- * of a reveal, rather than watch it. The one exception is the last card in
- * the stack, which the reader can swipe for themselves.
+ * Timed, and looping. It was first built scrubbed by the scroll, pinned for
+ * seven screens; played on a clock it reads as the product being shown off
+ * rather than a sequence the reader has to work through, and the page keeps
+ * moving underneath it. The loop starts and ends on green — the wordmark
+ * fades, the icon comes back on the same colour — so there is no seam.
+ *
+ * The one thing that is not on the clock is the last card in the stack,
+ * which is the reader's to swipe. Touching it, or the app's buttons under
+ * it, holds the loop until a few seconds after they let go; without that
+ * their turn would be over in about a second.
+ *
+ * It only runs while it is on screen. Off screen the clock stops outright
+ * rather than ticking in the background.
  *
  * Almost everything moving is vector or code. The screens the phone shows are
  * rebuilt as markup where they have to move (the job cards) and are 1x Figma
@@ -45,13 +54,15 @@ const ORANGE = "#f58120";
 const INK = "#2a3a35";
 
 /**
- * How much scrolling the whole reveal takes, in screen heights.
+ * One time round, in seconds.
  *
- * Seven chapters at a screen or so apiece. Less and the swipe, which has two
- * cards to get through before the reader's turn, is over before it has been
- * seen; more and a pinned section starts to feel like being held.
+ * About two seconds a chapter. The swipe has two cards to get through before
+ * the reader's turn, and much quicker than this they go by before anyone has
+ * worked out what they are looking at.
  */
-const LENGTH = 7;
+const DURATION = 24;
+/** How long the loop waits after the reader last touched their card. */
+const HOLD_MS = 2600;
 
 /**
  * Where each chapter sits in the reveal's progress, 0 to 1.
@@ -75,7 +86,9 @@ const T = {
   toWeb: [0.74, 0.79],
   toPoster: [0.82, 0.86],
   toWall: [0.88, 0.91],
-  end: [0.94, 0.98],
+  end: [0.92, 0.95],
+  /** The wordmark leaving, so the loop can come back round to the icon. */
+  out: [0.985, 1],
 } as const;
 
 /** The phone's screen, in the app's own design units. */
@@ -159,12 +172,37 @@ function useStage() {
 
 export default function Reveal() {
   const reduced = useReducedMotion();
-  const track = useRef<HTMLDivElement>(null);
   const [stage, { w: W, h: H }] = useStage();
-  const { scrollYProgress: p } = useScroll({
-    target: track,
-    offset: ["start start", "end end"],
-  });
+  const p = useMotionValue(0);
+  const onScreen = useInView(stage, { amount: 0.35 });
+  const holdUntil = useRef(0);
+
+  // The reader's card holds the loop while they are using it.
+  useEffect(() => {
+    const onHold = (e: Event) => {
+      const ms = (e as CustomEvent<number>).detail;
+      holdUntil.current = ms === Infinity ? Infinity : performance.now() + ms;
+    };
+    window.addEventListener("fortuna-hold", onHold);
+    return () => window.removeEventListener("fortuna-hold", onHold);
+  }, []);
+
+  // The clock. Started and stopped with the section's visibility, not left
+  // running idle; the step is capped so coming back to the tab after a while
+  // does not skip whole chapters in one frame.
+  useEffect(() => {
+    if (!onScreen || reduced) return;
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      if (now >= holdUntil.current) p.set((p.get() + dt / DURATION) % 1);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [onScreen, reduced, p]);
 
   // The phone, sized to the stage. The screen is laid out at the app's own
   // 375 x 812 and scaled into it, so every coordinate below is a Figma one.
@@ -233,7 +271,7 @@ export default function Reveal() {
   const wallOpacity = useTransform(p, (v) => span(v, T.toWall) * (1 - span(v, T.end)));
   const wallScale = useTransform(p, (v) => 0.92 + 0.08 * easeOut(span(v, T.toWall)));
 
-  const markOpacity = useTransform(p, (v) => span(v, T.end));
+  const markOpacity = useTransform(p, (v) => span(v, T.end) * (1 - span(v, T.out)));
   const markY = useTransform(p, (v) => 24 * (1 - easeOut(span(v, T.end))));
 
   const hintOpacity = useTransform(p, (v) => {
@@ -251,11 +289,15 @@ export default function Reveal() {
   const wallW = Math.min(W * 0.9, 1200, (H * 0.78 * 1600) / 1079);
 
   return (
-    <div
-      ref={track}
+    <motion.div
+      ref={stage}
       style={{
         position: "relative",
-        height: `${LENGTH * 100}vh`,
+        height: "100svh",
+        maxHeight: 980,
+        minHeight: 620,
+        overflow: "hidden",
+        background: bg,
         // Out of the text column to the full width of the page: the stage's
         // colour is the section's colour, and a coloured box sitting inside a
         // cream margin would read as a picture of it instead.
@@ -264,16 +306,6 @@ export default function Reveal() {
         marginTop: "clamp(40px, 7vh, 80px)",
       }}
     >
-      <motion.div
-        ref={stage}
-        style={{
-          position: "sticky",
-          top: 0,
-          height: "100svh",
-          overflow: "hidden",
-          background: bg,
-        }}
-      >
         <Layer interactive>
           {/* The phone. Clipped to the icon's square until it opens. */}
           <motion.div
@@ -476,9 +508,13 @@ export default function Reveal() {
         >
           Your turn — swipe the card, or tap ✕ or ✓
         </motion.p>
-      </motion.div>
-    </div>
+    </motion.div>
   );
+}
+
+/** Pause the loop: for a while, or until told otherwise. */
+function hold(ms: number) {
+  window.dispatchEvent(new CustomEvent("fortuna-hold", { detail: ms }));
 }
 
 /**
@@ -703,11 +739,15 @@ function YourCard({
         // page, which matters on a phone where the whole stage is pinned.
         touchAction: "pan-y",
       }}
+      onPanStart={() => {
+        if (live) hold(Infinity);
+      }}
       onPan={(_, info) => {
         if (live) x.set(info.offset.x / k);
       }}
       onPanEnd={(_, info) => {
         if (!live) return;
+        hold(HOLD_MS);
         const d = info.offset.x / k;
         if (Math.abs(d) > 90 || Math.abs(info.velocity.x) > 600) fling(d > 0 ? 1 : -1);
         else animate(x, 0, { type: "spring", stiffness: 420, damping: 30 });
@@ -870,8 +910,10 @@ function Header() {
 }
 
 function Buttons() {
-  const press = (dir: 1 | -1) =>
+  const press = (dir: 1 | -1) => {
+    hold(HOLD_MS);
     window.dispatchEvent(new CustomEvent("fortuna-swipe", { detail: dir }));
+  };
   return (
     <>
       <button
