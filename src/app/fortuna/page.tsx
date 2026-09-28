@@ -33,64 +33,77 @@ export default function FortunaPage() {
             margin: "0 auto",
           }}
         >
-          <Eyebrow>{HERO.eyebrow}</Eyebrow>
-          <h1
-            style={{
-              margin: "0 0 20px",
-              fontFamily: "var(--f-display)",
-              fontWeight: 600,
-              fontSize: "clamp(40px, 8vw, 78px)",
-              lineHeight: 1.05,
-              letterSpacing: "-0.015em",
-              textWrap: "balance",
-            }}
-          >
-            {HERO.title}
-            <span style={{ color: "var(--f-green)" }}>.</span>
-          </h1>
-          <p
-            style={{
-              margin: "0 0 40px",
-              maxWidth: "var(--f-measure-body)",
-              fontFamily: "var(--f-serif)",
-              fontStyle: "italic",
-              fontWeight: 500,
-              fontSize: "clamp(19px, 2.6vw, 26px)",
-              lineHeight: 1.45,
-              letterSpacing: "-0.02em",
-              color: "var(--f-muted)",
-            }}
-          >
-            {HERO.standfirst}
-          </p>
-          <p
-            style={{
-              margin: "0 0 18px",
-              maxWidth: "var(--f-measure-body)",
-              fontFamily: "var(--f-body)",
-              fontSize: "var(--f-body-size)",
-              lineHeight: 1.7,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {HERO.intro}
-          </p>
-          <p
-            style={{
-              margin: "36px 0 0",
-              maxWidth: "var(--f-measure-body)",
-              fontFamily: "var(--f-serif)",
-              fontStyle: "italic",
-              fontWeight: 500,
-              fontSize: "clamp(18px, 2.3vw, 22px)",
-              lineHeight: 1.55,
-              letterSpacing: "-0.02em",
-              borderLeft: "2px solid var(--f-green)",
-              paddingLeft: "clamp(18px, 3vw, 30px)",
-            }}
-          >
-            {HERO.pullquote}
-          </p>
+          {/* The page's own entrance, the same one every section below uses:
+              each piece on the shared queue, so on load they arrive a beat
+              apart from the top down. */}
+          <FadeIn>
+            <Eyebrow>{HERO.eyebrow}</Eyebrow>
+          </FadeIn>
+          <FadeIn>
+            <h1
+              style={{
+                margin: "0 0 20px",
+                fontFamily: "var(--f-display)",
+                fontWeight: 600,
+                fontSize: "clamp(40px, 8vw, 78px)",
+                lineHeight: 1.05,
+                letterSpacing: "-0.015em",
+                textWrap: "balance",
+              }}
+            >
+              {HERO.title}
+              <span style={{ color: "var(--f-green)" }}>.</span>
+            </h1>
+          </FadeIn>
+          <FadeIn>
+            <p
+              style={{
+                margin: "0 0 40px",
+                maxWidth: "var(--f-measure-body)",
+                fontFamily: "var(--f-serif)",
+                fontStyle: "italic",
+                fontWeight: 500,
+                fontSize: "clamp(19px, 2.6vw, 26px)",
+                lineHeight: 1.45,
+                letterSpacing: "-0.02em",
+                color: "var(--f-muted)",
+              }}
+            >
+              {HERO.standfirst}
+            </p>
+          </FadeIn>
+          <FadeIn>
+            <p
+              style={{
+                margin: "0 0 18px",
+                maxWidth: "var(--f-measure-body)",
+                fontFamily: "var(--f-body)",
+                fontSize: "var(--f-body-size)",
+                lineHeight: 1.7,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {HERO.intro}
+            </p>
+          </FadeIn>
+          <FadeIn>
+            <p
+              style={{
+                margin: "36px 0 0",
+                maxWidth: "var(--f-measure-body)",
+                fontFamily: "var(--f-serif)",
+                fontStyle: "italic",
+                fontWeight: 500,
+                fontSize: "clamp(18px, 2.3vw, 22px)",
+                lineHeight: 1.55,
+                letterSpacing: "-0.02em",
+                borderLeft: "2px solid var(--f-green)",
+                paddingLeft: "clamp(18px, 3vw, 30px)",
+              }}
+            >
+              {HERO.pullquote}
+            </p>
+          </FadeIn>
         </div>
       </header>
 
@@ -140,7 +153,13 @@ export default function FortunaPage() {
             })()}
 
             {section.draft ? (
-              <Figure note={section.draft} dark={dark} />
+              section.reveal ? (
+                <FadeIn>
+                  <Figure note={section.draft} dark={dark} />
+                </FadeIn>
+              ) : (
+                <Figure note={section.draft} dark={dark} />
+              )
             ) : null}
 
             {section.blocks.map((block, i) =>

@@ -405,6 +405,7 @@ export const SECTIONS: Section[] = [
     heading: "Data frameworks on research",
     headingPending: true,
     tone: "cream",
+    reveal: true,
     draft: "Add later",
     blocks: [],
   },

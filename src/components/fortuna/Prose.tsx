@@ -615,13 +615,30 @@ export function Figure({ note, dark }: { note: string; dark?: boolean }) {
 }
 
 /**
- * Order of arrival within a revealing section.
+ * How long the billboard waits per place in its section.
  *
- * The heading goes first and the paragraph follows it; the billboard waits for
- * both, because it is the loudest thing in the section and should not be what
- * the eye catches on the way in.
+ * Only the billboard still counts places. Everything else arrives on the
+ * page's shared queue in FadeIn; the billboard has its own stand-up and waits
+ * for the heading and paragraph above it, because it is the loudest thing in
+ * its section and should not be what the eye catches on the way in.
  */
 const STEP = 0.34;
+
+/**
+ * Blocks that bring their own entrance, and so are left out of the page's.
+ *
+ * The globe has its rise and pin, the persona its dealt cards, the goals their
+ * fade, the billboard its stand-up. Wrapping any of them in a fade as well
+ * would give the reader two entrances for one object.
+ */
+function ownsEntrance(block: Block) {
+  return (
+    block.kind === "globe" ||
+    block.kind === "persona" ||
+    (block.kind === "list" && block.emphasis === true) ||
+    (block.kind === "callout" && block.reveal === true)
+  );
+}
 
 export function renderBlock(
   block: Block,
@@ -632,9 +649,23 @@ export function renderBlock(
   /** Position in the section's arrival order, heading included. */
   order = 0,
 ) {
+  const node = blockNode(block, i, dark, align, order);
+  // Everything else arrives on the page's shared queue: on its own when it
+  // reaches the screen, a beat behind anything that reached it at the same
+  // moment. See FadeIn.
+  return reveal && !ownsEntrance(block) ? <FadeIn key={i}>{node}</FadeIn> : node;
+}
+
+function blockNode(
+  block: Block,
+  i: number,
+  dark: boolean,
+  align: Align,
+  order: number,
+) {
   switch (block.kind) {
-    case "text": {
-      const body = (
+    case "text":
+      return (
         <Body key={i} align={align} rules={block.rules}>
           {hasFill(block.text) ? (
             <ScrollFillLine nodes={block.text} />
@@ -643,16 +674,8 @@ export function renderBlock(
           )}
         </Body>
       );
-      return reveal ? (
-        <FadeIn key={i} delay={order * STEP}>
-          {body}
-        </FadeIn>
-      ) : (
-        body
-      );
-    }
-    case "quote": {
-      const quote = (
+    case "quote":
+      return (
         <Quote
           key={i}
           dark={dark}
@@ -663,14 +686,6 @@ export function renderBlock(
           <Inline nodes={block.text} />
         </Quote>
       );
-      return reveal ? (
-        <FadeIn key={i} delay={order * STEP}>
-          {quote}
-        </FadeIn>
-      ) : (
-        quote
-      );
-    }
     case "callout":
       // The revealing one is a client component; the plain one stays static so
       // a page full of pull-outs does not become a page full of scroll
