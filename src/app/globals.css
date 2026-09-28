@@ -19,6 +19,22 @@
   --font-sans: var(--font-body);
 }
 
+/* The page scrolls one way: down.
+
+   The art bleeds past both edges on purpose — the ridges are drawn a percent
+   or two wider than the screen and nudged left so their ends never show a
+   seam, and the cloud rows are many screens wide so they can loop. Left to
+   themselves those made the whole page 18px wider than the window and
+   draggable sideways. Clipped here, once, rather than by trimming the art.
+
+   `clip`, not `hidden`. Hidden makes the element a scroll container, which
+   breaks every position: sticky beneath it and still lets iOS pan sideways
+   on a drag; clip just cuts the overflow off. */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
