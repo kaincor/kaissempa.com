@@ -56,40 +56,81 @@ const INK = "#2a3a35";
 /**
  * One time round, in seconds.
  *
- * About two seconds a chapter. The swipe has two cards to get through before
- * the reader's turn, and much quicker than this they go by before anyone has
- * worked out what they are looking at.
+ * Quick, and every scene lands on a spring. The swipe still has two cards to
+ * get through before the reader's turn, so the time saved comes out of the
+ * holds between scenes rather than out of the moves themselves.
  */
-const DURATION = 24;
+const DURATION = 19;
 /** How long the loop waits after the reader last touched their card. */
 const HOLD_MS = 2600;
 
+/** A span of the loop given in seconds, stored as a fraction of it. */
+const S = (a: number, b: number) => [a / DURATION, b / DURATION] as const;
+
 /**
- * Where each chapter sits in the reveal's progress, 0 to 1.
+ * Where each beat sits in the loop.
  *
  * All of the choreography reads off this one table, so the pacing can be
- * retuned in one place rather than hunted through the transforms below.
+ * retuned in one place rather than hunted through the transforms below. The
+ * zooms come in pairs across a cut: in through the f in one scene until its
+ * stem fills the stage, and back out through the f of the next.
  */
 const T = {
-  iconIn: [0.0, 0.05],
-  morph: [0.07, 0.15],
-  welcomeIn: [0.19, 0.23],
-  tap: [0.26, 0.29],
-  listingIn: [0.3, 0.33],
-  swipeRight: [0.35, 0.41],
-  advance1: [0.41, 0.44],
-  swipeLeft: [0.45, 0.5],
-  advance2: [0.5, 0.52],
-  yourTurn: [0.52, 0.58],
-  toSeeker: [0.58, 0.63],
-  flip: [0.66, 0.72],
-  toWeb: [0.74, 0.79],
-  toPoster: [0.82, 0.86],
-  toWall: [0.88, 0.91],
-  end: [0.92, 0.95],
-  /** The wordmark leaving, so the loop can come back round to the icon. */
-  out: [0.985, 1],
+  zoomOut0: S(0, 0.6),
+  zoomIn1: S(1.1, 1.6),
+  zoomOut1: S(1.6, 2.2),
+  welcomeIn: S(2.75, 3.05),
+  tap: S(3.3, 3.6),
+  listingIn: S(3.65, 3.95),
+  swipeRight: S(4.15, 4.8),
+  advance1: S(4.8, 5.15),
+  swipeLeft: S(5.3, 5.95),
+  advance2: S(5.95, 6.3),
+  yourTurn: S(6.3, 7.9),
+  zoomIn2: S(7.9, 8.4),
+  zoomOut2: S(8.4, 9.0),
+  flipTo: S(9.4, 10.0),
+  flipBack: S(10.5, 11.1),
+  zoomIn3: S(11.1, 11.6),
+  zoomOut3: S(11.6, 12.2),
+  zoomIn4: S(13.1, 13.6),
+  zoomOut4: S(13.6, 14.2),
+  toPoster: S(14.9, 15.35),
+  zoomIn5: S(16.0, 16.5),
+  zoomOut5: S(16.5, 17.1),
+  zoomIn6: S(18.4, 19.0),
 } as const;
+
+/** The moment each zoom covers the stage: where the scenes change over. */
+const P1 = T.zoomIn1[1];
+const P2 = T.zoomIn2[1];
+const P3 = T.zoomIn3[1];
+const P4 = T.zoomIn4[1];
+const P5 = T.zoomIn5[1];
+const FLIP_TO = (T.flipTo[0] + T.flipTo[1]) / 2;
+const FLIP_BACK = (T.flipBack[0] + T.flipBack[1]) / 2;
+
+/** The colour of the f at each end of each cut, for the wash that covers it. */
+const WHITE = "#ffffff";
+const SITE_INK = "#32443e";
+const CUTS = [
+  { in: T.zoomIn1, out: T.zoomOut1, from: WHITE, to: GREEN },
+  { in: T.zoomIn2, out: T.zoomOut2, from: GREEN, to: GREEN },
+  { in: T.zoomIn3, out: T.zoomOut3, from: GREEN, to: SITE_INK },
+  { in: T.zoomIn4, out: T.zoomOut4, from: SITE_INK, to: GREEN },
+  { in: T.zoomIn5, out: T.zoomOut5, from: GREEN, to: WHITE },
+  // The seam: out of the closing wordmark's f and into the icon's.
+  { in: T.zoomIn6, out: T.zoomOut0, from: WHITE, to: WHITE },
+] as const;
+
+/**
+ * The f in the wordmark, in the wordmark's own units (it is drawn 41 high):
+ * the middle of the stem just under the crossbar, and half the stem's width.
+ * The stem is the one part of the letter broad enough to fly into.
+ */
+const MARK_F = { x: 8.3, y: 27, hw: 5.2 };
+/** The same point in the app icon's f, in the logo's units. */
+const ICON_F = { x: 66, y: 235, hw: 41 };
 
 /** The phone's screen, in the app's own design units. */
 const SCREEN_W = 375;
@@ -170,6 +211,60 @@ function useStage() {
   return [ref, size] as const;
 }
 
+/** Where a scene's f is, as an offset from the scene's centre, in px. */
+type Anchor = { x: number; y: number; hw: number };
+
+/**
+ * How far to fly into an f: until its stem is most of the stage wide.
+ *
+ * Capped, and the wash does the last of the covering. Flying the whole way
+ * into a four-pixel stem on a phone screen means scaling the scene past a
+ * hundred times, which is a lot of texture for a browser to find for a third
+ * of a second when a colour fading up over the last stretch reads the same.
+ */
+function depth(a: Anchor, W: number) {
+  return Math.min(32, Math.max(4, (W * 0.42) / a.hw));
+}
+
+/**
+ * A scene's transform at a moment: arriving out of its f, leaving into it,
+ * or at rest. The f's point is carried to the middle of the stage as the
+ * zoom deepens, so the camera flies into the letter rather than past it.
+ *
+ * Scaled in log space. A linear scale from 1 to 30 spends nearly all of its
+ * time in the last few multiples and reads as a lurch; log is even, the way a
+ * dolly move is. The landing overshoots a touch below full size and comes
+ * back, which is the bounce.
+ */
+function zoomed(
+  v: number,
+  arrive: { win: readonly [number, number]; a: Anchor } | null,
+  leave: { win: readonly [number, number]; a: Anchor } | null,
+  W: number,
+) {
+  let z = 1;
+  let c = 0;
+  let a: Anchor = { x: 0, y: 0, hw: 1 };
+  if (arrive && v >= arrive.win[0] && v < arrive.win[1]) {
+    const t = span(v, arrive.win);
+    a = arrive.a;
+    // Out of the letter over most of the window, then a dip just under full
+    // size and back for the landing. A spring curve for the whole move did
+    // its travel in the first quarter, so the scene was already at rest by
+    // the time the wash had cleared and the fly-out itself was never seen.
+    const out = Math.min(1, t / 0.78);
+    z = Math.exp(Math.log(depth(a, W)) * (1 - easeOut2(out)));
+    z *= 1 - 0.075 * Math.sin(Math.PI * span(t, [0.7, 1]));
+    c = 1 - easeInOut(out);
+  } else if (leave && v >= leave.win[0] && v <= leave.win[1]) {
+    const t = span(v, leave.win);
+    a = leave.a;
+    z = Math.exp(Math.log(depth(a, W)) * easeIn2(t));
+    c = easeInOut(Math.min(1, t / 0.6));
+  }
+  return `translate(${-c * z * a.x}px, ${-c * z * a.y}px) scale(${z})`;
+}
+
 export default function Reveal() {
   const reduced = useReducedMotion();
   const [stage, { w: W, h: H }] = useStage();
@@ -189,7 +284,7 @@ export default function Reveal() {
 
   // The clock. Started and stopped with the section's visibility, not left
   // running idle; the step is capped so coming back to the tab after a while
-  // does not skip whole chapters in one frame.
+  // does not skip whole scenes in one frame.
   useEffect(() => {
     if (!onScreen || reduced) return;
     let raf = 0;
@@ -213,66 +308,117 @@ export default function Reveal() {
   const PW = screenW + bezel * 2;
   const PH = screenH + bezel * 2;
   const phoneR = screenW * 0.14;
-  const iconS = PW * 0.52;
+  const iconS = Math.min(PW * 0.62, H * 0.3);
 
-  const bg = useTransform(
-    p,
-    [0, 0.12, 0.58, 0.62, 0.74, 0.78, 0.82, 0.86, 0.93, 0.97],
-    [GREEN, CREAM, CREAM, FOREST, FOREST, CREAM, CREAM, ORANGE, ORANGE, GREEN],
-  );
+  // Every other scene, fitted to whichever dimension of the stage runs out
+  // first.
+  const handH = PH * 1.04;
+  const hand = handH / 640;
+  const webW = Math.min(W * 0.92, 1100, (H * 0.74 * 1440) / 1297);
+  const web = webW / 1440;
+  const webH = 26 + 1297 * web;
+  const wallW = Math.min(W * 0.9, 1200, (H * 0.76 * 1600) / 1079);
+  const wall = wallW / 1600;
+  const posterH = Math.min(H * 0.82, (W * 0.8 * 1800) / 1013);
+  const poster = posterH / 1800;
+  const markFont = Math.min(118, Math.max(44, W * 0.1));
+  const markU = (markFont * 1.0256) / 41;
 
-  // The icon becoming the phone. The phone is clipped down to the icon's
-  // square and opened back out to its own outline; the icon on top fades as
-  // the clip passes it, so the one reads as turning into the other.
-  const clip = useTransform(p, (v) => {
-    const m = easeInOut(span(v, T.morph));
-    const s = iconS + (PW - iconS) * m;
-    const t = iconS + (PH - iconS) * m;
-    const x = (PW - s) / 2;
-    const y = (PH - t) / 2;
-    const r = iconS * 0.23 + (phoneR + bezel - iconS * 0.23) * m;
-    return `inset(${y}px ${x}px ${y}px ${x}px round ${r}px)`;
+  // Where the f is in each scene, measured off the files themselves.
+  const onScreenF = (sx: number, sy: number, hw: number): Anchor => ({
+    x: bezel + sx * k - PW / 2,
+    y: bezel + sy * k - PH / 2,
+    hw: hw * k,
   });
-  const iconScale = useTransform(p, (v) => 0.55 + 0.45 * easeOut(span(v, T.iconIn)));
-  const iconOpacity = useTransform(p, (v) =>
-    span(v, T.iconIn) * (1 - span(v, [T.morph[0] + 0.01, T.morph[0] + 0.05])),
+  const iconU = (iconS * 0.6) / 260.337;
+  const F = {
+    icon: {
+      x: iconS * 0.19 + ICON_F.x * iconU - iconS / 2,
+      y: iconS * 0.12 + ICON_F.y * iconU - iconS / 2,
+      hw: ICON_F.hw * iconU,
+    },
+    splash: onScreenF(84 + MARK_F.x, 346 + MARK_F.y, MARK_F.hw),
+    header: onScreenF(129 + MARK_F.x * 0.5628, 59 + MARK_F.y * 0.5628, MARK_F.hw * 0.5628),
+    seeker: { x: 120 * hand - (287 * hand) / 2, y: 73 * hand - handH / 2, hw: 2.5 * hand },
+    webPhone: { x: 671.8 * web - webW / 2, y: 26 + 777.5 * web - webH / 2, hw: 2.4 * web },
+    webLogo: { x: 69 * web - webW / 2, y: 26 + 63.5 * web - webH / 2, hw: 3.2 * web },
+    wall: { x: 392 * wall - wallW / 2, y: 214.5 * wall - (1079 * wall) / 2, hw: 3.2 * wall },
+    poster: { x: 114.8 * poster - (1013 * poster) / 2, y: 168 * poster - posterH / 2, hw: 11.2 * poster },
+    mark: {
+      x: (MARK_F.x - 103) * markU,
+      y: MARK_F.y * markU - (41 * markU - 0.09 * markFont) / 2,
+      hw: MARK_F.hw * markU,
+    },
+  };
+
+  // The stage's colour changes only at a cut, while the wash has it covered.
+  const bg = useTransform(p, (v) =>
+    v < P1 ? GREEN : v < P2 ? CREAM : v < P3 ? FOREST : v < P4 ? CREAM : v < P5 ? ORANGE : GREEN,
   );
-  const phoneShown = useTransform(p, (v) =>
-    v < T.morph[0] ? 0 : 1 - span(v, T.toSeeker),
+
+  // The wash: the colour of the stem the camera is inside, fading up over the
+  // last of a zoom in and away over the first of the zoom out, and turning
+  // from one f's colour to the next while it has the stage covered.
+  const washOpacity = useTransform(p, (v) => {
+    for (const c of CUTS) {
+      if (v >= c.in[0] && v <= c.in[1]) return easeIn3(span(v, [c.in[0] + (c.in[1] - c.in[0]) * 0.55, c.in[1] - (c.in[1] - c.in[0]) * 0.08]));
+      if (v >= c.out[0] && v < c.out[1]) return 1 - easeOut3(span(v, [c.out[0] + (c.out[1] - c.out[0]) * 0.06, c.out[0] + (c.out[1] - c.out[0]) * 0.4]));
+    }
+    return 0;
+  });
+  const washColour = useTransform(p, (v) => {
+    for (const c of CUTS) {
+      if (v >= c.in[0] && v <= c.in[1]) return mix(c.from, c.to, span(v, [c.in[1] - (c.in[1] - c.in[0]) * 0.12, c.in[1]]) * 0.5);
+      if (v >= c.out[0] && v < c.out[1]) return mix(c.from, c.to, 0.5 + 0.5 * span(v, [c.out[0], c.out[0] + (c.out[1] - c.out[0]) * 0.12]));
+    }
+    return WHITE;
+  });
+
+  // Which scene is up. They change over only at a cut, under the wash.
+  const iconOn = useTransform(p, (v) => (v < P1 ? 1 : 0));
+  const phoneOn = useTransform(p, (v) => (v >= P1 && v < P2 ? 1 : 0));
+  const seekerOn = useTransform(p, (v) =>
+    (v >= P2 && v < FLIP_TO) || (v >= FLIP_BACK && v < P3) ? 1 : 0,
   );
-  const phoneTurn = useTransform(p, (v) => -14 * span(v, T.toSeeker));
+  const employerOn = useTransform(p, (v) => (v >= FLIP_TO && v < FLIP_BACK ? 1 : 0));
+  const webOn = useTransform(p, (v) => (v >= P3 && v < P4 ? 1 : 0));
+  const markOn = useTransform(p, (v) => (v >= P5 ? 1 : 0));
+
+  const iconT = useTransform(p, (v) => zoomed(v, { win: T.zoomOut0, a: F.icon }, { win: T.zoomIn1, a: F.icon }, W));
+  const phoneT = useTransform(p, (v) => zoomed(v, { win: T.zoomOut1, a: F.splash }, { win: T.zoomIn2, a: F.header }, W));
+  const seekerT = useTransform(p, (v) => zoomed(v, { win: T.zoomOut2, a: F.seeker }, { win: T.zoomIn3, a: F.seeker }, W));
+  const webT = useTransform(p, (v) => zoomed(v, { win: T.zoomOut3, a: F.webPhone }, { win: T.zoomIn4, a: F.webLogo }, W));
+  const wallT = useTransform(p, (v) => zoomed(v, { win: T.zoomOut4, a: F.wall }, null, W));
+  const posterT = useTransform(p, (v) => zoomed(v, null, { win: T.zoomIn5, a: F.poster }, W));
+  const markT = useTransform(p, (v) => zoomed(v, { win: T.zoomOut5, a: F.mark }, { win: T.zoomIn6, a: F.mark }, W));
+
+  // The two users: the phone turned round to the employer's side and back.
+  const seekerRot = useTransform(p, (v) =>
+    v < FLIP_BACK
+      ? 90 * easeIn(span(v, [T.flipTo[0], FLIP_TO]))
+      : -90 + 90 * backOut(span(v, [FLIP_BACK, T.flipBack[1]]), 1.2),
+  );
+  const employerRot = useTransform(p, (v) =>
+    v < FLIP_BACK - 0.0001 && v >= FLIP_TO
+      ? v < T.flipBack[0]
+        ? -90 + 90 * backOut(span(v, [FLIP_TO, T.flipTo[1]]), 1.2)
+        : 90 * easeIn(span(v, [T.flipBack[0], FLIP_BACK]))
+      : -90,
+  );
+
+  const wallOn = useTransform(p, (v) => (v >= P4 && v < T.toPoster[1] ? 1 - span(v, T.toPoster) : 0));
+  const posterOn = useTransform(p, (v) => (v >= T.toPoster[0] && v < P5 ? span(v, T.toPoster) : 0));
+  const posterIn = useTransform(p, (v) => 0.86 + 0.14 * backOut(span(v, T.toPoster), 1.6));
 
   const welcomeOpacity = useTransform(p, (v) => span(v, T.welcomeIn));
+  const welcomeY = useTransform(p, (v) => 40 * (1 - backOut(span(v, T.welcomeIn), 1.6)));
   const listingOpacity = useTransform(p, (v) => span(v, T.listingIn));
+  const listingY = useTransform(p, (v) => 40 * (1 - backOut(span(v, T.listingIn), 1.6)));
   const tapScale = useTransform(p, (v) => 0.2 + 1.6 * span(v, T.tap));
   const tapOpacity = useTransform(p, (v) => {
     const s = span(v, T.tap);
     return s <= 0 || s >= 1 ? 0 : 0.35 * (1 - s);
   });
-
-  // The two users. The job seeker's phone turns away and the employer's
-  // turns in on the same axis, so it reads as the phone being turned round.
-  const seekerOpacity = useTransform(p, (v) =>
-    span(v, T.toSeeker) * (v > T.flip[0] + (T.flip[1] - T.flip[0]) / 2 ? 0 : 1),
-  );
-  const seekerY = useTransform(p, (v) => 40 * (1 - easeOut(span(v, T.toSeeker))));
-  const seekerRot = useTransform(p, (v) => 90 * easeIn(span(v, [T.flip[0], (T.flip[0] + T.flip[1]) / 2])));
-  const employerRot = useTransform(p, (v) => -90 + 90 * easeOut(span(v, [(T.flip[0] + T.flip[1]) / 2, T.flip[1]])));
-  const employerOpacity = useTransform(p, (v) =>
-    v < (T.flip[0] + T.flip[1]) / 2 ? 0 : 1 - span(v, T.toWeb),
-  );
-  const employerScale = useTransform(p, (v) => 1 - 0.35 * easeInOut(span(v, T.toWeb)));
-
-  const webOpacity = useTransform(p, (v) => span(v, T.toWeb) * (1 - span(v, T.toPoster)));
-  const webScale = useTransform(p, (v) => 1.14 - 0.14 * easeOut(span(v, T.toWeb)));
-
-  const posterY = useTransform(p, (v) => `${60 * (1 - easeOut(span(v, T.toPoster)))}vh`);
-  const posterOpacity = useTransform(p, (v) => (v < T.toPoster[0] ? 0 : 1 - span(v, T.toWall)));
-  const wallOpacity = useTransform(p, (v) => span(v, T.toWall) * (1 - span(v, T.end)));
-  const wallScale = useTransform(p, (v) => 0.92 + 0.08 * easeOut(span(v, T.toWall)));
-
-  const markOpacity = useTransform(p, (v) => span(v, T.end) * (1 - span(v, T.out)));
-  const markY = useTransform(p, (v) => 24 * (1 - easeOut(span(v, T.end))));
 
   const hintOpacity = useTransform(p, (v) => {
     const a = span(v, [T.yourTurn[0], T.yourTurn[0] + 0.015]);
@@ -281,12 +427,6 @@ export default function Reveal() {
   });
 
   if (reduced) return <StillReveal />;
-
-  // The website and the posters are fitted to whichever of the stage's two
-  // dimensions runs out first.
-  const webW = Math.min(W * 0.92, 1100, ((H * 0.78) * 1440) / 1297);
-  const posterH = Math.min(H * 0.82, (W * 0.8 * 1800) / 1013);
-  const wallW = Math.min(W * 0.9, 1200, (H * 0.78 * 1600) / 1079);
 
   return (
     <motion.div
@@ -306,17 +446,33 @@ export default function Reveal() {
         marginTop: "clamp(40px, 7vh, 80px)",
       }}
     >
-        <Layer interactive>
-          {/* The phone. Clipped to the icon's square until it opens. */}
-          <motion.div
+      {/* The app icon. */}
+      <Layer>
+        <motion.div style={{ opacity: iconOn, transform: iconT }}>
+          <div
+            aria-hidden="true"
+            style={{
+              width: iconS,
+              height: iconS,
+              borderRadius: iconS * 0.23,
+              background: GREEN,
+              position: "relative",
+              boxShadow: "0 18px 40px rgba(20, 60, 20, 0.25)",
+            }}
+          >
+            <FLogo size={iconS} />
+          </div>
+        </motion.div>
+      </Layer>
+
+      {/* The phone, running the app. */}
+      <Layer interactive>
+        <motion.div style={{ opacity: phoneOn, transform: phoneT }}>
+          <div
             style={{
               position: "relative",
               width: PW,
               height: PH,
-              clipPath: clip,
-              opacity: phoneShown,
-              rotateY: phoneTurn,
-              transformPerspective: 1400,
               background: "#31403d",
               borderRadius: phoneR + bezel,
               boxShadow: "0 30px 60px rgba(20, 30, 27, 0.28)",
@@ -343,7 +499,7 @@ export default function Reveal() {
                 }}
               >
                 <Shot src="/fortuna/reveal/splash.webp" w={375} h={812} />
-                <motion.div style={{ position: "absolute", inset: 0, opacity: welcomeOpacity }}>
+                <motion.div style={{ position: "absolute", inset: 0, opacity: welcomeOpacity, y: welcomeY, background: CREAM }}>
                   <Shot src="/fortuna/reveal/welcome.webp" w={375} h={809} />
                   {/* The tap on Job Seeker. */}
                   <motion.span
@@ -361,7 +517,7 @@ export default function Reveal() {
                     }}
                   />
                 </motion.div>
-                <motion.div style={{ position: "absolute", inset: 0, opacity: listingOpacity }}>
+                <motion.div style={{ position: "absolute", inset: 0, opacity: listingOpacity, y: listingY }}>
                   <Listing p={p} k={k} />
                 </motion.div>
               </div>
@@ -380,47 +536,30 @@ export default function Reveal() {
                 borderRadius: `0 0 ${screenW * 0.05}px ${screenW * 0.05}px`,
               }}
             />
-          </motion.div>
-        </Layer>
+          </div>
+        </motion.div>
+      </Layer>
 
-        {/* The app icon, sat exactly where the phone's clip starts. */}
-        <Layer>
-          <motion.div
-            aria-hidden="true"
-            style={{
-              width: iconS,
-              height: iconS,
-              borderRadius: iconS * 0.23,
-              background: GREEN,
-              scale: iconScale,
-              opacity: iconOpacity,
-              position: "relative",
-              boxShadow: "0 18px 40px rgba(20, 60, 20, 0.25)",
-            }}
-          >
-            <FLogo size={iconS} />
+      {/* The two users, either side of the same phone. */}
+      <Layer style={{ perspective: 1400 }}>
+        <motion.div style={{ opacity: seekerOn, transform: seekerT }}>
+          <motion.div style={{ rotateY: seekerRot }}>
+            <Shot src="/fortuna/reveal/phone-seeker.webp" w={287} h={640} height={handH} />
           </motion.div>
-        </Layer>
+        </motion.div>
+      </Layer>
+      <Layer style={{ perspective: 1400 }}>
+        <motion.div style={{ opacity: employerOn, rotateY: employerRot }}>
+          <Shot src="/fortuna/reveal/phone-employer.webp" w={287} h={640} height={handH} />
+        </motion.div>
+      </Layer>
 
-        {/* The two users, one either side of the same phone. */}
-        <Layer style={{ perspective: 1400 }}>
-          <motion.div style={{ opacity: seekerOpacity, y: seekerY, rotateY: seekerRot }}>
-            <Shot src="/fortuna/reveal/phone-seeker.webp" w={287} h={640} height={PH * 1.04} />
-          </motion.div>
-        </Layer>
-        <Layer style={{ perspective: 1400 }}>
-          <motion.div style={{ opacity: employerOpacity, rotateY: employerRot, scale: employerScale }}>
-            <Shot src="/fortuna/reveal/phone-employer.webp" w={287} h={640} height={PH * 1.04} />
-          </motion.div>
-        </Layer>
-
-        {/* The website, in a browser window. */}
-        <Layer>
-          <motion.div
+      {/* The website, in a browser window. */}
+      <Layer>
+        <motion.div style={{ opacity: webOn, transform: webT }}>
+          <div
             style={{
               width: webW,
-              opacity: webOpacity,
-              scale: webScale,
               borderRadius: 14,
               overflow: "hidden",
               background: "#fff",
@@ -429,87 +568,85 @@ export default function Reveal() {
           >
             <div
               aria-hidden="true"
-              style={{
-                height: 26,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "0 12px",
-                background: "#ebe9e4",
-              }}
+              style={{ height: 26, display: "flex", alignItems: "center", gap: 6, padding: "0 12px", background: "#ebe9e4" }}
             >
               {["#f34545", "#f58120", "#69bd45"].map((c) => (
                 <span key={c} style={{ width: 9, height: 9, borderRadius: "50%", background: c, opacity: 0.8 }} />
               ))}
             </div>
             <Shot src="/fortuna/reveal/website-hero.webp" w={1440} h={1297} width={webW} />
-          </motion.div>
-        </Layer>
+          </div>
+        </motion.div>
+      </Layer>
 
-        {/* The posters. */}
-        <Layer>
+      {/* The posters: on the wall first, then the poster itself. */}
+      <Layer>
+        <motion.div style={{ opacity: wallOn, transform: wallT }}>
+          <div style={{ borderRadius: 14, overflow: "hidden", boxShadow: "0 30px 70px rgba(60, 25, 0, 0.3)" }}>
+            <Shot src="/fortuna/reveal/posters-wall.webp" w={1600} h={1079} width={wallW} />
+          </div>
+        </motion.div>
+      </Layer>
+      <Layer>
+        <motion.div style={{ opacity: posterOn, transform: posterT }}>
           <motion.div
-            style={{
-              y: posterY,
-              opacity: posterOpacity,
-              rotate: -3,
-              borderRadius: 10,
-              overflow: "hidden",
-              boxShadow: "0 30px 70px rgba(60, 25, 0, 0.3)",
-            }}
+            style={{ scale: posterIn, borderRadius: 10, overflow: "hidden", boxShadow: "0 30px 70px rgba(60, 25, 0, 0.3)" }}
           >
             <Shot src="/fortuna/reveal/poster.webp" w={1013} h={1800} height={posterH} />
           </motion.div>
-        </Layer>
-        <Layer>
-          <motion.div
-            style={{
-              opacity: wallOpacity,
-              scale: wallScale,
-              borderRadius: 14,
-              overflow: "hidden",
-              boxShadow: "0 30px 70px rgba(60, 25, 0, 0.3)",
-            }}
-          >
-            <Shot src="/fortuna/reveal/posters-wall.webp" w={1600} h={1079} width={wallW} />
-          </motion.div>
-        </Layer>
+        </motion.div>
+      </Layer>
 
-        {/* And the name, to close. */}
-        <Layer>
-          <motion.div
-            style={{
-              opacity: markOpacity,
-              y: markY,
-              fontSize: "clamp(44px, 10vw, 118px)",
-              lineHeight: 1,
-            }}
-          >
+      {/* And the name. */}
+      <Layer>
+        <motion.div style={{ opacity: markOn, transform: markT }}>
+          <div style={{ display: "flex", fontSize: markFont, lineHeight: 0 }}>
             <FortunaWordmark color="#ffffff" title="fortuna" />
-          </motion.div>
-        </Layer>
+          </div>
+        </motion.div>
+      </Layer>
 
-        <motion.p
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: "max(5vh, 22px)",
-            margin: 0,
-            textAlign: "center",
-            fontFamily: "var(--f-body)",
-            fontSize: 14,
-            fontWeight: 500,
-            letterSpacing: "-0.01em",
-            color: INK,
-            opacity: hintOpacity,
-            pointerEvents: "none",
-          }}
-        >
-          Your turn — swipe the card, or tap ✕ or ✓
-        </motion.p>
+      {/* Inside the f: the colour of its stem, covering the cut. */}
+      <motion.div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: washColour,
+          opacity: washOpacity,
+          pointerEvents: "none",
+        }}
+      />
+
+      <motion.p
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: "max(5vh, 22px)",
+          margin: 0,
+          textAlign: "center",
+          fontFamily: "var(--f-body)",
+          fontSize: 14,
+          fontWeight: 500,
+          letterSpacing: "-0.01em",
+          color: INK,
+          opacity: hintOpacity,
+          pointerEvents: "none",
+        }}
+      >
+        Your turn — swipe the card, or tap ✕ or ✓
+      </motion.p>
     </motion.div>
   );
+}
+
+/** Two hex colours mixed, t of the way from a to b. */
+function mix(a: string, b: string, t: number) {
+  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  const c = pa.map((x, i) => Math.round(x + (pb[i] - x) * t));
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 }
 
 /** Pause the loop: for a while, or until told otherwise. */
@@ -612,9 +749,9 @@ function Listing({ p, k }: { p: MotionValue<number>; k: number }) {
   // Rendered back to front, so the front card is always painted last and no
   // z-index has to follow the stack as it steps forward.
   const depth = (i: number, v: number) => {
-    const a1 = easeInOut(span(v, T.advance1));
-    const a2 = easeInOut(span(v, T.advance2));
-    return Math.max(0, i - a1 - a2);
+    const a1 = backOut(span(v, T.advance1), 1.8);
+    const a2 = backOut(span(v, T.advance2), 1.8);
+    return i - a1 - a2;
   };
 
   return (
@@ -641,16 +778,19 @@ function Listing({ p, k }: { p: MotionValue<number>; k: number }) {
 
 /** A card's slot in the stack, blended between neighbouring slots. */
 function slot(d: number) {
-  const lo = Math.floor(Math.min(d, 2));
+  // Past the front slot on the overshoot: carried on along the line from the
+  // second slot through the first, so the card comes a little too far
+  // forward and settles back.
+  const lo = d < 0 ? 0 : Math.floor(Math.min(d, 2));
   const hi = Math.min(2, lo + 1);
-  const t = Math.min(d, 2) - lo;
+  const t = d < 0 ? d : Math.min(d, 2) - lo;
   const a = SLOTS[lo];
   const b = SLOTS[hi];
   return {
     x: a.x + (b.x - a.x) * t,
     y: a.y + (b.y - a.y) * t,
     s: (a.w + (b.w - a.w) * t) / SLOTS[0].w,
-    dim: DIM[lo] + (DIM[hi] - DIM[lo]) * t,
+    dim: Math.max(0, DIM[lo] + (DIM[hi] - DIM[lo]) * t),
   };
 }
 
@@ -697,7 +837,7 @@ function YourCard({
 }) {
   const x = useMotionValue(0);
   const [live, setLive] = useState(false);
-  useMotionValueEvent(p, "change", (v) => setLive(v >= T.advance2[1] && v < T.toSeeker[0]));
+  useMotionValueEvent(p, "change", (v) => setLive(v >= T.advance2[1] && v < T.zoomIn2[0]));
 
   // The scroll places it in the stack; the reader's drag moves it from there.
   const transform = useTransform([p, x], ([v, d]: number[]) => {
@@ -898,7 +1038,11 @@ function Header() {
         <path d="M1 27c0-6.6 5-11 11-11s11 4.4 11 11z" fill={GREEN} />
         <circle cx="24" cy="4" r="3" fill={ORANGE} />
       </svg>
-      <div style={{ position: "absolute", left: 0, right: 0, textAlign: "center", fontSize: 30, top: 2 }}>
+      {/* At the Home frame's own position and width — 116 wide at (129, 59) —
+          in a box with no line height, so its top-left corner is the
+          wordmark's and the f the camera flies into is where it is expected
+          to be. */}
+      <div style={{ position: "absolute", left: 129, top: 9, display: "flex", fontSize: 22.5, lineHeight: 0 }}>
         <FortunaWordmark title="fortuna" />
       </div>
       <svg style={{ position: "absolute", right: 32, top: 8 }} width="28" height="26" viewBox="0 0 28 26" aria-hidden="true">
@@ -1003,11 +1147,25 @@ function StillReveal() {
   );
 }
 
-function easeIn(t: number) {
+/** Overshoots past 1 and settles back; `s` is how far. */
+function backOut(t: number, s = 1.70158) {
+  const u = t - 1;
+  return 1 + (s + 1) * u * u * u + s * u * u;
+}
+function easeIn2(t: number) {
   return t * t;
 }
-function easeOut(t: number) {
+function easeOut2(t: number) {
   return 1 - (1 - t) * (1 - t);
+}
+function easeIn3(t: number) {
+  return t * t * t;
+}
+function easeOut3(t: number) {
+  return 1 - (1 - t) ** 3;
+}
+function easeIn(t: number) {
+  return t * t;
 }
 function easeInOut(t: number) {
   return t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
