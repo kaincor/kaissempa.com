@@ -7,7 +7,7 @@ import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
 import GoalList from "./GoalList";
 import Persona from "./Persona";
-import Reveal from "./Reveal";
+import Reel from "./reel/Reel";
 import NightSky from "./NightSky";
 import { hasFill } from "@/content/fortuna";
 import type { Align, Block, Rich, Token, Tone } from "@/content/fortuna";
@@ -739,7 +739,7 @@ function blockNode(
     case "persona":
       return <Persona key={i} persona={block.persona} />;
     case "reveal":
-      return <Reveal key={i} />;
+      return <Reel key={i} />;
   }
 }
 
