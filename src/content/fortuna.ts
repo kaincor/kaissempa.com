@@ -125,8 +125,12 @@ export type Block =
   | { kind: "globe"; caption: Rich }
   /** The research persona, rebuilt as the sheet it came from. */
   | { kind: "persona"; persona: PersonaSheet }
-  /** The pinned, scrolled reveal of the product itself. */
-  | { kind: "reveal" }
+  /**
+   * The looping reel that reveals the product. Two cuts of it for now,
+   * labelled, so they can be compared on the page: the bouncy one, and one
+   * built the way the Kindred reel is.
+   */
+  | { kind: "reveal"; variant?: "kindred"; label?: string }
 
 export type Section = {
   id: string;
@@ -458,7 +462,8 @@ export const SECTIONS: Section[] = [
         rules: true,
         text: "Looking for work shouldn't feel like another job. Apply with a swipe and respond to employer interest with an in-app video introduction.",
       },
-      { kind: "reveal" },
+      { kind: "reveal", label: "A · Bouncy" },
+      { kind: "reveal", variant: "kindred", label: "B · After Kindred" },
     ],
   },
   {

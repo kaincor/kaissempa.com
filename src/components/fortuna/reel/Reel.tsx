@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useInView, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   AppChrome,
   AppliedFace,
@@ -15,12 +15,17 @@ import {
   MiniCard,
   ORANGE,
 } from "./cards";
+import { PROMO_DOTS, SPLASH_DOTS } from "./dots";
+import { ReelLabel } from "./KindredReel";
 import {
   at,
   between,
   clamp01,
   easeIn,
+  easeInOut,
+  easeOut,
   fall,
+  glide,
   hop,
   lerp,
   mix,
@@ -51,21 +56,23 @@ import { DOT, DOT_BESIDE_F, GLYPHS, ICON_SCALE } from "./wordmark";
  *
  * The other things that carry across are carried, not cut: the phone runs
  * from the splash into the promo and out of the website back into the
- * splash, and one card morphs from the app icon's square into the flow
- * promo's panel and on into the website's page.
+ * splash; the camera rushes into the applied card until its green is the
+ * whole stage, and that green closes into the app icon's square; the square
+ * then opens into the flow promo's panel and on into the website's page.
  *
  * Bouncy throughout. Every arrival is a spring that overshoots and settles;
- * the only things that are not are the things falling away.
+ * the only things that are not are the things falling away, and the icon's
+ * full stop, which is set down gently.
  *
  * All of it is drawn from a single clock by one function, writing styles
  * straight to the elements rather than through React state, because there
- * are about ninety moving parts and a render per frame for each would be
- * the whole budget. Any moment of the loop can be drawn on its own, which is
- * what makes it loop cleanly.
+ * are well over a hundred moving parts and a render per frame for each
+ * would be the whole budget. Any moment of the loop can be drawn on its
+ * own, which is what makes it loop cleanly.
  */
 
 /** One time round, in seconds. */
-const LOOP = 20;
+const LOOP = 22;
 
 /** The stage's colour for each scene. */
 const STAGE = { splash: GREEN, promo: FOREST, icon: CREAM, flow: ORANGE, web: "#6f8b81" };
@@ -77,27 +84,67 @@ const WEB_PAPER = CREAM;
 const MARK_DARK = "#32443e";
 
 /**
+ * How far a dashed ring turns in one loop: about `deg`, rounded to a whole
+ * number of dash periods. A dashed circle looks the same after turning one
+ * period, so a whole number of them leaves the loop with no seam.
+ */
+function turn(deg: number, dash: number, r: number) {
+  const p = ((dash * 2) / r) * (180 / Math.PI);
+  return Math.max(1, Math.round(deg / p)) * p;
+}
+
+/**
  * The splash's dashed rings, and the swipe promo's. Radii and opacities are
- * the frames' own. A dashed circle looks the same after turning one dash
- * period, so each turns a whole number of periods per loop — at a different
- * number each, so they drift against one another — and the loop has no seam.
+ * the frames' own; each turns at its own pace, the inner ones fastest, so
+ * they visibly slide against one another.
  */
 const SPLASH_RINGS = [
-  { r: 250.754, o: 1, n: 12 },
-  { r: 331.316, o: 0.8, n: 13 },
-  { r: 411.877, o: 0.6, n: 17 },
-  { r: 492.439, o: 0.5, n: 19 },
-  { r: 573, o: 0.3, n: 24 },
-];
+  { r: 250.754, o: 1, deg: 210 },
+  { r: 331.316, o: 0.8, deg: 175 },
+  { r: 411.877, o: 0.6, deg: 145 },
+  { r: 492.439, o: 0.5, deg: 120 },
+  { r: 573, o: 0.3, deg: 95 },
+].map((ring) => ({ ...ring, deg: turn(ring.deg, 8, ring.r) }));
 const PROMO_RINGS = [
-  { r: 771.745, o: 1, n: 4 },
-  { r: 1020.86, o: 0.8, n: 5 },
-  { r: 1269.97, o: 0.6, n: 7 },
-  { r: 1519.09, o: 0.5, n: 8 },
-  { r: 1768.2, o: 0.3, n: 11 },
-];
-/** Degrees one dash period takes on a ring of radius r. */
-const period = (dash: number, r: number) => ((dash * 2) / r) * (180 / Math.PI);
+  { r: 771.745, o: 1, deg: 150 },
+  { r: 1020.86, o: 0.8, deg: 120 },
+  { r: 1269.97, o: 0.6, deg: 100 },
+  { r: 1519.09, o: 0.5, deg: 80 },
+  { r: 1768.2, o: 0.3, deg: 64 },
+].map((ring) => ({ ...ring, deg: turn(ring.deg, 53.89, ring.r) }));
+
+/** A number in [0, 1) that is the same every time for the same inputs. */
+function rand(i: number, salt: number) {
+  const v = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+/**
+ * Each dot's own small orbit. Two waves at different whole numbers of cycles
+ * per loop trace a loop or a figure of eight that differs from dot to dot,
+ * some one way round and some the other, so no two wander together. Whole
+ * numbers of cycles keep the loop seamless. `start` is when, as a share of
+ * its scene's window, the dot fades in.
+ */
+type Wander = { ax: number; ay: number; kx: number; ky: number; px: number; py: number; start: number };
+function wander(i: number, salt: number, amp: number): Wander {
+  const way = rand(i, salt + 1) < 0.5 ? -1 : 1;
+  return {
+    ax: amp * (0.5 + rand(i, salt + 2)),
+    ay: amp * (0.5 + rand(i, salt + 3)),
+    kx: way * (3 + Math.floor(rand(i, salt + 4) * 4)),
+    ky: 3 + Math.floor(rand(i, salt + 5) * 4),
+    px: rand(i, salt + 6) * 2 * Math.PI,
+    py: rand(i, salt + 7) * 2 * Math.PI,
+    start: rand(i, salt + 8),
+  };
+}
+const drift = (w: Wander, t: number) => ({
+  x: w.ax * Math.sin((2 * Math.PI * w.kx * t) / LOOP + w.px),
+  y: w.ay * Math.cos((2 * Math.PI * w.ky * t) / LOOP + w.py),
+});
+const SPLASH_WANDER = SPLASH_DOTS.map((_, i) => wander(i, 1, 8));
+const PROMO_WANDER = PROMO_DOTS.map((_, i) => wander(i, 2, 54));
 
 /**
  * When everything happens, in seconds round the loop.
@@ -106,71 +153,119 @@ const period = (dash: number, r: number) => ((dash * 2) / r) * (180 / Math.PI);
  * here rather than hunted through the drawing code below.
  */
 const T = {
-  // The splash.
+  // The splash. Each dot fades in somewhere in `dotsIn`.
   markUp: [0.15, 1.0],
-  dotsUp: [0.25, 1.1],
-  dotsLow: [0.4, 1.25],
+  dotsIn: [0.2, 1.5],
   // Splash into the swipe promo: the promo grows up around the phone.
   toPromo: [2.8, 3.95],
   promoOpen: [2.9, 3.9],
   promoRings: [3.3, 4.1],
-  promoDots: [3.5, 4.3],
+  promoDots: [3.4, 4.6],
   man: [3.85, 4.75],
   cardIn: [4.2, 4.8],
   words: 3.7,
   your: 4.1,
   type: [4.5, 5.2],
-  underline: [5.25, 5.7],
+  underline: [5.25, 5.65],
   swipe: [6.0, 6.9],
   face: [6.1, 6.55],
   tick: [6.35, 6.9],
   stamp: [6.5, 7.05],
-  // Into the f, and out as the app icon.
-  zoomIn: [7.8, 8.4],
-  toIcon: [7.85, 8.9],
-  drop: 8.0,
-  dotOver: [8.3, 9.0],
-  whiten: [8.5, 8.85],
-  square: [8.45, 9.2],
-  // The icon opening into the flow promo.
-  toFlow: [9.9, 10.9],
-  markToFlow: [9.95, 10.85],
-  greenAgain: [10.2, 10.6],
-  flowTitle: 10.7,
-  cols: [11.05, 11.35, 11.65],
-  cookSwipe: [12.4, 13.3],
+  // Into the applied card's green, which closes into the app icon.
+  zoomIn: [7.35, 8.2],
+  toIcon: [7.45, 8.3],
+  drop: 7.65,
+  whiten: [7.85, 8.2],
+  square: [8.4, 9.3],
+  dotOver: [8.6, 9.85],
+  // The icon opening into the flow promo, and its three steps in turn.
+  toFlow: [10.4, 11.4],
+  markToFlow: [10.45, 11.35],
+  greenAgain: [10.7, 11.1],
+  flowTitle: 11.2,
+  parts: [11.45, 12.55, 13.65],
+  bioName: [11.8, 12.2],
+  bioEdu: [12.25, 12.65],
+  bioPills: [12.65, 13.05],
+  swipeOut: [13.05, 13.5],
+  swipeBack: [13.6, 14.2],
+  hirePills: [14.0, 14.35],
+  hired: [14.35, 14.85],
+  confetti: [14.42, 15.3],
   // The flow promo growing into the website.
-  flowDrop: 13.6,
-  toWeb: [13.6, 14.5],
-  markToWeb: [14.0, 14.8],
-  dotBack: [14.1, 14.7],
-  lettersBack: 14.35,
-  darken: [14.1, 14.6],
-  webIn: 14.5,
-  miami: [15.6, 16.05],
-  webUnder: [16.1, 16.45],
-  slots: [16.5, 17.35, 18.2],
+  flowDrop: 15.5,
+  toWeb: [15.5, 16.4],
+  markToWeb: [15.9, 16.7],
+  dotBack: [16.0, 16.6],
+  lettersBack: 16.25,
+  darken: [16.0, 16.5],
+  webIn: 16.4,
+  slots: [17.7, 18.9, 20.1],
   // The website's phone back into the splash.
-  toSplash: [18.9, 19.9],
-  webOut: [18.9, 19.45],
-  ringsBack: [19.3, 20],
+  toSplash: [21.0, 22.0],
+  webOut: [21.0, 21.55],
+  ringsBack: [21.4, 22.0],
 } as const;
+
+/**
+ * The website's headline types the kind of work rather than the city — the
+ * live site cycles through seven. Each word is typed, underlined, and
+ * deleted again: `under` is when its underline shows, `del` when it goes.
+ */
+const SECTORS = [
+  { word: "Hospitality", type: [17.2, 17.9], under: [17.95, 18.75], del: [18.9, 19.3] },
+  { word: "Retail", type: [19.4, 19.8], under: [19.85, 20.55], del: [20.7, 20.95] },
+] as const;
 
 /** Stage colour changes, each [from, to, start, end]. */
 const STAGE_CHANGES: [string, string, number, number][] = [
   [STAGE.splash, STAGE.promo, 2.8, 3.3],
-  [STAGE.promo, STAGE.icon, 7.9, 8.4],
-  [STAGE.icon, STAGE.flow, 10.0, 10.5],
-  [STAGE.flow, STAGE.web, 13.7, 14.2],
-  [STAGE.web, STAGE.splash, 19.0, 19.5],
+  // Green as the camera reaches the applied card, and cream under the green
+  // before it closes, so the icon's ground is waiting round it.
+  [STAGE.promo, GREEN, 7.6, 8.05],
+  [GREEN, STAGE.icon, 8.3, 8.32],
+  [STAGE.icon, STAGE.flow, 10.5, 11.0],
+  [STAGE.flow, STAGE.web, 15.6, 16.1],
+  [STAGE.web, STAGE.splash, 21.1, 21.6],
 ];
 
 const PROMO_WORDS = ["Swipe", "right", "to", "find"];
 const TYPED = "next job";
-const MIAMI = "Miami";
 const FLOW_WORDS = ["Job", "search", "made", "easy"];
 const STEPS = ["Create your bio", "Swipe through jobs", "Get hired"];
 const STEP_X = [64, 496, 928];
+
+/**
+ * The flow promo's bio forms, in a column's own units (it is 368 square).
+ * The attribute pills are the frame's; the bio fills them in its greens,
+ * getting hired fills them all.
+ */
+const PILLS = [
+  { x: 152, w: 36 },
+  { x: 192, w: 55 },
+  { x: 251, w: 66 },
+];
+const PILL_PALE = "#d9eed0";
+const BIO_FILLS = ["#6abd46", "#8fcd73", "#b3dda1"];
+const BIO_NAME = "Jessica Lambert";
+const BIO_EDU = "Miami Dade College";
+/** Where the Hired stamp lands, over the right column's form. */
+const HIRED_AT = { x: 240, y: 228 };
+
+/** The burst round the Hired stamp: which way each piece flies, how far. */
+const CONFETTI = Array.from({ length: 22 }, (_, i) => {
+  const a = -Math.PI / 2 + (rand(i, 31) - 0.5) * Math.PI * 1.7;
+  return {
+    dx: Math.cos(a) * (110 + rand(i, 32) * 140),
+    dy: Math.sin(a) * (100 + rand(i, 32) * 110),
+    spin: (rand(i, 33) < 0.5 ? -1 : 1) * (200 + rand(i, 34) * 400),
+    w: rand(i, 35) < 0.4 ? 11 : 10 + rand(i, 36) * 9,
+    h: rand(i, 35) < 0.4 ? 11 : 6,
+    round: rand(i, 35) < 0.4,
+    colour: [GREEN, ORANGE, FOREST, "#b3dda1"][i % 4],
+    delay: rand(i, 37) * 0.08,
+  };
+});
 
 /** The website's people: where they sit, how big, the colour of their ring. */
 const PEOPLE = [
@@ -193,7 +288,7 @@ function slotX(q: number) {
 
 /** How far the reel has stepped along at a moment: each step is a spring. */
 function slotsMoved(t: number) {
-  return T.slots.reduce((n, s) => n + spring(seg(t, s, s + 0.6), 0.35), 0);
+  return T.slots.reduce((n, s) => n + spring(seg(t, s, s + 0.8), 0.3), 0);
 }
 
 function fit(dw: number, dh: number, maxW: number, maxH: number, W: number, H: number): Box {
@@ -210,8 +305,9 @@ function stageColour(t: number) {
 }
 
 type El = HTMLElement | SVGElement;
+type Reg = (key: string) => (el: El | null) => void;
 
-export default function Reel() {
+export default function Reel({ label }: { label?: string }) {
   const reduced = useReducedMotion();
   const stage = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ W: 1200, H: 800 });
@@ -220,7 +316,7 @@ export default function Reel() {
   const clock = useRef(0);
   const onScreen = useInView(stage, { amount: 0.3 });
 
-  const reg = useCallback(
+  const reg = useCallback<Reg>(
     (key: string) => (el: El | null) => {
       if (el) els.current[key] = el;
       else delete els.current[key];
@@ -261,6 +357,14 @@ export default function Reel() {
         cache[k] = value;
         el.setAttribute(name, value);
       };
+      const text = (key: string, value: string) => {
+        const el = e[key];
+        if (!el) return;
+        const k = key + "#";
+        if (cache[k] === value) return;
+        cache[k] = value;
+        el.textContent = value;
+      };
       const show = (key: string, o: number) => css(key, "opacity", clamp01(o).toFixed(3));
 
       // ── The five layouts, fitted to the stage ──────────────────────────
@@ -272,11 +376,20 @@ export default function Reel() {
 
       css("stage", "background", stageColour(t));
 
-      // ── The camera leaning into the promo's f, and into the web's phone ─
+      // ── The camera rushing into the applied card, and into the web's phone
+      // It closes on the card's lower half, below the tick and the stamp, so
+      // what fills the stage is nothing but its green; and it brings that
+      // spot to the middle as it goes, so the green fills the stage evenly.
       const promoMarkBox: Box = { ...at(promo, 119, 192), s: (promo.s * 555) / 206 };
-      const promoF = { x: promoMarkBox.x + 12 * promoMarkBox.s, y: promoMarkBox.y + 24 * promoMarkBox.s };
-      const promoZ = 1 + 2.4 * easeIn(seg(t, ...T.zoomIn));
-      const promoCam = zoom(promo, promoF.x, promoF.y, promoZ);
+      const zu = seg(t, ...T.zoomIn);
+      const greenSpot = at(promo, 1306.65, 2210);
+      const closeIn = zoom(promo, greenSpot.x, greenSpot.y, Math.pow(14, easeIn(zu)));
+      const pan = easeInOut(zu);
+      const promoCam: Box = {
+        x: closeIn.x + (W / 2 - greenSpot.x) * pan,
+        y: closeIn.y + (H / 2 - greenSpot.y) * pan,
+        s: closeIn.s,
+      };
 
       const webPhone0: Box = { ...at(web, 558, 592), s: web.s };
       const webPhoneMid = { x: webPhone0.x + 207.5 * web.s, y: webPhone0.y + 419 * web.s };
@@ -293,7 +406,7 @@ export default function Reel() {
       else if (t < T.zoomIn[0]) phone = promoPhone(promo);
       else if (t < T.zoomIn[1] + 0.05) {
         phone = promoPhone(promoCam);
-        phoneO = 1 - seg(t, T.zoomIn[0] + 0.15, T.zoomIn[1]);
+        phoneO = 1 - seg(t, T.zoomIn[0] + 0.2, T.zoomIn[1] - 0.1);
       } else if (t < T.webIn + 0.3) phoneO = 0;
       else if (t < T.toSplash[0]) {
         const drop = 1 - spring(seg(t, T.webIn + 0.3, T.webIn + 1.25), 0.32);
@@ -303,25 +416,19 @@ export default function Reel() {
       show("phone", phoneO);
 
       // What the phone's screen shows.
-      const splashRingsO = t >= T.webIn ? seg(t, ...T.ringsBack) : 1;
-      show("ph-rings", splashRingsO);
+      show("ph-rings", t >= T.webIn ? seg(t, ...T.ringsBack) : 1);
       SPLASH_RINGS.forEach((ring, i) => {
-        const a = (t / LOOP) * ring.n * period(8, ring.r);
-        attr(`ph-ring-${i}`, "transform", `rotate(${a.toFixed(3)} 187 364)`);
+        attr(`ph-ring-${i}`, "transform", `rotate(${((t / LOOP) * ring.deg).toFixed(3)} 187 364)`);
       });
-      const orbit = (ph: number) => ({
-        x: 4 * Math.sin((2 * Math.PI * t) / 5 + ph),
-        y: 4 * Math.cos((2 * Math.PI * t) / 5 + ph),
-      });
+      // The dots fade up where they stand, each at its own moment, and each
+      // wanders its own small orbit.
       const dotsOn = t < T.webIn;
-      const up = spring(seg(t, ...T.dotsUp), 0.4);
-      const low = spring(seg(t, ...T.dotsLow), 0.4);
-      const ou = orbit(0);
-      const ol = orbit(Math.PI);
-      css("ph-dots-up", "transform", `translate(${ou.x}px, ${(ou.y + (1 - up) * 70).toFixed(2)}px)`);
-      show("ph-dots-up", dotsOn ? seg(t, T.dotsUp[0], T.dotsUp[0] + 0.3) : 0);
-      css("ph-dots-low", "transform", `translate(${ol.x}px, ${(283 + ol.y + (1 - low) * 90).toFixed(2)}px)`);
-      show("ph-dots-low", dotsOn ? seg(t, T.dotsLow[0], T.dotsLow[0] + 0.3) : 0);
+      SPLASH_WANDER.forEach((w, i) => {
+        const d = drift(w, t);
+        attr(`ph-dot-${i}`, "transform", `translate(${d.x.toFixed(2)} ${d.y.toFixed(2)})`);
+        const s0 = lerp(T.dotsIn[0], T.dotsIn[1] - 0.5, w.start);
+        show(`ph-dot-${i}`, dotsOn ? seg(t, s0, s0 + 0.5) : 0);
+      });
 
       // The waiter card the promo's phone develops.
       const cardPop = spring(seg(t, ...T.cardIn), 0.55);
@@ -340,9 +447,9 @@ export default function Reel() {
       }
 
       // ── The swipe promo ────────────────────────────────────────────────
-      const promoOn = t >= T.toPromo[0] && t < T.zoomIn[1] + 0.05;
+      const promoOn = t >= T.toPromo[0] && t < T.zoomIn[1];
       css("promo", "transform", place(promoCam));
-      show("promo", promoOn ? 1 - seg(t, T.zoomIn[0] + 0.1, T.zoomIn[1]) : 0);
+      show("promo", promoOn ? 1 - seg(t, T.zoomIn[0] + 0.35, T.zoomIn[1]) : 0);
       // It grows out from where the phone stood.
       {
         const open = spring(seg(t, ...T.promoOpen), 0.18);
@@ -360,14 +467,14 @@ export default function Reel() {
       }
       show("promo-rings", seg(t, ...T.promoRings));
       PROMO_RINGS.forEach((ring, i) => {
-        const a = (t / LOOP) * ring.n * period(53.89, ring.r);
-        attr(`promo-ring-${i}`, "transform", `rotate(${a.toFixed(3)} 2448.55 1693.77)`);
+        attr(`promo-ring-${i}`, "transform", `rotate(${((t / LOOP) * ring.deg).toFixed(3)} 2448.55 1693.77)`);
       });
-      {
-        const o = orbit(1.2);
-        css("promo-dots", "transform", `translate(${(336.78 + o.x * 6).toFixed(1)}px, ${(o.y * 6).toFixed(1)}px)`);
-        show("promo-dots", seg(t, ...T.promoDots));
-      }
+      PROMO_WANDER.forEach((w, i) => {
+        const d = drift(w, t);
+        attr(`pd-${i}`, "transform", `translate(${d.x.toFixed(1)} ${d.y.toFixed(1)})`);
+        const s0 = lerp(T.promoDots[0], T.promoDots[1] - 0.5, w.start);
+        show(`pd-${i}`, seg(t, s0, s0 + 0.5));
+      });
       {
         const u = spring(seg(t, ...T.man), 0.35);
         const bob = 18 * Math.sin((2 * Math.PI * t) / 4);
@@ -395,9 +502,10 @@ export default function Reel() {
         }
       }
       show("p-caret", t >= T.type[0] - 0.2 && t < T.underline[0] ? (Math.floor(t * 4) % 2 === 0 ? 1 : 0.2) : 0);
-      css("p-under", "transform", `scaleX(${spring(seg(t, ...T.underline), 0.3).toFixed(3)})`);
+      show("p-under", seg(t, ...T.underline));
 
-      // The applied card, swiped out of the phone.
+      // The applied card, swiped out of the phone; then the camera dives
+      // into it, its green going solid on the way.
       {
         const u = spring(seg(t, ...T.swipe), 0.35);
         const cx = lerp(622.3, 1394.55, u);
@@ -406,8 +514,8 @@ export default function Reel() {
         const c = at(promoCam, cx, cy);
         const s = promoCam.s * 2.3504;
         css("green", "transform", `translate(${c.x.toFixed(1)}px, ${c.y.toFixed(1)}px) rotate(${rot.toFixed(2)}deg) scale(${s.toFixed(4)}) translate(-157.5px, -255.5px)`);
-        show("green", t >= T.swipe[0] && promoOn ? 1 - seg(t, T.zoomIn[0] + 0.1, T.zoomIn[1]) : 0);
-        show("apply-green", 0.88 * seg(t, ...T.face));
+        show("green", t >= T.swipe[0] && promoOn ? 1 : 0);
+        show("apply-green", 0.88 * seg(t, ...T.face) + 0.12 * seg(t, T.zoomIn[0], T.zoomIn[0] + 0.3));
         const tick = spring(seg(t, ...T.tick), 0.6);
         css("apply-tick", "transform", `scale(${tick.toFixed(3)})`);
         show("apply-tick", seg(t, T.tick[0], T.tick[0] + 0.1));
@@ -416,28 +524,34 @@ export default function Reel() {
         show("apply-stamp", seg(t, T.stamp[0], T.stamp[0] + 0.12));
       }
 
-      // ── The card that morphs: icon square, flow panel, web page ────────
+      // ── The card that morphs: the green, the icon, flow panel, web page ─
       {
+        const fullRect = { x: 0, y: 0, w: W, h: H, r: 0 };
         const iconRect = { x: icon.x, y: icon.y, w: 401 * icon.s, h: 401 * icon.s, r: 90 * icon.s };
         const flowRect = { x: flow.x, y: flow.y, w: 1360 * flow.s, h: 695 * flow.s, r: 36 * flow.s };
         const cam = t >= T.webOut[0] ? webCam : web;
         const webRect = { x: cam.x + 43 * cam.s, y: cam.y, w: 1440 * cam.s, h: 1369 * cam.s, r: 30 * cam.s };
+        const blend = (a: typeof iconRect, b: typeof iconRect, u: number) => ({
+          x: lerp(a.x, b.x, u),
+          y: lerp(a.y, b.y, u),
+          w: lerp(a.w, b.w, u),
+          h: lerp(a.h, b.h, u),
+          r: lerp(a.r, b.r, clamp01(u)),
+        });
         let rect = iconRect;
         let colour = GREEN;
         let o = 1;
-        if (t < T.square[0] || t >= T.webOut[1]) o = 0;
+        if (t < T.zoomIn[1] - 0.1 || t >= T.webOut[1]) o = 0;
         else if (t < T.toFlow[0]) {
-          const k = spring(seg(t, ...T.square), 0.6);
-          const cx = iconRect.x + iconRect.w / 2;
-          const cy = iconRect.y + iconRect.h / 2;
-          rect = { x: cx - (iconRect.w * k) / 2, y: cy - (iconRect.h * k) / 2, w: iconRect.w * k, h: iconRect.h * k, r: iconRect.r * k };
+          // The whole stage of green, closing into the icon's square: eased
+          // rather than sprung, so it draws in rather than snaps.
+          rect = blend(fullRect, iconRect, 1 - (1 - seg(t, ...T.square)) ** 3);
+          o = seg(t, T.zoomIn[1] - 0.1, T.zoomIn[1]);
         } else if (t < T.toWeb[0]) {
-          const u = spring(seg(t, ...T.toFlow), 0.28);
-          rect = { x: lerp(iconRect.x, flowRect.x, u), y: lerp(iconRect.y, flowRect.y, u), w: lerp(iconRect.w, flowRect.w, u), h: lerp(iconRect.h, flowRect.h, u), r: lerp(iconRect.r, flowRect.r, clamp01(u)) };
+          rect = blend(iconRect, flowRect, spring(seg(t, ...T.toFlow), 0.28));
           colour = mix(GREEN, FLOW_PAPER, seg(t, T.toFlow[0] + 0.05, T.toFlow[0] + 0.5));
         } else {
-          const u = spring(seg(t, ...T.toWeb), 0.28);
-          rect = { x: lerp(flowRect.x, webRect.x, u), y: lerp(flowRect.y, webRect.y, u), w: lerp(flowRect.w, webRect.w, u), h: lerp(flowRect.h, webRect.h, u), r: lerp(flowRect.r, webRect.r, clamp01(u)) };
+          rect = blend(flowRect, webRect, spring(seg(t, ...T.toWeb), 0.28));
           colour = mix(FLOW_PAPER, WEB_PAPER, seg(t, ...T.toWeb));
           if (t >= T.webOut[0]) o = 1 - seg(t, T.webOut[0] + 0.05, T.webOut[1]);
         }
@@ -455,7 +569,7 @@ export default function Reel() {
         css("flow", "transform", place(flow));
         show("flow", on ? 1 : 0);
         let n = 0;
-        const out = (key: string, extra = "") => {
+        const out = (extra = "") => {
           const u = (t - (T.flowDrop + n * 0.045)) / 0.8;
           n++;
           if (u <= 0) return { tr: extra, o: 1 };
@@ -465,32 +579,92 @@ export default function Reel() {
         FLOW_WORDS.forEach((_, i) => {
           const s0 = T.flowTitle + i * 0.08;
           const u = spring(seg(t, s0, s0 + 0.6), 0.55);
-          const f = out(`fw-${i}`);
+          const f = out();
           css(`fw-${i}`, "transform", `translateY(${((1 - u) * -70).toFixed(1)}px) ${f.tr}`);
           show(`fw-${i}`, seg(t, s0, s0 + 0.12) * f.o);
         });
-        const pop = (key: string, s0: number, fromY: number, rot0 = 0) => {
+        const pop = (key: string, s0: number, fromY: number) => {
           const u = spring(seg(t, s0, s0 + 0.7), 0.5);
-          const f = out(key);
-          css(key, "transform", `translateY(${((1 - u) * fromY).toFixed(1)}px) scale(${lerp(0.9, 1, u).toFixed(3)}) rotate(${((1 - u) * rot0).toFixed(2)}deg) ${f.tr}`);
+          const f = out();
+          css(key, "transform", `translateY(${((1 - u) * fromY).toFixed(1)}px) scale(${lerp(0.9, 1, u).toFixed(3)}) ${f.tr}`);
           show(key, seg(t, s0, s0 + 0.2) * f.o);
         };
-        pop("fcol-0", T.cols[0], 90);
-        pop("ft-0", T.cols[0] + 0.12, 50);
-        pop("fmid-fork", T.cols[1], 90);
+        // A field typing itself in, its caret showing while it does.
+        const typeInto = (key: string, words: string, [a, b]: readonly [number, number]) => {
+          text(key, words.slice(0, Math.floor(seg(t, a, b) * words.length + 1e-6)));
+          show(`${key}-caret`, t >= a - 0.1 && t < b + 0.3 ? 1 : 0);
+        };
+        const fillPills = (key: string, [a, b]: readonly [number, number]) => {
+          const step = (b - a) / PILLS.length;
+          PILLS.forEach((_, i) => {
+            const s0 = a + i * step;
+            css(`${key}-${i}`, "transform", `scaleX(${easeOut(seg(t, s0, s0 + step + 0.1)).toFixed(3)})`);
+          });
+        };
+
+        // One: create your bio. The form fills itself in.
+        pop("fcol-0", T.parts[0], 90);
+        pop("ft-0", T.parts[0] + 0.12, 50);
+        typeInto("bio-name", BIO_NAME, T.bioName);
+        typeInto("bio-edu", BIO_EDU, T.bioEdu);
+        fillPills("bio-pill", T.bioPills);
+
+        // Two: swipe through jobs. The Cook card gets a tick and is swiped
+        // away, and the next one is dealt into its place.
+        pop("fmid-fork", T.parts[1], 90);
         {
-          // The Cook card lands on top a beat later, then gives a little swipe
-          // of its own before the page moves on.
-          const s0 = T.cols[1] + 0.14;
-          const u = spring(seg(t, s0, s0 + 0.7), 0.5);
-          const back = Math.sin(Math.PI * seg(t, ...T.cookSwipe));
-          const f = out("fmid-cook");
-          css("fmid-cook", "transform", `translate(${(back * 80).toFixed(1)}px, ${((1 - u) * 90 - back * 14).toFixed(1)}px) rotate(${((1 - u) * -14 + back * 9).toFixed(2)}deg) ${f.tr}`);
-          show("fmid-cook", seg(t, s0, s0 + 0.2) * f.o);
+          const s0 = T.parts[1] + 0.14;
+          const f = out();
+          let x = 0;
+          let y = 0;
+          let rot = 0;
+          let sc = 1;
+          let o = 1;
+          if (t < T.swipeOut[0]) {
+            const u = spring(seg(t, s0, s0 + 0.7), 0.5);
+            y = (1 - u) * 90;
+            rot = (1 - u) * -14;
+            sc = lerp(0.9, 1, u);
+            o = seg(t, s0, s0 + 0.2);
+          } else if (t < T.swipeBack[0]) {
+            const u = easeIn(seg(t, ...T.swipeOut));
+            x = u * 520;
+            y = -u * 40;
+            rot = u * 24;
+            o = 1 - seg(t, T.swipeOut[0] + 0.25, T.swipeOut[1]);
+          } else {
+            const u = spring(seg(t, ...T.swipeBack), 0.5);
+            y = (1 - u) * 90;
+            rot = (1 - u) * -14;
+            sc = lerp(0.9, 1, u);
+            o = seg(t, T.swipeBack[0], T.swipeBack[0] + 0.15);
+          }
+          css("fmid-cook", "transform", `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${sc.toFixed(3)}) rotate(${rot.toFixed(2)}deg) ${f.tr}`);
+          show("fmid-cook", o * f.o);
+          const like = spring(seg(t, T.swipeOut[0] - 0.3, T.swipeOut[0] + 0.15), 0.6);
+          css("cook-like", "transform", `scale(${like.toFixed(3)})`);
+          show("cook-like", t >= T.swipeOut[0] - 0.3 && t < T.swipeBack[0] ? 1 : 0);
         }
-        pop("ft-1", T.cols[1] + 0.12, 50);
-        pop("fcol-2", T.cols[2], 90);
-        pop("ft-2", T.cols[2] + 0.12, 50);
+        pop("ft-1", T.parts[1] + 0.12, 50);
+
+        // Three: get hired. The attributes fill, the stamp comes down, and
+        // the confetti goes up.
+        pop("fcol-2", T.parts[2], 90);
+        pop("ft-2", T.parts[2] + 0.12, 50);
+        fillPills("hire-pill", T.hirePills);
+        {
+          const u = spring(seg(t, ...T.hired), 0.55);
+          css("hired", "transform", `rotate(${lerp(-18, -6, u).toFixed(2)}deg) scale(${lerp(1.8, 1, u).toFixed(3)})`);
+          show("hired", seg(t, T.hired[0], T.hired[0] + 0.1));
+        }
+        CONFETTI.forEach((c, i) => {
+          const u = seg(t, T.confetti[0] + c.delay, T.confetti[1]);
+          const p = easeOut(u);
+          const x = c.dx * p;
+          const y = c.dy * p + 120 * u * u;
+          css(`conf-${i}`, "transform", `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${(c.spin * u).toFixed(1)}deg)`);
+          show(`conf-${i}`, u > 0 && u < 1 ? 1 - seg(u, 0.6, 1) : 0);
+        });
       }
 
       // ── The website ────────────────────────────────────────────────────
@@ -511,17 +685,33 @@ export default function Reel() {
         drop("w-h3", 0.34);
         drop("w-sub", 0.42);
         drop("w-cta", 0.5, -520, 0.55);
-        const m = Math.floor(seg(t, ...T.miami) * MIAMI.length + 1e-6);
-        for (let i = 0; i < MIAMI.length; i++) {
-          const onCh = i < m;
-          css(`w-m-${i}`, "display", onCh ? "inline-block" : "none");
-          if (onCh) {
-            const s0 = T.miami[0] + (i / MIAMI.length) * (T.miami[1] - T.miami[0]);
-            css(`w-m-${i}`, "transform", `translateY(${((1 - spring(seg(t, s0, s0 + 0.35), 0.6)) * -30).toFixed(1)}px)`);
+        // The kind of work, typed and deleted. The caret holds solid while it
+        // types and blinks while it waits, as a real one does.
+        let busy = false;
+        SECTORS.forEach((s, w) => {
+          const L = s.word.length;
+          let shown = 0;
+          if (t >= s.type[0] && t < s.type[1]) {
+            shown = Math.floor(seg(t, s.type[0], s.type[1]) * L + 1e-6);
+            busy = true;
+          } else if (t >= s.type[1] && t < s.del[0]) shown = L;
+          else if (t >= s.del[0] && t < s.del[1]) {
+            shown = L - Math.floor(seg(t, s.del[0], s.del[1]) * L + 1e-6);
+            busy = true;
           }
-        }
-        show("w-caret", t >= T.miami[0] - 0.25 && t < T.webUnder[0] ? (Math.floor(t * 4) % 2 === 0 ? 1 : 0.2) : 0);
-        css("w-under", "transform", `scaleX(${spring(seg(t, ...T.webUnder), 0.3).toFixed(3)})`);
+          css(`w-word-${w}`, "display", shown > 0 ? "inline-block" : "none");
+          for (let i = 0; i < L; i++) {
+            const onCh = i < shown;
+            css(`w-s-${w}-${i}`, "display", onCh ? "inline-block" : "none");
+            if (onCh) {
+              const s0 = s.type[0] + (i / L) * (s.type[1] - s.type[0]);
+              css(`w-s-${w}-${i}`, "transform", `translateY(${((1 - spring(seg(t, s0, s0 + 0.35), 0.6)) * -30).toFixed(1)}px)`);
+            }
+          }
+          show(`w-under-${w}`, seg(t, s.under[0], s.under[0] + 0.25) * (1 - seg(t, s.under[1], s.under[1] + 0.15)));
+        });
+        const caretOn = t >= SECTORS[0].type[0] - 0.3 && t < T.webOut[1];
+        show("w-caret", caretOn ? (busy || Math.floor(t * 2.6) % 2 === 0 ? 1 : 0.15) : 0);
         PEOPLE.forEach((p, i) => {
           const s0 = T.webIn + 0.3 + i * 0.1;
           const u = spring(seg(t, s0, s0 + 0.8), 0.5);
@@ -548,6 +738,7 @@ export default function Reel() {
         let colour = GREEN;
         let o = 1;
         let dot = 0;
+        let lift = 0;
         if (t < T.markUp[0]) o = 0;
         else if (t < T.toPromo[0]) {
           const u = spring(seg(t, ...T.markUp), 0.45);
@@ -556,11 +747,26 @@ export default function Reel() {
         } else if (t < T.toPromo[1]) box = between(splashMark, promoMarkBox, spring(seg(t, ...T.toPromo), 0.28));
         else if (t < T.toIcon[0]) box = promoMarkBox;
         else if (t < T.markToFlow[0]) {
-          box = between(promoMarkBox, iconMark, spring(seg(t, ...T.toIcon), 0.3));
+          // It stays out of the camera's dive: it comes forward on its own,
+          // white against the green, to be the icon's f.
+          // It grows at the camera's pace, evenly in scale rather than in
+          // size, so it reaches the icon's f as the green reaches the edges.
+          const u = easeInOut(seg(t, ...T.toIcon));
+          box = {
+            x: lerp(promoMarkBox.x, iconMark.x, u),
+            y: lerp(promoMarkBox.y, iconMark.y, u),
+            s: promoMarkBox.s * (iconMark.s / promoMarkBox.s) ** u,
+          };
           colour = mix(GREEN, "#ffffff", seg(t, ...T.whiten));
-          // Barely any overshoot. The dot travels 173 units, and a looser
-          // spring carried it clean past the f and back over its stem.
-          dot = spring(seg(t, ...T.dotOver), 0.05);
+          // The full stop is set down beside the f rather than dropped: it
+          // leaves slowly, drifts over in a low arc, and slows to a stop.
+          // At icon size its place after the a is far off the stage, so it is
+          // held just inside the edge while the mark grows, and leaves from
+          // there.
+          const inside = (b: Box) => clamp01((206 - (W - Math.max(20, W * 0.06) - b.x) / b.s) / -DOT_BESIDE_F);
+          const v = seg(t, ...T.dotOver);
+          dot = t < T.dotOver[0] ? inside(box) : lerp(inside(iconMark), 1, glide(v));
+          lift = -6 * Math.sin(Math.PI * v);
         } else if (t < T.markToWeb[0]) {
           box = between(iconMark, flowMark, spring(seg(t, ...T.markToFlow), 0.3));
           colour = mix("#ffffff", GREEN, seg(t, ...T.greenAgain));
@@ -569,6 +775,7 @@ export default function Reel() {
           box = between(flowMark, webMark, spring(seg(t, ...T.markToWeb), 0.3));
           colour = mix(GREEN, MARK_DARK, seg(t, ...T.darken));
           dot = 1 - spring(seg(t, ...T.dotBack), 0.05);
+          lift = -14 * Math.sin(Math.PI * seg(t, ...T.dotBack));
         } else {
           box = zoom(webMark, webPhoneMid.x, webPhoneMid.y, webZ);
           colour = MARK_DARK;
@@ -577,10 +784,7 @@ export default function Reel() {
         css("mark", "transform", place(box));
         show("mark", o);
         attr("mark", "fill", colour);
-
-        // The dot walks between after the a and beside the f, with a hop.
-        const hopDot = Math.sin(Math.PI * clamp01(t < T.markToFlow[0] ? seg(t, ...T.dotOver) : seg(t, ...T.dotBack))) * -14;
-        attr("mk-dot", "transform", `translate(${(DOT_BESIDE_F * dot).toFixed(2)} ${hopDot.toFixed(2)})`);
+        attr("mk-dot", "transform", `translate(${(DOT_BESIDE_F * dot).toFixed(2)} ${lift.toFixed(2)})`);
 
         // "ortuna": dropped off the f, and back again.
         GLYPHS.forEach((g, i) => {
@@ -613,7 +817,7 @@ export default function Reel() {
   // is capped so returning to the tab does not skip whole scenes.
   useEffect(() => {
     if (reduced) {
-      draw(7.4);
+      draw(7.2);
       return;
     }
     draw(clock.current);
@@ -666,9 +870,11 @@ export default function Reel() {
             <circle key={i} ref={reg(`promo-ring-${i}`)} cx="2448.55" cy="1693.77" r={ring.r} opacity={ring.o} stroke="#32443E" strokeOpacity="0.12" strokeWidth="13.472" strokeDasharray="53.89 53.89" />
           ))}
         </svg>
-        <div ref={reg("promo-dots")} style={{ position: "absolute", left: 0, top: 0, width: 2190, height: 3006 }}>
-          <Image src="/fortuna/reel/promo-dots.svg" alt="" width={2190} height={3006} unoptimized draggable={false} />
-        </div>
+        <svg width="2526" height="3006" viewBox="0 0 2526 3006" style={{ position: "absolute", left: 0, top: 0 }} aria-hidden="true">
+          {PROMO_DOTS.map(([x, y, r, fill, o], i) => (
+            <circle key={i} ref={reg(`pd-${i}`)} cx={x} cy={y} r={r} fill={fill} fillOpacity={o} style={{ opacity: 0 }} />
+          ))}
+        </svg>
         <div ref={reg("man")} style={{ position: "absolute", left: 0, top: 0, width: 1569.49, height: 1556.02, transformOrigin: "50% 60%" }}>
           <Image src="/fortuna/reel/man.webp" alt="" width={1569} height={1556} unoptimized draggable={false} style={{ width: "100%", height: "auto" }} />
         </div>
@@ -706,7 +912,7 @@ export default function Reel() {
             <span ref={reg("p-caret")} style={{ display: "inline-block", width: 8, height: 96, marginLeft: 6, background: ORANGE, verticalAlign: "-12px", opacity: 0 }} />
           </div>
         </div>
-        <div ref={reg("p-under")} style={{ position: "absolute", left: 350.69, top: 778, width: 381.49, height: 9, borderRadius: 5, background: GREEN, transformOrigin: "0 50%", transform: "scaleX(0)" }} />
+        <div ref={reg("p-under")} style={{ position: "absolute", left: 350.69, top: 778, width: 381.49, height: 9, borderRadius: 5, background: GREEN, opacity: 0 }} />
       </div>
 
       {/* ── The morphing card ── */}
@@ -734,10 +940,63 @@ export default function Reel() {
             </span>
           ))}
         </div>
-        <FlowPart k="fcol-0" reg={reg} src="/fortuna/reel/flow-left.webp" x={64} y={191} w={368} h={368} />
+        <FlowPart k="fcol-0" reg={reg} src="/fortuna/reel/flow-left.webp" x={64} y={191} w={368} h={368}>
+          <Field k="bio-name" reg={reg} y={166} />
+          <Field k="bio-edu" reg={reg} y={224} />
+          <Pills k="bio-pill" reg={reg} fills={BIO_FILLS} />
+        </FlowPart>
         <FlowPart k="fmid-fork" reg={reg} src="/fortuna/reel/flow-forklift.webp" x={597} y={226} w={220} h={250} />
-        <FlowPart k="fmid-cook" reg={reg} src="/fortuna/reel/flow-cook.webp" x={518} y={289.94} w={277.2} h={298.4} />
-        <FlowPart k="fcol-2" reg={reg} src="/fortuna/reel/flow-right.webp" x={928} y={191} w={368} h={368} />
+        <FlowPart k="fmid-cook" reg={reg} src="/fortuna/reel/flow-cook.webp" x={518} y={289.94} w={277.2} h={298.4}>
+          <div ref={reg("cook-like")} style={{ position: "absolute", left: 182, top: 34, width: 48, height: 48, borderRadius: "50%", background: GREEN, display: "grid", placeItems: "center", boxShadow: "0 6px 16px rgba(40, 80, 30, 0.3)", opacity: 0 }}>
+            <Tick size={26} />
+          </div>
+        </FlowPart>
+        <FlowPart k="fcol-2" reg={reg} src="/fortuna/reel/flow-right.webp" x={928} y={191} w={368} h={368}>
+          <Field y={166}>{BIO_NAME}</Field>
+          <Field y={224}>{BIO_EDU}</Field>
+          <Pills k="hire-pill" reg={reg} fills={[BIO_FILLS[0], BIO_FILLS[0], BIO_FILLS[0]]} />
+          {CONFETTI.map((c, i) => (
+            <div
+              key={i}
+              ref={reg(`conf-${i}`)}
+              style={{
+                position: "absolute",
+                left: HIRED_AT.x - c.w / 2,
+                top: HIRED_AT.y - c.h / 2,
+                width: c.w,
+                height: c.h,
+                borderRadius: c.round ? "50%" : 1.5,
+                background: c.colour,
+                opacity: 0,
+              }}
+            />
+          ))}
+          <div
+            ref={reg("hired")}
+            style={{
+              position: "absolute",
+              left: HIRED_AT.x - 74,
+              top: HIRED_AT.y - 26,
+              width: 148,
+              height: 52,
+              borderRadius: 14,
+              background: GREEN,
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              fontFamily: "var(--f-body)",
+              fontSize: 25,
+              fontWeight: 600,
+              boxShadow: "0 10px 24px rgba(40, 80, 30, 0.28)",
+              opacity: 0,
+            }}
+          >
+            <Tick size={24} />
+            Hired
+          </div>
+        </FlowPart>
         {STEPS.map((s, i) => (
           <div
             key={s}
@@ -774,15 +1033,20 @@ export default function Reel() {
           <div ref={reg("w-h1")}>Swipe right to find</div>
           <div ref={reg("w-h2")}>your next job in</div>
           <div ref={reg("w-h3")} style={{ color: ORANGE, height: 77 }}>
-            {MIAMI.split("").map((c, i) => (
-              <span key={i} ref={reg(`w-m-${i}`)} style={{ display: "none" }}>
-                {c}
+            {SECTORS.map((s, w) => (
+              <span key={s.word} ref={reg(`w-word-${w}`)} style={{ position: "relative", display: "none", height: 77, verticalAlign: "top" }}>
+                {s.word.split("").map((c, i) => (
+                  <span key={i} ref={reg(`w-s-${w}-${i}`)} style={{ display: "none" }}>
+                    {c}
+                  </span>
+                ))}
+                {/* As wide as the word, whichever word it is. */}
+                <span ref={reg(`w-under-${w}`)} style={{ position: "absolute", left: 0, right: 0, top: 74, height: 5, borderRadius: 3, background: GREEN, opacity: 0 }} />
               </span>
             ))}
             <span ref={reg("w-caret")} style={{ display: "inline-block", width: 5, height: 56, marginLeft: 4, background: ORANGE, verticalAlign: "-6px", opacity: 0 }} />
           </div>
         </div>
-        <div ref={reg("w-under")} style={{ position: "absolute", left: 667, top: 356, width: 192, height: 5, borderRadius: 3, background: GREEN, transformOrigin: "0 50%", transform: "scaleX(0)" }} />
         <div ref={reg("w-sub")} style={{ position: "absolute", left: 493, top: 391, width: 540, textAlign: "center", fontFamily: "var(--f-body)", fontSize: 20, lineHeight: "32px", color: "#6b6b6b" }}>
           Fortuna is the fastest and most stress free way for you to discover job opportunities in your community.
         </div>
@@ -822,12 +1086,11 @@ export default function Reel() {
               <circle key={i} ref={reg(`ph-ring-${i}`)} cx="187" cy="364" r={ring.r} opacity={ring.o} stroke="#32443E" strokeOpacity="0.12" strokeWidth="2" strokeDasharray="8 8" />
             ))}
           </svg>
-          <div ref={reg("ph-dots-up")} style={{ position: "absolute", left: 0, top: 0, width: 375, height: 248, opacity: 0 }}>
-            <Image src="/fortuna/reel/dots-up.svg" alt="" width={375} height={248} unoptimized draggable={false} />
-          </div>
-          <div ref={reg("ph-dots-low")} style={{ position: "absolute", left: 0, top: 0, width: 375, height: 518, opacity: 0 }}>
-            <Image src="/fortuna/reel/dots-low.svg" alt="" width={375} height={518} unoptimized draggable={false} />
-          </div>
+          <svg width="375" height="801" viewBox="0 0 375 801" style={{ position: "absolute", left: 0, top: 0 }} aria-hidden="true">
+            {SPLASH_DOTS.map(([x, y, r, fill, o], i) => (
+              <circle key={i} ref={reg(`ph-dot-${i}`)} cx={x} cy={y} r={r} fill={fill} fillOpacity={o} style={{ opacity: 0 }} />
+            ))}
+          </svg>
           <div ref={reg("ph-card")} style={{ position: "absolute", left: 0, top: 0, transformOrigin: "157px 255px", opacity: 0 }}>
             <BigCard job={DINER} />
           </div>
@@ -860,6 +1123,8 @@ export default function Reel() {
         ))}
         <path ref={reg("mk-dot")} d={DOT} fill={ORANGE} />
       </svg>
+
+      {label && <ReelLabel text={label} />}
     </div>
   );
 }
@@ -872,18 +1137,77 @@ function FlowPart({
   y,
   w,
   h,
+  children,
 }: {
   k: string;
-  reg: (key: string) => (el: El | null) => void;
+  reg: Reg;
   src: string;
   x: number;
   y: number;
   w: number;
   h: number;
+  children?: ReactNode;
 }) {
   return (
     <div ref={reg(k)} style={{ position: "absolute", left: x, top: y, width: w, height: h, transformOrigin: "50% 60%", opacity: 0 }}>
       <Image src={src} alt="" width={Math.round(w * 2)} height={Math.round(h * 2)} unoptimized draggable={false} style={{ width: "100%", height: "100%" }} />
+      {children}
     </div>
+  );
+}
+
+/**
+ * Text in one of the bio form's boxes. Given a key it types itself in, with
+ * a caret; given children it is already filled.
+ */
+function Field({ k, reg, y, children }: { k?: string; reg?: Reg; y: number; children?: ReactNode }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: 152,
+        top: y,
+        width: 176,
+        height: 28,
+        paddingLeft: 9,
+        display: "flex",
+        alignItems: "center",
+        fontFamily: "var(--f-body)",
+        fontSize: 11,
+        fontWeight: 500,
+        color: FOREST,
+        whiteSpace: "pre",
+      }}
+    >
+      {k && reg ? (
+        <>
+          <span ref={reg(k)} />
+          <span ref={reg(`${k}-caret`)} style={{ width: 1.5, height: 13, marginLeft: 1, background: FOREST, opacity: 0 }} />
+        </>
+      ) : (
+        children
+      )}
+    </div>
+  );
+}
+
+/** The form's three attribute pills, each filling from the left. */
+function Pills({ k, reg, fills }: { k: string; reg: Reg; fills: string[] }) {
+  return (
+    <>
+      {PILLS.map((p, i) => (
+        <div key={i} style={{ position: "absolute", left: p.x, top: 284, width: p.w, height: 18, borderRadius: 5, overflow: "hidden", background: PILL_PALE }}>
+          <div ref={reg(`${k}-${i}`)} style={{ position: "absolute", inset: 0, background: fills[i], transformOrigin: "0 50%", transform: "scaleX(0)" }} />
+        </div>
+      ))}
+    </>
+  );
+}
+
+function Tick({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

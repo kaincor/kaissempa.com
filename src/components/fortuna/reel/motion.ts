@@ -38,6 +38,15 @@ export const easeInOut = (u: number) =>
   u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u);
 
 /**
+ * Smoother than easeInOut at both ends: it leaves and arrives at no speed at
+ * all, so whatever it moves sets down rather than lands.
+ */
+export const glide = (u: number) => {
+  const c = clamp01(u);
+  return c * c * c * (c * (6 * c - 15) + 10);
+};
+
+/**
  * Something let go of: falls with gravity, turns as it goes, fades out.
  * `u` is time since release over the fall's length.
  */

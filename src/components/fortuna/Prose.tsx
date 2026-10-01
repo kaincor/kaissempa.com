@@ -7,6 +7,7 @@ import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
 import GoalList from "./GoalList";
 import Persona from "./Persona";
+import KindredReel from "./reel/KindredReel";
 import Reel from "./reel/Reel";
 import NightSky from "./NightSky";
 import { hasFill } from "@/content/fortuna";
@@ -739,7 +740,7 @@ function blockNode(
     case "persona":
       return <Persona key={i} persona={block.persona} />;
     case "reveal":
-      return <Reel key={i} />;
+      return block.variant === "kindred" ? <KindredReel key={i} label={block.label} /> : <Reel key={i} label={block.label} />;
   }
 }
 
