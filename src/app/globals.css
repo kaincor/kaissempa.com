@@ -177,3 +177,16 @@ body {
   box-shadow: 0 0 22px 3px rgb(var(--icon-shadow-rgb) / 0.75);
   transition: box-shadow 0.7s cubic-bezier(0.33, 0, 0.35, 1);
 }
+
+/* A link laid over an interactive embed, for screens with no hover. On a
+   mouse the embed keeps its pointer and handles the click itself; on touch it
+   cannot, so the link takes the tap. See FortunaThumb. */
+.touch-link {
+  display: none;
+}
+
+@media (hover: none) {
+  .touch-link {
+    display: block;
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -31,6 +32,12 @@ import { useEffect, useRef, useState } from "react";
  *
  * The corner chip stays as the visible affordance and the keyboard path, since
  * the focus trick is mouse-only.
+ *
+ * On touch screens the trick does not work at all: a tap inside a
+ * cross-origin iframe plays the scene's own touch interaction but does not
+ * move focus onto the iframe, so nothing ever navigated. There, a plain link
+ * covers the scene instead, so a tap opens the case study. Touch has no
+ * hover to give up, so the only cost is the scene's tap response.
  */
 export default function FortunaThumb({
   src,
@@ -117,7 +124,7 @@ export default function FortunaThumb({
           }}
         />
       ) : null}
-
+      <Link href={href} aria-label={label} className="touch-link" style={{ position: "absolute", inset: 0, zIndex: 1 }} />
     </div>
   );
 }
