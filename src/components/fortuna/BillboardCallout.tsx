@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useArrival } from "./arrival";
 import FillInline from "./FillText";
 import Parallax from "./Parallax";
 import type { Rich } from "@/content/fortuna";
@@ -30,13 +31,16 @@ const DRIFT = 16;
 export default function BillboardCallout({
   text,
   align = "left",
-  delay = 0,
 }: {
   text: Rich;
   align?: "left" | "center" | "right";
-  delay?: number;
 }) {
   const reduced = useReducedMotion();
+  const board = useRef<HTMLDivElement>(null);
+  // Its turn on the page's queue, which also keeps it behind the heading and
+  // paragraph above it: it is the loudest thing in its section and should
+  // not be what the eye catches on the way in.
+  const go = useArrival(board, { amount: 0.5, disabled: !!reduced });
   // The fill waits for the board to arrive rather than running on a guessed
   // delay, so the two stay in step if the spring is ever retuned.
   const [filled, setFilled] = useState(false);
@@ -46,16 +50,15 @@ export default function BillboardCallout({
     // the same element otherwise, and the drift would fight the rotation.
     <Parallax drift={DRIFT}>
       <motion.div
+        ref={board}
         initial={reduced ? false : { rotateX: LAID_FLAT }}
-        whileInView={{ rotateX: 0 }}
-        viewport={{ once: true, amount: 0.5 }}
+        animate={go ? { rotateX: 0 } : undefined}
         onAnimationComplete={() => setFilled(true)}
         transition={{
           type: "spring",
           stiffness: 74,
           damping: 12,
           mass: 0.9,
-          delay,
         }}
         style={{
           margin: "32px 0",

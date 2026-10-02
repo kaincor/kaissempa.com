@@ -3,12 +3,12 @@
 import {
   animate,
   motion,
-  useInView,
   useMotionValue,
   useReducedMotion,
   useTransform,
   type MotionValue,
 } from "motion/react";
+import { useArrival } from "./arrival";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /**
@@ -122,7 +122,9 @@ export default function PersonaDecks({
   // Shrinking the root's bottom by a third means the piles count as arrived
   // when they cross two thirds of the way up the screen, rather than the
   // moment their first pixel appears at the bottom of it.
-  const started = useInView(wrap, { once: true, margin: "0px 0px -35% 0px" });
+  // Its turn on the page's queue; it holds the queue a little while the
+  // piles deal, so what follows does not start under the cards in the air.
+  const started = useArrival(wrap, { margin: "0px 0px -35% 0px", hold: 0.8 });
 
   /** Each card's distance from the top of its column, once laid out. */
   const [tops, setTops] = useState<number[][]>(() => columns.map(() => []));
@@ -168,8 +170,7 @@ export default function PersonaDecks({
     <motion.div
       ref={wrap}
       initial={reduced ? false : { opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true, amount: 0.15 }}
+      animate={started ? { opacity: 1 } : undefined}
       transition={{ duration: 0.7, ease: "easeOut" }}
       style={{
         marginTop: "clamp(16px, 2.4vw, 26px)",

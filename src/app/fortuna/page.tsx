@@ -147,8 +147,6 @@ export default function FortunaPage() {
               ) : null}
                 </Display>
               );
-              // The heading takes the first slot in the arrival order, so the
-              // blocks beneath it start counting from one.
               return section.reveal ? <FadeIn>{heading}</FadeIn> : heading;
             })()}
 
@@ -163,7 +161,7 @@ export default function FortunaPage() {
             ) : null}
 
             {section.blocks.map((block, i) =>
-              renderBlock(block, i, dark, section.align, section.reveal, i + 1),
+              renderBlock(block, i, dark, section.align, section.reveal),
             )}
           </Band>
         );

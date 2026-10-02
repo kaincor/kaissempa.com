@@ -3,11 +3,11 @@
 import {
   animate,
   motion,
-  useInView,
   useMotionValue,
   useReducedMotion,
   useTransform,
 } from "motion/react";
+import { useArrival } from "./arrival";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import GlobeCanvas from "./GlobeCanvas";
 import MiamiPin from "./MiamiPin";
@@ -76,7 +76,9 @@ export default function GlobeStage({
   // Nearly half of it showing. Any less and the entrance starts while the
   // globe is still a sliver at the bottom of the screen and is mostly over by
   // the time the reader can see it.
-  const inView = useInView(ref, { once: true, amount: 0.45 });
+  // In its turn on the page's queue, holding it a moment while the globe
+  // rises so the text under it does not come up alongside.
+  const inView = useArrival(ref, { amount: 0.45, hold: 0.6 });
 
   const progress = useMotionValue(reduced ? 1 : 0);
   const [dropPin, setDropPin] = useState(false);

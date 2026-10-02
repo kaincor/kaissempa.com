@@ -617,21 +617,13 @@ export function Figure({ note, dark }: { note: string; dark?: boolean }) {
 }
 
 /**
- * How long the billboard waits per place in its section.
- *
- * Only the billboard still counts places. Everything else arrives on the
- * page's shared queue in FadeIn; the billboard has its own stand-up and waits
- * for the heading and paragraph above it, because it is the loudest thing in
- * its section and should not be what the eye catches on the way in.
- */
-const STEP = 0.34;
-
-/**
  * Blocks that bring their own entrance, and so are left out of the page's.
  *
  * The globe has its rise and pin, the persona its dealt cards, the goals their
  * fade, the billboard its stand-up. Wrapping any of them in a fade as well
- * would give the reader two entrances for one object.
+ * would give the reader two entrances for one object. They still wait their
+ * turn on the same queue as the fades (arrival.ts), so the page plays top to
+ * bottom whichever kind of entrance a block has.
  */
 function ownsEntrance(block: Block) {
   return (
@@ -649,10 +641,8 @@ export function renderBlock(
   dark: boolean,
   align: Align = "left",
   reveal = false,
-  /** Position in the section's arrival order, heading included. */
-  order = 0,
 ) {
-  const node = blockNode(block, i, dark, align, order);
+  const node = blockNode(block, i, dark, align);
   // Everything else arrives on the page's shared queue: on its own when it
   // reaches the screen, a beat behind anything that reached it at the same
   // moment. See FadeIn.
@@ -664,7 +654,6 @@ function blockNode(
   i: number,
   dark: boolean,
   align: Align,
-  order: number,
 ) {
   switch (block.kind) {
     case "text":
@@ -698,7 +687,6 @@ function blockNode(
           key={i}
           text={block.text}
           align={align}
-          delay={order * STEP}
         />
       ) : (
         <Callout key={i} dark={dark} align={align}>

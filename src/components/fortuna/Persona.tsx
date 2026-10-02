@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
+import { useArrival } from "./arrival";
 import PersonaBoard from "./PersonaBoard";
 import PersonaDecks from "./PersonaDecks";
 import SheetFrame from "./SheetFrame";
@@ -52,24 +53,21 @@ const STEP = 0.09;
 
 /** One piece of the sheet, arriving in its turn. */
 function Rise({
-  at,
   still,
   children,
 }: {
-  at: number;
   still: boolean;
   children: ReactNode;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  // In its turn on the page's queue, a short beat behind the piece before it.
+  const go = useArrival(ref, { amount: 0.25, step: STEP, disabled: still });
   return (
     <motion.div
+      ref={ref}
       initial={still ? false : { opacity: 0, y: 14 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{
-        duration: 0.55,
-        ease: [0.22, 0.61, 0.24, 1],
-        delay: at * STEP,
-      }}
+      animate={go ? { opacity: 1, y: 0 } : undefined}
+      transition={{ duration: 0.55, ease: [0.22, 0.61, 0.24, 1] }}
     >
       {children}
     </motion.div>
@@ -79,10 +77,6 @@ function Rise({
 export default function Persona({ persona }: { persona: PersonaSheet }) {
   const reduced = useReducedMotion();
 
-  // One running counter, so the whole sheet shares a single arrival order
-  // rather than each column restarting its own.
-  let beat = 0;
-  const next = () => beat++;
   const still = !!reduced;
 
   return (
@@ -113,7 +107,7 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
             alignItems: "center",
           }}
         >
-          <Rise at={next()} still={still}>
+          <Rise still={still}>
             <div
               style={{
                 position: "relative",
@@ -141,7 +135,7 @@ export default function Persona({ persona }: { persona: PersonaSheet }) {
 
           <div style={{ display: "grid", gap: "clamp(16px, 2.4vw, 24px)" }}>
             {persona.notes.map((n) => (
-              <Rise key={n.title} at={next()} still={still}>
+              <Rise key={n.title} still={still}>
                 <h4
                   style={{
                     margin: "0 0 6px",

@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
+import { useArrival } from "./arrival";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 /**
@@ -111,7 +112,7 @@ export default function PersonaBoard({
   const still = !!reduced;
   // The first board pops in when the sheet arrives, not on mount — otherwise
   // it has already happened by the time the reader scrolls to it.
-  const started = useInView(wrap, { once: true, margin: "0px 0px -25% 0px" });
+  const started = useArrival(wrap, { margin: "0px 0px -25% 0px", hold: 0.5 });
   const id = useId();
 
   // Each board's own height, so the frame can be the size of the one on show

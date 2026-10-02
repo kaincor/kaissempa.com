@@ -1,6 +1,8 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import { useRef } from "react";
+import { useArrival } from "./arrival";
 import Parallax from "./Parallax";
 
 /**
@@ -35,18 +37,6 @@ const STAGGER = 0.5;
 const FADE = 1;
 
 /**
- * Seconds the first goal waits.
- *
- * Long enough for the line above — "Our high level goals for the app were to:"
- * — to have arrived and settled first. Its own reveal is a 1.25s fade on a
- * 0.34s delay, and the two are triggered separately, so this is what keeps
- * them in order rather than racing.
- */
-const LEAD = 0.9;
-
-
-
-/**
  * How far the block drifts against the page, in pixels each way.
  *
  * The whole list moves as one, not each line on its own depth. Separate
@@ -65,10 +55,16 @@ export default function GoalList({
   align?: "left" | "center" | "right";
 }) {
   const reduced = useReducedMotion();
+  const list = useRef<HTMLOListElement>(null);
+  // The list takes one turn on the page's queue — which is what keeps it
+  // behind the line that introduces it — and holds the queue until its last
+  // goal has started, so nothing below cuts in while it is still counting.
+  const go = useArrival(list, { amount: 0.4, hold: (items.length - 1) * STAGGER, disabled: !!reduced });
 
   return (
     <Parallax drift={DRIFT}>
       <ol
+        ref={list}
         style={{
           listStyle: "none",
           margin: "clamp(46px, 6vh, 68px) 0 0",
@@ -88,12 +84,11 @@ export default function GoalList({
           <motion.li
             key={item}
             initial={reduced ? false : { opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.6 }}
+            animate={go ? { opacity: 1 } : undefined}
             transition={{
               duration: FADE,
               ease: "easeOut",
-              delay: LEAD + i * STAGGER,
+              delay: i * STAGGER,
             }}
             style={{
               position: "relative",

@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useArrival } from "./arrival";
 
 /**
  * The persona sheet's outline, drawn rather than switched on.
@@ -58,6 +59,9 @@ export default function SheetFrame({
   const box = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const reduced = useReducedMotion();
+  // In its turn on the page's queue: first of the sheet, since it sits ahead
+  // of everything written on it.
+  const go = useArrival(box, { amount: 0.12, disabled: !!reduced });
 
   // The path is in real pixels, so it has to be rebuilt when the sheet
   // reflows. Scaling one viewBox instead would stretch the corner radii into
@@ -120,8 +124,7 @@ export default function SheetFrame({
               strokeWidth={width}
               strokeLinecap="round"
               initial={reduced ? false : { pathLength: SEED }}
-              whileInView={{ pathLength: 1 }}
-              viewport={{ once: true, amount: 0.12 }}
+              animate={go ? { pathLength: 1 } : undefined}
               transition={{ duration: DRAW, ease: PACE }}
             />
           ))}
