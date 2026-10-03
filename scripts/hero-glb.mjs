@@ -11,11 +11,11 @@
  * - Simplifies each mesh to an error budget set by what it is. The rough
  *   "KAI" letters were half the scene's triangles for outlines nobody can
  *   resolve at hero size; the figurine and bike keep tighter budgets.
- * - Drops the rock's roughness map: it comes out near zero (a mirror), and
- *   the page builds the rock's sheen from the colour texture instead.
- * - The rock's colour texture to WebP at 2048, then quantization and
- *   meshopt compression.
- * 75MB in, about 1.7MB out.
+ * - Drops the rock's textures: the page builds the rock from a colour and a
+ *   small normal map (public/hero/rock-detail.webp) instead.
+ * - The bike paint's texture to WebP, then quantization and meshopt
+ *   compression.
+ * 75MB in, about 0.6MB out.
  */
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
@@ -45,7 +45,22 @@ const budget = (path) => {
 // 9MB of point lists the page never reads.
 for (const m of root.listMeshes()) { m.setExtras({}); for (const p of m.listPrimitives()) p.setExtras({}); }
 for (const n of root.listNodes()) n.setExtras({});
-for (const m of root.listMaterials()) m.setMetallicRoughnessTexture(null);
+for (const m of root.listMaterials()) {
+  m.setMetallicRoughnessTexture(null);
+  // The rock's photograph: the page builds the rock from a colour and a
+  // small normal map instead (after the MTB Summit scene), so the 4096px
+  // photo is a megabyte nobody sees. The bike's paint keeps its texture.
+  if (m.getAlphaMode() !== 'BLEND') m.setBaseColorTexture(null);
+}
+// Texture coordinates only where something is mapped through them: the
+// rock (its normal map, applied by the page) and the bike's paint.
+for (const n of root.listNodes()) {
+  const mesh = n.getMesh();
+  if (!mesh || n.getName() === 'Rock') continue;
+  for (const p of mesh.listPrimitives()) {
+    if (!p.getMaterial()?.getBaseColorTexture()) p.setAttribute('TEXCOORD_0', null);
+  }
+}
 await doc.transform(dedup(), weld());
 let before = 0, after = 0; const rows = [];
 const done = new Set();
@@ -60,7 +75,9 @@ for (const n of root.listNodes()) {
 rows.sort((a,b)=>b[0]-a[0]); console.log(rows.slice(0,15).map(r=>r.join('  ')).join('\n'));
 console.log('tris', before, '->', after);
 await doc.transform(
-  prune(),
+  // Keep the texture coordinates: with its photo gone the rock references no
+  // texture, but the page maps its normal map through them.
+  prune({ keepAttributes: true }),
   textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [2048, 2048], quality: 80, slots: /^baseColor/ }),
   reorder({ encoder: MeshoptEncoder }),
   quantize(),

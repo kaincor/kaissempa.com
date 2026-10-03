@@ -20,12 +20,16 @@ import type * as THREE_NS from "three";
 export const MODE = { normal: 0, multiply: 1, screen: 2, overlay: 3 } as const;
 type Mode = (typeof MODE)[keyof typeof MODE];
 
+type Fresnel = { color: number[]; mode: Mode; alpha: number; bias: number; scale: number; power: number; factor: number };
+
 export type LayerSpec = {
   /** The base layer: a colour, or the material's own texture. */
   base: { color: number[] } | { texture: true };
-  light: { mode: Mode; alpha: number };
+  /** `gain` scales the light before it is blended, for a scene lit brighter than the one the material was made in. */
+  light: { mode: Mode; alpha: number; gain?: number };
   matcap?: { tex: THREE_NS.Texture; mode: Mode; alpha: number; intensity: number };
-  fresnel?: { color: number[]; mode: Mode; alpha: number; bias: number; scale: number; power: number; factor: number };
+  /** One fresnel rim, or a stack of them composited in order. */
+  fresnel?: Fresnel | Fresnel[];
   /** A colour layer above the light, as Path 5 has. */
   tint?: { color: number[]; mode: Mode; alpha: number };
 };
@@ -43,9 +47,11 @@ export function applyLayers(m: THREE_NS.Material & { color?: THREE_NS.Color }, s
   const lightOnBase = spec.light.mode === MODE.normal;
   const v3 = (c: number[]) => ({ value: { x: c[0], y: c[1], z: c[2], isVector3: true } });
   m.onBeforeCompile = (shader) => {
+    m.userData.shader = shader;
     const u = shader.uniforms;
     u.splLightMode = { value: spec.light.mode };
     u.splLightAlpha = { value: spec.light.alpha };
+    u.splLightGain = { value: spec.light.gain ?? 1 };
     u.splBaseColor = v3("color" in spec.base ? spec.base.color : [1, 1, 1]);
     u.splUseBaseColor = { value: "color" in spec.base ? 1 : 0 };
     u.splLightOnBase = { value: lightOnBase ? 1 : 0 };
@@ -55,22 +61,22 @@ export function applyLayers(m: THREE_NS.Material & { color?: THREE_NS.Color }, s
       u.splMatcapAlpha = { value: spec.matcap.alpha };
       u.splMatcapIntensity = { value: spec.matcap.intensity };
     }
-    if (spec.fresnel) {
-      const f = spec.fresnel;
-      u.splFresnelColor = v3(f.color);
-      u.splFresnel = { value: [f.bias, f.scale, f.power, f.factor] };
-      u.splFresnelMode = { value: f.mode };
-      u.splFresnelAlpha = { value: f.alpha };
-    }
+    const fresnels = spec.fresnel ? (Array.isArray(spec.fresnel) ? spec.fresnel : [spec.fresnel]) : [];
+    fresnels.forEach((f, i) => {
+      u[`splFresnelColor${i}`] = v3(f.color);
+      u[`splFresnel${i}`] = { value: [f.bias, f.scale, f.power, f.factor] };
+      u[`splFresnelMode${i}`] = { value: f.mode };
+      u[`splFresnelAlpha${i}`] = { value: f.alpha };
+    });
     if (spec.tint) {
       u.splTint = v3(spec.tint.color);
       u.splTintMode = { value: spec.tint.mode };
       u.splTintAlpha = { value: spec.tint.alpha };
     }
     const decl = [
-      "uniform int splLightMode; uniform float splLightAlpha; uniform vec3 splBaseColor; uniform int splUseBaseColor; uniform int splLightOnBase;",
+      "uniform int splLightMode; uniform float splLightAlpha; uniform float splLightGain; uniform vec3 splBaseColor; uniform int splUseBaseColor; uniform int splLightOnBase;",
       spec.matcap ? "uniform sampler2D splMatcap; uniform int splMatcapMode; uniform float splMatcapAlpha; uniform float splMatcapIntensity;" : "",
-      spec.fresnel ? "uniform vec3 splFresnelColor; uniform vec4 splFresnel; uniform int splFresnelMode; uniform float splFresnelAlpha;" : "",
+      fresnels.map((_, i) => `uniform vec3 splFresnelColor${i}; uniform vec4 splFresnel${i}; uniform int splFresnelMode${i}; uniform float splFresnelAlpha${i};`).join("\n"),
       spec.tint ? "uniform vec3 splTint; uniform int splTintMode; uniform float splTintAlpha;" : "",
       BLEND,
     ].join("\n");
@@ -86,7 +92,7 @@ export function applyLayers(m: THREE_NS.Material & { color?: THREE_NS.Color }, s
       .replace(
         "#include <opaque_fragment>",
         `{
-          vec3 res = mix(splBase, splBlend(splBase, outgoingLight, splLightMode), splLightAlpha);
+          vec3 res = mix(splBase, splBlend(splBase, outgoingLight * splLightGain, splLightMode), splLightAlpha);
           ${spec.tint ? "res = mix(res, splBlend(res, splTint, splTintMode), splTintAlpha);" : ""}
           ${
             spec.matcap
@@ -99,15 +105,17 @@ export function applyLayers(m: THREE_NS.Material & { color?: THREE_NS.Color }, s
           }`
               : ""
           }
-          ${
-            spec.fresnel
-              ? `{
+          ${fresnels
+            .map(
+              (_, i) => `{
             float nv = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
-            float fr = clamp(splFresnel.x + splFresnel.y * pow(1.0 - nv, splFresnel.z), 0.0, 1.0) * splFresnel.w;
-            res = mix(res, splBlend(res, splFresnelColor * fr, splFresnelMode), splFresnelAlpha);
-          }`
-              : ""
-          }
+            float fr = clamp(splFresnel${i}.x + splFresnel${i}.y * pow(1.0 - nv, splFresnel${i}.z), 0.0, 1.0) * splFresnel${i}.w;
+            // The rim is how much of the layer shows, not a colour: a
+            // multiplied fresnel darkens the edges, not the whole face.
+            res = mix(res, splBlend(res, splFresnelColor${i}, splFresnelMode${i}), fr * splFresnelAlpha${i});
+          }`,
+            )
+            .join("\n")}
           outgoingLight = res;
         }
         #include <opaque_fragment>`,
