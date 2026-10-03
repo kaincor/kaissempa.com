@@ -179,7 +179,8 @@ export default function HeroScene({
         if (meshName === "Rock") {
           // The rock, built the way the MTB Summit scene's rock is: a flat
           // colour with no photograph, lit in overlay with a rock normal map
-          // read as bump and roughness, four fresnel rims stacked on top,
+          // read as bump and roughness, three of its four fresnel rims stacked on top (the
+          // screened one, which washed the rock's edges white, left off),
           // and a soft matcap screened over all of it.
           const m = physical(PHYS(1, 0.09), {
             roughnessMap: rockDetail,
@@ -190,10 +191,10 @@ export default function HeroScene({
           return applyLayers(m, {
             base: { color: rockColor },
             light: { mode: O, alpha: 1, gain: ROCK.gain },
+            // (gain also sets how dark the rock reads)
             fresnel: [
               { color: grey(0.847), mode: MODE.multiply, alpha: 1, bias: 0.1, scale: 1, power: 2, factor: 1 },
               { color: grey(0.847), mode: O, alpha: 1, bias: 0.1, scale: 1, power: 2, factor: 1 },
-              { color: grey(0.847), mode: S, alpha: 1, bias: 0.1, scale: 1, power: 3.84, factor: 1 },
               { color: grey(0.65), mode: O, alpha: 1, bias: -0.36, scale: 1.48, power: 1.16, factor: 0.08 },
             ],
             matcap: { tex: matcapSoft, mode: S, alpha: 1, intensity: 1 },
@@ -450,4 +451,4 @@ const KEY_LIGHT = 1.57;
  * hard the normal map bumps it, how many times the map repeats across it, and
  * how much of this scene's (brighter) light it takes.
  */
-const ROCK = { color: "3b3836", bump: 3, repeat: 6, gain: 0.5 };
+const ROCK = { color: "2a2826", bump: 3, repeat: 6, gain: 0.5 };
