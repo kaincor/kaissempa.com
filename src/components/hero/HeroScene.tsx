@@ -115,7 +115,11 @@ export default function HeroScene({
         const l = o as THREE_NS.PointLight;
         if (!l.isPointLight) return;
         if (l === follow) Object.assign(l, { intensity: 4.383, distance: 500, decay: 0 });
-        else if (l === key) Object.assign(l, { intensity: 6.283, distance: 0, decay: 1 });
+        // The light that is always on, above the rock. Spline gives it decay
+        // 1 but no distance, and without a distance its light does not fall
+        // off; three would fade it to nothing by the time it reached the
+        // rock, which is what left the scene dark with the cursor away.
+        else if (l === key) Object.assign(l, { intensity: KEY_LIGHT, distance: 0, decay: 0 });
       });
       const ambient = new THREE.HemisphereLight(0xd3d3d3, 0x828282, AMBIENT.value);
       scene.add(ambient);
@@ -166,10 +170,12 @@ export default function HeroScene({
           });
         }
         if (src.map) {
-          // The rock: its texture, lit normally at 90%, glossy where the
-          // texture is dark, bumped by the texture, and very reflective.
+          // The rock: its texture, lit normally at 90%.
+          // Spline's settings: roughness from the texture's luminance, the
+          // texture as a bump map, reflectivity 10.
           const m = physical(PHYS(ROCK.roughness, 0), {
             map: src.map,
+            roughnessMap: src.map,
             bumpMap: src.map,
             bumpScale: ROCK.bump,
             specularIntensity: 1,
@@ -217,12 +223,6 @@ export default function HeroScene({
         mesh.material = swapped.get(src)!;
       });
 
-      // ── Fewer draw calls ────────────────────────────────────────────────
-      // The scene is 300-odd separate meshes — the figurine alone is 191
-      // flattened Figma shapes — and each costs a draw call every frame.
-      // Everything that moves together, and shares a material, is merged
-      // into one: under each animated group, one mesh per material. Lossless:
-      // every triangle is kept, only the bookkeeping goes.
       const floatAttr = (a: THREE_NS.BufferAttribute | THREE_NS.InterleavedBufferAttribute, size: number) => {
         const out = new Float32Array(a.count * size);
         for (let i = 0; i < a.count; i++) {
@@ -232,6 +232,92 @@ export default function HeroScene({
         }
         return new THREE.BufferAttribute(out, size);
       };
+      // ── Grass along the ridge ───────────────────────────────────────────
+      // The scene's own few tufts, copied along the rock's skyline behind
+      // the bike, where they read against the sky. The skyline is found by
+      // looking at the rock from the camera: across the frame, the highest
+      // point of the rock in each column.
+      {
+        const rg = byName("Responsive Group");
+        const rock = byName("Rock") as THREE_NS.Mesh | undefined;
+        // Each tuft is one of Spline's cloners: a group of some 25 blades.
+        const tufts = (byName("Grass")?.children ?? []).filter((c) => !(c as THREE_NS.Mesh).isMesh && c.children.length > 0);
+        if (rg && rock && tufts.length) {
+          scene.updateMatrixWorld(true);
+          const toGroup = rg.matrixWorld.clone().invert();
+          const pos = rock.geometry.attributes.position;
+          const v = new THREE.Vector3();
+          const cols = 48;
+          const top: (THREE_NS.Vector3 | null)[] = Array(cols).fill(null);
+          const topY: number[] = Array(cols).fill(Infinity);
+          for (let i = 0; i < pos.count; i += 2) {
+            v.fromBufferAttribute(pos, i).applyMatrix4(rock.matrixWorld);
+            const ndc = v.clone().project(camera);
+            const c = Math.floor(((ndc.x + 1) / 2) * cols);
+            if (c < 0 || c >= cols) continue;
+            if (-ndc.y < topY[c]) {
+              topY[c] = -ndc.y;
+              top[c] = v.clone();
+            }
+          }
+          const ridge = top.filter(Boolean) as THREE_NS.Vector3[];
+          // The top of the skyline only: the ridge behind the bike, not the
+          // slopes falling away at either end.
+          const ys = ridge.map((p) => p.clone().project(camera).y);
+          const hi = Math.max(...ys);
+          const lo = Math.min(...ys);
+          const keep = ridge.filter((_, i) => ys[i] > lo + (hi - lo) * GRASS.ridge);
+          let seed = 7;
+          const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+          const spots: THREE_NS.Vector3[] = [];
+          keep.forEach((p, i) => {
+            // A second tuft halfway to the next column, so the ridge reads
+            // as one run of grass rather than a row of separate clumps.
+            spots.push(p);
+            if (keep[i + 1]) spots.push(p.clone().lerp(keep[i + 1], 0.5));
+          });
+          spots.forEach((p, i) => {
+            if (i % GRASS.every !== 0) return;
+            const t = tufts[i % tufts.length];
+            // The tuft's blades as one geometry in the group's frame, its
+            // base at the origin.
+            const blades: THREE_NS.BufferGeometry[] = [];
+            let mat: THREE_NS.Material | null = null;
+            let n = 0;
+            t.traverse((o) => {
+              const mesh = o as THREE_NS.Mesh;
+              if (!mesh.isMesh) return;
+              // Every other blade: at this size the tuft reads the same.
+              if (n++ % 2) return;
+              const bg = new THREE.BufferGeometry();
+              bg.setAttribute("position", floatAttr(mesh.geometry.attributes.position, 3));
+              if (mesh.geometry.attributes.normal) bg.setAttribute("normal", floatAttr(mesh.geometry.attributes.normal, 3));
+              if (mesh.geometry.index) bg.setIndex(Array.from(mesh.geometry.index.array as ArrayLike<number>));
+              bg.applyMatrix4(new THREE.Matrix4().multiplyMatrices(toGroup, mesh.matrixWorld));
+              blades.push(bg);
+              mat = mesh.material as THREE_NS.Material;
+            });
+            const g = blades.length ? mergeGeometries(blades, false) : null;
+            if (!g || !mat) return;
+            g.computeBoundingBox();
+            const b = g.boundingBox!;
+            g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+            const base = p.clone().applyMatrix4(toGroup);
+            const m = new THREE.Mesh(g, mat);
+            m.position.copy(base).add(new THREE.Vector3(0, -GRASS.sink, 0));
+            m.rotation.y = rnd() * Math.PI * 2;
+            m.scale.setScalar(GRASS.scale * (0.7 + rnd() * 0.6));
+            rg.add(m);
+          });
+        }
+      }
+
+      // ── Fewer draw calls ────────────────────────────────────────────────
+      // The scene is 300-odd separate meshes — the figurine alone is 191
+      // flattened Figma shapes — and each costs a draw call every frame.
+      // Everything that moves together, and shares a material, is merged
+      // into one: under each animated group, one mesh per material. Lossless:
+      // every triangle is kept, only the bookkeeping goes.
       const mergeUnder = (root: THREE_NS.Object3D, skip: Set<THREE_NS.Object3D>) => {
         root.updateMatrixWorld(true);
         const inv = root.matrixWorld.clone().invert();
@@ -420,10 +506,20 @@ export default function HeroScene({
 
 /** Matched against renders of the Spline scene with its light pinned in the same place. */
 /** The hemisphere fill, in three's units; it sets where the overlay layers sit. */
-const AMBIENT = { value: 4 };
+const AMBIENT = { value: 1.5 };
+/** The always-on light's strength in three's units (Spline: 2π). */
+const KEY_LIGHT = 1.57;
 /**
- * The rock's sheen. Spline's rock is roughness 0.1 driven by its texture,
- * bumped by it, at a reflectivity of 10; three spends those numbers
- * differently, and these are what give the same broad wet sheen.
+ * The rock's sheen. Spline's rock is roughness 0.1 driven by its texture's
+ * luminance, bumped by it at 0.5, at a reflectivity of 10. Three reads a
+ * roughness map as a multiplier and has no reflectivity past 1, so the same
+ * look comes from a full roughness scaled by the texture, and a boosted
+ * specular colour.
  */
-const ROCK = { roughness: 0.45, bump: 10, specular: 25 };
+const ROCK = { roughness: 1, bump: 3, specular: 10 };
+/**
+ * Grass on the ridge: a tuft every `every` skyline columns, at `scale` of
+ * Spline's tufts, sunk a touch into the rock, along the top `1 - ridge` of
+ * the skyline.
+ */
+const GRASS = { every: 1, scale: 0.45, sink: 1, ridge: 0.5 };

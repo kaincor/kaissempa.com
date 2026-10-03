@@ -32,6 +32,9 @@ const tris = (m) => m.listPrimitives().reduce((a,p)=>a+(p.getIndices()?.getCount
 const pathOf = (n) => { const p=[]; let c=n; while (c) { p.unshift(c.getName()); c = c.getParentNode(); } return p.join('/'); };
 const k = +eScale;
 const budget = (path) => {
+  // The grass blades are thin curves at a few pixels on screen, and the page
+  // copies them along the ridge; they can lose the most.
+  if (path.includes('Grass')) return 0.003 * k;
   if (/Roughness/.test(path)) return 0.004 * k;
   if (path.includes('Kai Figurine')) return 0.002 * k;
   if (path.includes('Revamped Bike')) return 0.0015 * k;
