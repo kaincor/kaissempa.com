@@ -178,15 +178,41 @@ body {
   transition: box-shadow 0.7s cubic-bezier(0.33, 0, 0.35, 1);
 }
 
-/* A link laid over an interactive embed, for screens with no hover. On a
-   mouse the embed keeps its pointer and handles the click itself; on touch it
-   cannot, so the link takes the tap. See FortunaThumb. */
-.touch-link {
-  display: none;
+/* The Fortuna thumbnail's motion, as the Hana scene had it. Each dot eases
+   out to its drift target and back, forever, at its own pace; the rings turn
+   twice every hundred seconds. Transforms only, so neither repaints.
+   See FortunaThumb. */
+@keyframes fthumb-drift {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(var(--dx), var(--dy));
+  }
 }
 
-@media (hover: none) {
-  .touch-link {
-    display: block;
+.fthumb-dot {
+  animation-name: fthumb-drift;
+  animation-timing-function: cubic-bezier(0.42, 0, 0.58, 1);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  will-change: transform;
+}
+
+@keyframes fthumb-turn {
+  to {
+    transform: rotate(720deg);
+  }
+}
+
+.fthumb-rings {
+  animation: fthumb-turn 100s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fthumb-dot,
+  .fthumb-rings {
+    animation: none !important;
   }
 }

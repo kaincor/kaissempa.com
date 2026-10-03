@@ -52,11 +52,7 @@ export default function ProjectsAndProducts() {
       <SectionHeading paddingTop={40}>Projects &amp; Products</SectionHeading>
 
       <Thumb label="Fortuna" href={null} shadow={FORTUNA_GREEN}>
-        <FortunaThumb
-          src="https://my.spline.design/untitled-LJJusTxa5gWBBga8bpLjm42w-3v2/"
-          href="/fortuna"
-          label="Fortuna"
-        />
+        <FortunaThumb href="/fortuna" label="Fortuna" />
       </Thumb>
 
       <Thumb label="Zorzal" background="#ffffff" shadow={ZORZAL_WINE}>
