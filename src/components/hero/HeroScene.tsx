@@ -324,15 +324,15 @@ export default function HeroScene({
         const o = byName(name)!;
         return { o, f, y: o.position.y, rx: o.rotation.x, ry: o.rotation.y };
       });
-      const followHome = new THREE.Vector3();
-      const followAim = new THREE.Vector3();
+      // Before the cursor first moves, the light sits a little right of
+      // the middle of the screen: where it puts the sheen on the rock where
+      // the Spline scene has it on load.
+      const followHome = new THREE.Vector3(64.9, 99.2, -16.8);
+      if (follow) follow.position.copy(followHome);
+      const followAim = followHome.clone();
       // Spline's Follow puts the light where the cursor's ray meets a plane
       // facing the camera, at the light's own depth.
-      // Spline's plane is at the light's own depth, which is the rock's: with
-      // the cursor low the light sank into the rock and lit nothing. Here
-      // the plane is brought toward the viewer, so the light stays in front
-      // of the rock and its glow shows wherever the cursor goes.
-      const depth = follow ? follow.getWorldPosition(new THREE.Vector3()).sub(camera.getWorldPosition(new THREE.Vector3())).dot(camera.getWorldDirection(new THREE.Vector3())) * FOLLOW.depth : 0;
+      const depth = follow ? follow.getWorldPosition(new THREE.Vector3()).sub(camera.getWorldPosition(new THREE.Vector3())).dot(camera.getWorldDirection(new THREE.Vector3())) : 0;
       const aimAt = (nx: number, ny: number) => {
         if (!follow) return;
         const p = new THREE.Vector3(nx, ny, 0.5).unproject(camera);
@@ -342,12 +342,6 @@ export default function HeroScene({
         const world = origin.add(dir.multiplyScalar(depth / dir.dot(fwd)));
         followAim.copy(follow.parent ? follow.parent.worldToLocal(world) : world);
       };
-      // Before the cursor first moves, the light sits a little right of the
-      // middle of the screen: where it puts the glow on the rock where the
-      // Spline scene has it on load.
-      aimAt(FOLLOW.home[0], FOLLOW.home[1]);
-      followHome.copy(followAim);
-      if (follow) follow.position.copy(followHome);
       const onMove = (e: PointerEvent) => {
         const r = canvas.getBoundingClientRect();
         aimAt(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1));
@@ -482,9 +476,3 @@ const ROCK = { color: "1a1918", bump: 3, repeat: 6, gain: 0.5 };
  * takes — less is blacker.
  */
 const PHOTO_ROCK = { roughness: 0.3, specular: 14, bump: 6, gain: 0.45 };
-/**
- * The cursor light: how far along the way from the camera to Spline's plane
- * it moves (1 = Spline's, at the rock), and where it rests before the cursor
- * first moves, in screen coordinates.
- */
-const FOLLOW = { depth: 0.6, home: [0.15, -0.05] as [number, number] };
