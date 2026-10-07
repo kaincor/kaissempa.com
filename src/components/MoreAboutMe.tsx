@@ -1,14 +1,13 @@
 "use client";
 
 import { useInView, useReducedMotion } from "motion/react";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import SectionHeading from "@/components/SectionHeading";
 import SwipeDeck, { type Pose } from "@/components/SwipeDeck";
 import type { MountainRange as Range } from "@/data/mountainRanges";
 
 /**
- * Kai's photographs in a swipeable pile, one per sentence, with the sentence
- * for the photograph on top lit up.
+ * Kai's photographs in a swipeable pile beside a few sentences about him.
  *
  * This used to be a pinned section the photographs flew up through as the
  * page scrolled, landing one at a time. The reader had no say in the pace
@@ -94,7 +93,6 @@ export default function MoreAboutMe({
   const copy = useRef<HTMLDivElement>(null);
   const seen = useInView(copy, { once: true, amount: 0.3 });
   const play = reduced || seen;
-  const [front, setFront] = useState(0);
 
   return (
     <div
@@ -175,7 +173,6 @@ export default function MoreAboutMe({
               poses={POSES}
               sizes="(max-width: 760px) 60vw, 290px"
               label="Photos of Kai"
-              onFrontChange={setFront}
               style={{ width: "100%", aspectRatio: "3 / 4" }}
             />
           </div>
@@ -194,18 +191,16 @@ export default function MoreAboutMe({
             }}
           >
             {SLIDES.map((slide, i) => (
-              // Bright while its photograph is the one on top, so the eye is
-              // always told which sentence belongs to what it is looking at.
               <p
                 key={slide.src}
                 style={{
                   margin: 0,
                   opacity: play ? 1 : 0,
                   transform: play ? "none" : "translateY(10px)",
-                  color: i === front ? "#D9D9D9" : "#535353",
+                  color: "#6E6E6E",
                   transition: reduced
                     ? undefined
-                    : `opacity 0.6s ease-out ${i * 0.12}s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.12}s, color 0.45s ease-out`,
+                    : `opacity 0.6s ease-out ${i * 0.12}s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.12}s`,
                 }}
               >
                 {slide.line}

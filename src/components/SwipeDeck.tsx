@@ -42,8 +42,11 @@ const THROW_DISTANCE = 70;
 const THROW_VELOCITY = 450;
 /** When the cards start popping in once the deck is in view, and their spacing. */
 const POP_STAGGER = 0.07;
-/** How long after the pop the hint and the demonstration begin, s. */
+/** How long after the pop the hint comes up, s. */
 const HINT_AFTER = 0.5;
+/** How long the hint stays up, and when in that time the top card demonstrates, s. */
+const HINT_FOR = 1.5;
+const DEMO_AT = 0.55;
 
 const SETTLE = { type: "spring", stiffness: 320, damping: 28 } as const;
 const POP = { type: "spring", stiffness: 420, damping: 22 } as const;
@@ -85,7 +88,7 @@ export default function SwipeDeck({
   const [xs] = useState(() => cards.map(() => motionValue(0)));
   const busy = useRef(false);
 
-  /** Hint: on after the pop, off for good at the first touch. */
+  /** Hint: up briefly after the pop, and gone early at the first touch. */
   const [hint, setHint] = useState(false);
   const touched = useRef(false);
   /** Whether the pop is over, after which a change of depth has no delay. */
@@ -125,10 +128,12 @@ export default function SwipeDeck({
       setPopped(true);
       if (!touched.current) setHint(true);
     }, after);
-    const b = setTimeout(() => !touched.current && cycle(-1), after + 700);
+    const b = setTimeout(() => !touched.current && cycle(-1), after + DEMO_AT * 1000);
+    const c = setTimeout(() => setHint(false), after + HINT_FOR * 1000);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
+      clearTimeout(c);
     };
   }, [shown, reduced, n, cycle]);
 
@@ -262,14 +267,14 @@ function Card({
   );
 }
 
-/** A pointing hand and "Swipe", sliding back and forth over the bottom of the deck. */
+/** A roughly drawn pointing hand and "Swipe", sliding back and forth over the bottom of the deck. */
 function Hint({ on }: { on: boolean }) {
   return (
     <motion.div
       aria-hidden="true"
       initial={false}
       animate={{ opacity: on ? 1 : 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: 0.25 }}
       style={{
         position: "absolute",
         left: 0,
@@ -282,29 +287,57 @@ function Hint({ on }: { on: boolean }) {
       }}
     >
       <motion.div
-        animate={on ? { x: [-22, 22] } : { x: 0 }}
-        transition={on ? { duration: 1.1, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" } : { duration: 0.3 }}
+        animate={on ? { x: [-18, 18] } : { x: 0 }}
+        transition={on ? { duration: 0.5, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" } : { duration: 0.25 }}
+        className="display"
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          padding: "7px 14px 7px 10px",
+          gap: 7,
+          padding: "6px 14px 6px 9px",
           borderRadius: 999,
           background: "rgba(0, 0, 0, 0.5)",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
           color: "#f2f2f2",
-          fontSize: 14,
+          fontSize: 15,
           lineHeight: 1,
-          letterSpacing: "0.01em",
+          letterSpacing: "0.04em",
         }}
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffffff" stroke="#111111" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10 9.5V4a2 2 0 0 0-4 0v10l-1.6-1.6a2 2 0 0 0-2.83 2.82l3.6 3.6C6.66 20.3 8.35 22 12 22h2a8 8 0 0 0 8-8v-3a2 2 0 1 0-4 0v-1a2 2 0 0 0-4 0V9a2 2 0 0 0-4 0z" />
-          <path d="M10 9.5V12M14 10v2M18 11v1.5" fill="none" />
-        </svg>
+        <SketchHand />
         Swipe
       </motion.div>
     </motion.div>
+  );
+}
+
+/**
+ * A pointing hand drawn the way a pen would: a wobbly outline that does not
+ * quite close, a second pass slightly off the first, and the knuckle lines
+ * stopping short.
+ */
+function SketchHand() {
+  return (
+    <svg
+      width="26"
+      height="26"
+      viewBox="0 0 32 32"
+      fill="none"
+      stroke="#f2f2f2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path
+        strokeWidth="1.7"
+        d="M12.9 3.3C14.5 2.5 16 3.5 16.1 5.1l.3 8.4c.5-1.3 2.8-1.3 3.2.3.7-1.1 2.8-.8 3.1 1 .9-.8 2.8-.3 2.9 1.7l-.2 5c-.3 4.4-3.3 7.3-7.7 7.4l-2.4-.1c-2.7-.1-4.3-1.3-5.7-3l-4.1-5.6c-.8-1.2-.4-2.6.9-3 1-.3 1.9.2 2.6 1.1l1.5 1.9-.2-15.1c0-1.2 1-1.9 2.4-2.1"
+      />
+      <path
+        strokeWidth="1"
+        opacity="0.5"
+        d="M10.9 5.6c.2-1.7 1.6-2.6 3.3-2.5M25.8 18.4c.1 4.9-2.8 9.9-8.3 10.4M5.8 18.1c.6-.3 1.4-.1 2.1.5"
+      />
+      <path strokeWidth="1.3" d="M16.4 13.6l.2 3.4M19.6 14l.1 3.2M22.7 15.3l-.1 2.6" />
+    </svg>
   );
 }
