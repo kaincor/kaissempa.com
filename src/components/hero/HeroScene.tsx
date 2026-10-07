@@ -179,11 +179,9 @@ export default function HeroScene({
           });
         }
         if (meshName === "Rock" && ROCK_STYLE === "photo" && src.map) {
-          // The rock as Spline has it — its photograph, lit at 90%, the photo
-          // as a bump map — but dry rather than wet: an even roughness in
-          // place of Spline's roughness-from-the-photo (which made the dark
-          // grain mirror-glossy), a weaker specular, and a multiplied
-          // fresnel that settles its edges.
+          // The rock as Spline has it: its photograph, lit at 90%, the photo
+          // as a bump map, and a wet sheen where the light falls. Matched
+          // side by side against the Spline scene.
           const m = physical(PHYS(PHOTO_ROCK.roughness, 0), {
             map: src.map,
             bumpMap: src.map,
@@ -194,7 +192,6 @@ export default function HeroScene({
           return applyLayers(m, {
             base: { texture: true },
             light: { mode: MODE.normal, alpha: 0.9, gain: PHOTO_ROCK.gain },
-            fresnel: { color: [PHOTO_ROCK.rim, PHOTO_ROCK.rim, PHOTO_ROCK.rim], mode: MODE.multiply, alpha: 1, bias: 0.1, scale: 1, power: 2, factor: 1 },
           });
         }
         if (meshName === "Rock") {
@@ -270,84 +267,6 @@ export default function HeroScene({
         }
         return new THREE.BufferAttribute(out, size);
       };
-      // ── A few blades along the right of the ridge ───────────────────────
-      // Single blades from Spline's own tufts, a handful at each of three
-      // spots on the rock's skyline, rooted in the rock: each stands where a
-      // ray from the camera first meets the rock near its spot, and grows
-      // out along the rock's surface there, tipped a little toward the sky,
-      // each at its own angle so the clump reads as grown, not placed.
-      // A spot is a direction from the camera — (x, y) with y the screen's
-      // own -1..1 and x in the same units — so it holds at any window shape.
-      {
-        const rg = byName("Responsive Group");
-        const rock = byName("Rock") as THREE_NS.Mesh | undefined;
-        const blades: THREE_NS.Mesh[] = [];
-        byName("Grass")?.traverse((o) => {
-          const mesh = o as THREE_NS.Mesh;
-          if (mesh.isMesh && mesh.parent && mesh.parent.name !== "Grass") blades.push(mesh);
-        });
-        if (rg && rock && blades.length) {
-          scene.updateMatrixWorld(true);
-          const toGroup = rg.matrixWorld.clone().invert();
-          const normalToWorld = new THREE.Matrix3().getNormalMatrix(rock.matrixWorld);
-          const ray = new THREE.Raycaster();
-          const skyUp = new THREE.Vector3(0, 1, 0);
-          let seed = 11;
-          const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-          // Where along a column of the screen the rock's edge is, with the
-          // surface's facing there.
-          const edgeAt = (x: number, fromY: number) => {
-            for (let y = fromY; y > fromY - 0.6; y -= 0.003) {
-              ray.setFromCamera(new THREE.Vector2(x / camera.aspect, y), camera);
-              const hit = ray.intersectObject(rock, false)[0];
-              if (hit && hit.face) return { p: hit.point, n: hit.face.normal.clone().applyMatrix3(normalToWorld).normalize() };
-            }
-            return null;
-          };
-          for (const spot of GRASS_SPOTS) {
-            for (let k = 0; k < spot.count; k++) {
-              const at = edgeAt(spot.x + (rnd() - 0.5) * GRASS_SPREAD, spot.y + 0.12);
-              if (!at) continue;
-              const src = blades[Math.floor(rnd() * blades.length)];
-              // The blade in its own frame, at its size in the scene.
-              const g = new THREE.BufferGeometry();
-              g.setAttribute("position", floatAttr(src.geometry.attributes.position, 3));
-              if (src.geometry.attributes.normal) g.setAttribute("normal", floatAttr(src.geometry.attributes.normal, 3));
-              if (src.geometry.index) g.setIndex(Array.from(src.geometry.index.array as ArrayLike<number>));
-              const ws = src.getWorldScale(new THREE.Vector3());
-              g.scale(ws.x, ws.y, ws.z);
-              // A blade is drawn along its height; its root is the wider end.
-              g.computeBoundingBox();
-              const bb = g.boundingBox!;
-              const pos = g.attributes.position;
-              const band = (bb.max.y - bb.min.y) * 0.15;
-              let lo = [Infinity, -Infinity];
-              let hi = [Infinity, -Infinity];
-              for (let i = 0; i < pos.count; i++) {
-                const y = pos.getY(i);
-                const x = pos.getX(i);
-                if (y < bb.min.y + band) lo = [Math.min(lo[0], x), Math.max(lo[1], x)];
-                if (y > bb.max.y - band) hi = [Math.min(hi[0], x), Math.max(hi[1], x)];
-              }
-              const rootLow = lo[1] - lo[0] >= hi[1] - hi[0];
-              g.translate(-(bb.min.x + bb.max.x) / 2, -(rootLow ? bb.min.y : bb.max.y), -(bb.min.z + bb.max.z) / 2);
-              const along = new THREE.Vector3(0, rootLow ? 1 : -1, 0);
-              // Out from the rock, tipped toward the sky, then a little off.
-              const out = at.n.clone().add(skyUp.clone().multiplyScalar(GRASS_RISE));
-              out.add(new THREE.Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).multiplyScalar(GRASS_JUMBLE)).normalize();
-              const turn = new THREE.Quaternion().setFromUnitVectors(along, out);
-              const spin = new THREE.Quaternion().setFromAxisAngle(out, rnd() * Math.PI * 2);
-              const m = new THREE.Mesh(g, src.material);
-              m.quaternion.copy(spin.multiply(turn));
-              m.scale.setScalar(0.8 + rnd() * 0.4);
-              // Its root just under the surface, so it grows from the rock.
-              m.position.copy(at.p.clone().addScaledVector(at.n, -0.4).applyMatrix4(toGroup));
-              rg.add(m);
-            }
-          }
-        }
-      }
-
       // ── Fewer draw calls ────────────────────────────────────────────────
       // The scene is 300-odd separate meshes — the figurine alone is 191
       // flattened Figma shapes — and each costs a draw call every frame.
@@ -558,31 +477,14 @@ const KEY_LIGHT = 1.57;
  */
 const ROCK = { color: "1a1918", bump: 3, repeat: 6, gain: 0.5 };
 /**
- * The photo rock, made matte: its roughness, its specular (the wet look
- * was 10), its bump, and how far the multiplied fresnel darkens its edges
- * (1 = not at all), and how much of the light it takes — less is blacker.
+ * The photo rock, matched to Spline's: its roughness (lower is wetter), its
+ * specular, how hard the photo bumps it, and how much of the light it
+ * takes — less is blacker.
  */
-const PHOTO_ROCK = { roughness: 0.5, specular: 3, bump: 3, rim: 0.75, gain: 0.5 };
+const PHOTO_ROCK = { roughness: 0.3, specular: 14, bump: 6, gain: 0.45 };
 /**
  * The cursor light: how far along the way from the camera to Spline's plane
  * it moves (1 = Spline's, at the rock), and where it rests before the cursor
  * first moves, in screen coordinates.
  */
 const FOLLOW = { depth: 0.6, home: [0.15, -0.05] as [number, number] };
-/**
- * Where the blades on the right of the ridge go, from Kai's marked-up
- * screenshot: directions from the camera, and how many blades at each.
- */
-const GRASS_SPOTS = [
-  { x: 0.601, y: -0.223, count: 8 },
-  { x: 0.928, y: -0.419, count: 6 },
-  { x: 1.136, y: -0.594, count: 5 },
-];
-/**
- * How the blades at one spot sit: how far apart (in the spots' units), how
- * far each tips from the rock's surface toward the sky, and how much each
- * strays from that at random.
- */
-const GRASS_SPREAD = 0.05;
-const GRASS_RISE = 0.6;
-const GRASS_JUMBLE = 0.5;
