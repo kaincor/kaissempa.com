@@ -12,9 +12,10 @@
  *   "KAI" letters were half the scene's triangles for outlines nobody can
  *   resolve at hero size; the figurine and bike keep tighter budgets.
  * - Drops the rock's roughness map (the page reads roughness off the photo).
- * - The rock photo and the bike paint's texture to WebP at 2048, then
+ * - The rock photo and the bike paint's texture to WebP at 1536 (the rock
+ *   is never more than about 1400 device pixels wide on screen), then
  *   quantization and meshopt compression.
- * 75MB in, about 1.5MB out.
+ * 75MB in, about 0.9MB out.
  */
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
@@ -73,7 +74,7 @@ await doc.transform(
   // Keep the texture coordinates: with its photo gone the rock references no
   // texture, but the page maps its normal map through them.
   prune({ keepAttributes: true }),
-  textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [2048, 2048], quality: 80, slots: /^baseColor/ }),
+  textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [1536, 1536], quality: 74, slots: /^baseColor/ }),
   reorder({ encoder: MeshoptEncoder }),
   quantize(),
   meshopt({ encoder: MeshoptEncoder, level: 'high' }),

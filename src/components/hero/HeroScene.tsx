@@ -272,11 +272,12 @@ export default function HeroScene({
       };
       // ── A few blades along the right of the ridge ───────────────────────
       // Single blades from Spline's own tufts, a handful at each of three
-      // spots on the rock's skyline. A spot is given as a direction from
-      // the camera — (x, y) where y is the screen's own -1..1 and x is in
-      // the same units, so it holds at any window shape — and the blades
-      // stand where a ray in that direction, lowered until it meets the
-      // rock, first touches it.
+      // spots on the rock's skyline, rooted in the rock: each stands where a
+      // ray from the camera first meets the rock near its spot, and grows
+      // out along the rock's surface there, tipped a little toward the sky,
+      // each at its own angle so the clump reads as grown, not placed.
+      // A spot is a direction from the camera — (x, y) with y the screen's
+      // own -1..1 and x in the same units — so it holds at any window shape.
       {
         const rg = byName("Responsive Group");
         const rock = byName("Rock") as THREE_NS.Mesh | undefined;
@@ -288,33 +289,59 @@ export default function HeroScene({
         if (rg && rock && blades.length) {
           scene.updateMatrixWorld(true);
           const toGroup = rg.matrixWorld.clone().invert();
+          const normalToWorld = new THREE.Matrix3().getNormalMatrix(rock.matrixWorld);
           const ray = new THREE.Raycaster();
+          const skyUp = new THREE.Vector3(0, 1, 0);
           let seed = 11;
           const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-          for (const spot of GRASS_SPOTS) {
-            let foot: THREE_NS.Vector3 | null = null;
-            for (let y = spot.y + 0.15; y > spot.y - 0.4 && !foot; y -= 0.004) {
-              ray.setFromCamera(new THREE.Vector2(spot.x / camera.aspect, y), camera);
-              foot = ray.intersectObject(rock, false)[0]?.point ?? null;
+          // Where along a column of the screen the rock's edge is, with the
+          // surface's facing there.
+          const edgeAt = (x: number, fromY: number) => {
+            for (let y = fromY; y > fromY - 0.6; y -= 0.003) {
+              ray.setFromCamera(new THREE.Vector2(x / camera.aspect, y), camera);
+              const hit = ray.intersectObject(rock, false)[0];
+              if (hit && hit.face) return { p: hit.point, n: hit.face.normal.clone().applyMatrix3(normalToWorld).normalize() };
             }
-            if (!foot) continue;
-            const footLocal = foot.applyMatrix4(toGroup);
-            for (let n = 0; n < spot.count; n++) {
+            return null;
+          };
+          for (const spot of GRASS_SPOTS) {
+            for (let k = 0; k < spot.count; k++) {
+              const at = edgeAt(spot.x + (rnd() - 0.5) * GRASS_SPREAD, spot.y + 0.12);
+              if (!at) continue;
               const src = blades[Math.floor(rnd() * blades.length)];
+              // The blade in its own frame, at its size in the scene.
               const g = new THREE.BufferGeometry();
               g.setAttribute("position", floatAttr(src.geometry.attributes.position, 3));
               if (src.geometry.attributes.normal) g.setAttribute("normal", floatAttr(src.geometry.attributes.normal, 3));
               if (src.geometry.index) g.setIndex(Array.from(src.geometry.index.array as ArrayLike<number>));
-              // In the group's frame, turned as it was in its tuft, its root
-              // at the origin.
-              g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(toGroup, src.matrixWorld));
+              const ws = src.getWorldScale(new THREE.Vector3());
+              g.scale(ws.x, ws.y, ws.z);
+              // A blade is drawn along its height; its root is the wider end.
               g.computeBoundingBox();
               const bb = g.boundingBox!;
-              g.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
+              const pos = g.attributes.position;
+              const band = (bb.max.y - bb.min.y) * 0.15;
+              let lo = [Infinity, -Infinity];
+              let hi = [Infinity, -Infinity];
+              for (let i = 0; i < pos.count; i++) {
+                const y = pos.getY(i);
+                const x = pos.getX(i);
+                if (y < bb.min.y + band) lo = [Math.min(lo[0], x), Math.max(lo[1], x)];
+                if (y > bb.max.y - band) hi = [Math.min(hi[0], x), Math.max(hi[1], x)];
+              }
+              const rootLow = lo[1] - lo[0] >= hi[1] - hi[0];
+              g.translate(-(bb.min.x + bb.max.x) / 2, -(rootLow ? bb.min.y : bb.max.y), -(bb.min.z + bb.max.z) / 2);
+              const along = new THREE.Vector3(0, rootLow ? 1 : -1, 0);
+              // Out from the rock, tipped toward the sky, then a little off.
+              const out = at.n.clone().add(skyUp.clone().multiplyScalar(GRASS_RISE));
+              out.add(new THREE.Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).multiplyScalar(GRASS_JUMBLE)).normalize();
+              const turn = new THREE.Quaternion().setFromUnitVectors(along, out);
+              const spin = new THREE.Quaternion().setFromAxisAngle(out, rnd() * Math.PI * 2);
               const m = new THREE.Mesh(g, src.material);
-              const spread = GRASS_SPREAD;
-              m.position.copy(footLocal).add(new THREE.Vector3((rnd() - 0.5) * spread, -0.5, (rnd() - 0.5) * spread));
+              m.quaternion.copy(spin.multiply(turn));
               m.scale.setScalar(0.8 + rnd() * 0.4);
+              // Its root just under the surface, so it grows from the rock.
+              m.position.copy(at.p.clone().addScaledVector(at.n, -0.4).applyMatrix4(toGroup));
               rg.add(m);
             }
           }
@@ -378,15 +405,15 @@ export default function HeroScene({
         const o = byName(name)!;
         return { o, f, y: o.position.y, rx: o.rotation.x, ry: o.rotation.y };
       });
-      // Before the cursor first moves, the light sits a little right of
-      // the middle of the screen: where it puts the sheen on the rock where
-      // the Spline scene has it on load.
-      const followHome = new THREE.Vector3(64.9, 99.2, -16.8);
-      if (follow) follow.position.copy(followHome);
-      const followAim = followHome.clone();
+      const followHome = new THREE.Vector3();
+      const followAim = new THREE.Vector3();
       // Spline's Follow puts the light where the cursor's ray meets a plane
       // facing the camera, at the light's own depth.
-      const depth = follow ? follow.getWorldPosition(new THREE.Vector3()).sub(camera.getWorldPosition(new THREE.Vector3())).dot(camera.getWorldDirection(new THREE.Vector3())) : 0;
+      // Spline's plane is at the light's own depth, which is the rock's: with
+      // the cursor low the light sank into the rock and lit nothing. Here
+      // the plane is brought toward the viewer, so the light stays in front
+      // of the rock and its glow shows wherever the cursor goes.
+      const depth = follow ? follow.getWorldPosition(new THREE.Vector3()).sub(camera.getWorldPosition(new THREE.Vector3())).dot(camera.getWorldDirection(new THREE.Vector3())) * FOLLOW.depth : 0;
       const aimAt = (nx: number, ny: number) => {
         if (!follow) return;
         const p = new THREE.Vector3(nx, ny, 0.5).unproject(camera);
@@ -396,6 +423,12 @@ export default function HeroScene({
         const world = origin.add(dir.multiplyScalar(depth / dir.dot(fwd)));
         followAim.copy(follow.parent ? follow.parent.worldToLocal(world) : world);
       };
+      // Before the cursor first moves, the light sits a little right of the
+      // middle of the screen: where it puts the glow on the rock where the
+      // Spline scene has it on load.
+      aimAt(FOLLOW.home[0], FOLLOW.home[1]);
+      followHome.copy(followAim);
+      if (follow) follow.position.copy(followHome);
       const onMove = (e: PointerEvent) => {
         const r = canvas.getBoundingClientRect();
         aimAt(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1));
@@ -529,7 +562,13 @@ const ROCK = { color: "1a1918", bump: 3, repeat: 6, gain: 0.5 };
  * was 10), its bump, and how far the multiplied fresnel darkens its edges
  * (1 = not at all), and how much of the light it takes — less is blacker.
  */
-const PHOTO_ROCK = { roughness: 0.6, specular: 2, bump: 3, rim: 0.75, gain: 0.5 };
+const PHOTO_ROCK = { roughness: 0.5, specular: 3, bump: 3, rim: 0.75, gain: 0.5 };
+/**
+ * The cursor light: how far along the way from the camera to Spline's plane
+ * it moves (1 = Spline's, at the rock), and where it rests before the cursor
+ * first moves, in screen coordinates.
+ */
+const FOLLOW = { depth: 0.6, home: [0.15, -0.05] as [number, number] };
 /**
  * Where the blades on the right of the ridge go, from Kai's marked-up
  * screenshot: directions from the camera, and how many blades at each.
@@ -539,5 +578,11 @@ const GRASS_SPOTS = [
   { x: 0.928, y: -0.419, count: 6 },
   { x: 1.136, y: -0.594, count: 5 },
 ];
-/** How far apart, in scene units, the blades at one spot stand. */
-const GRASS_SPREAD = 10;
+/**
+ * How the blades at one spot sit: how far apart (in the spots' units), how
+ * far each tips from the rock's surface toward the sky, and how much each
+ * strays from that at random.
+ */
+const GRASS_SPREAD = 0.05;
+const GRASS_RISE = 0.6;
+const GRASS_JUMBLE = 0.5;
