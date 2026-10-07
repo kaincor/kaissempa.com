@@ -234,6 +234,64 @@ export default function HeroScene({
         }
         return new THREE.BufferAttribute(out, size);
       };
+      // ── Grass in the wind ───────────────────────────────────────────────
+      // Each tuft leans gently back and forth, the tips furthest and the
+      // roots not at all, on a slow swing with a slower gust over it, a
+      // little out of step from tuft to tuft. All of it runs in the vertex
+      // shader off one time value, so it costs next to nothing: each point
+      // carries how far up its tuft it sits (squared, so the blades bend
+      // rather than tilt), worked out once here.
+      const windTime = { value: 0 };
+      {
+        const grassMats = new Map<THREE_NS.Material, THREE_NS.Material>();
+        byName("Grass")?.children.forEach((tuft) => {
+          tuft.traverse((o) => {
+            const mesh = o as THREE_NS.Mesh;
+            if (!mesh.isMesh) return;
+            mesh.updateWorldMatrix(true, false);
+            const pos = mesh.geometry.attributes.position;
+            const v = new THREE.Vector3();
+            const ys = new Float32Array(pos.count);
+            let lo = Infinity;
+            let hi = -Infinity;
+            for (let i = 0; i < pos.count; i++) {
+              ys[i] = v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld).y;
+              lo = Math.min(lo, ys[i]);
+              hi = Math.max(hi, ys[i]);
+            }
+            const h = Math.max(hi - lo, 1e-6);
+            const sway = new Float32Array(pos.count);
+            for (let i = 0; i < pos.count; i++) sway[i] = ((ys[i] - lo) / h) ** 2 * h;
+            mesh.geometry.setAttribute("sway", new THREE.BufferAttribute(sway, 1));
+            const src = mesh.material as THREE_NS.Material;
+            if (!grassMats.has(src)) {
+              const m = src.clone();
+              m.onBeforeCompile = (shader) => {
+                shader.uniforms.windTime = windTime;
+                shader.vertexShader = shader.vertexShader
+                  .replace("#include <common>", "#include <common>\nattribute float sway;\nuniform float windTime;")
+                  .replace(
+                    "#include <begin_vertex>",
+                    `#include <begin_vertex>
+                    {
+                      // Out of step across the ridge, and zero at time zero,
+                      // so the first frame is the still the page opens on.
+                      float ph = position.x * ${WIND.spread.toFixed(4)} + position.z * ${(WIND.spread * 0.7).toFixed(4)};
+                      float w = windTime * ${((2 * Math.PI) / WIND.period).toFixed(4)};
+                      float g = windTime * ${((2 * Math.PI) / WIND.gust).toFixed(4)};
+                      float k = 0.75 * (sin(w + ph) - sin(ph)) + 0.25 * (sin(g + ph * 0.6) - sin(ph * 0.6));
+                      transformed.x += k * sway * ${WIND.amount.toFixed(4)};
+                      transformed.z += k * sway * ${(WIND.amount * 0.35).toFixed(4)};
+                    }`,
+                  );
+              };
+              grassMats.set(src, m);
+            }
+            mesh.material = grassMats.get(src)!;
+          });
+        });
+      }
+
       // ── Fewer draw calls ────────────────────────────────────────────────
       // The scene is 300-odd separate meshes — the figurine alone is 191
       // flattened Figma shapes — and each costs a draw call every frame.
@@ -253,6 +311,7 @@ export default function HeroScene({
             const g = new THREE.BufferGeometry();
             g.setAttribute("position", floatAttr(src.attributes.position, 3));
             if (src.attributes.normal) g.setAttribute("normal", floatAttr(src.attributes.normal, 3));
+            if (src.attributes.sway) g.setAttribute("sway", floatAttr(src.attributes.sway, 1));
             g.setAttribute("uv", src.attributes.uv ? floatAttr(src.attributes.uv, 2) : new THREE.BufferAttribute(new Float32Array(src.attributes.position.count * 2), 2));
             const idx = src.index ? Array.from(src.index.array as ArrayLike<number>) : Array.from({ length: src.attributes.position.count }, (_, i) => i);
             const m = new THREE.Matrix4().multiplyMatrices(inv, mesh.matrixWorld);
@@ -358,6 +417,7 @@ export default function HeroScene({
         }
         if (layoutAt > -10) place(layoutFrom + (t - layoutAt));
         if (follow) follow.position.lerp(followAim, 0.08);
+        windTime.value = t;
         renderer.render(scene, camera);
       };
 
@@ -377,6 +437,7 @@ export default function HeroScene({
           renderer.setSize(w, h, false);
           camera.aspect = w / h;
           camera.updateProjectionMatrix();
+          windTime.value = 0;
           for (const { o, y, rx, ry } of floats) {
             o.position.y = y;
             o.rotation.x = rx;
@@ -437,3 +498,9 @@ const KEY_LIGHT = 1.57;
  * takes — less is blacker.
  */
 const ROCK = { roughness: 0.3, specular: 14, bump: 6, gain: 0.45 };
+/**
+ * The grass in the wind: how far the tips lean (a share of the tuft's
+ * height), the seconds for one slow swing and for the gust over it, and how
+ * out of step tufts are across the ridge.
+ */
+const WIND = { amount: 0.12, period: 6.5, gust: 17, spread: 0.02 };
