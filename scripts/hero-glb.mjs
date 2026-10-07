@@ -11,11 +11,10 @@
  * - Simplifies each mesh to an error budget set by what it is. The rough
  *   "KAI" letters were half the scene's triangles for outlines nobody can
  *   resolve at hero size; the figurine and bike keep tighter budgets.
- * - Drops the rock's textures: the page builds the rock from a colour and a
- *   small normal map (public/hero/rock-detail.webp) instead.
- * - The bike paint's texture to WebP, then quantization and meshopt
- *   compression.
- * 75MB in, about 0.6MB out.
+ * - Drops the rock's roughness map (the page reads roughness off the photo).
+ * - The rock photo and the bike paint's texture to WebP at 2048, then
+ *   quantization and meshopt compression.
+ * 75MB in, about 1.5MB out.
  */
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
@@ -47,10 +46,6 @@ for (const m of root.listMeshes()) { m.setExtras({}); for (const p of m.listPrim
 for (const n of root.listNodes()) n.setExtras({});
 for (const m of root.listMaterials()) {
   m.setMetallicRoughnessTexture(null);
-  // The rock's photograph: the page builds the rock from a colour and a
-  // small normal map instead (after the MTB Summit scene), so the 4096px
-  // photo is a megabyte nobody sees. The bike's paint keeps its texture.
-  if (m.getAlphaMode() !== 'BLEND') m.setBaseColorTexture(null);
 }
 // Texture coordinates only where something is mapped through them: the
 // rock (its normal map, applied by the page) and the bike's paint.

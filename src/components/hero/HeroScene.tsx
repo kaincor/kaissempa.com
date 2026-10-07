@@ -100,7 +100,9 @@ export default function HeroScene({
       rockDetail.repeat.set(ROCK.repeat, ROCK.repeat);
       // The rock's colour: ROCK.color, or ?rock=<hex> in the address to try
       // another without a rebuild.
-      const rockHex = new URLSearchParams(window.location.search).get("rock")?.replace(/[^0-9a-f]/gi, "") || ROCK.color;
+      const params = new URLSearchParams(window.location.search);
+      const ROCK_STYLE = params.get("rockstyle") === "mtb" ? "mtb" : "photo";
+      const rockHex = params.get("rock")?.replace(/[^0-9a-f]/gi, "") || ROCK.color;
       const rockColor = [0, 2, 4].map((i) => parseInt(rockHex.padEnd(6, "0").slice(i, i + 2), 16) / 255);
 
       const scene = gltf.scene;
@@ -176,12 +178,32 @@ export default function HeroScene({
             fresnel: { color: [0.5469, 0.7281, 1], mode: S, alpha: 1, bias: -0.06, scale: 0.53, power: 1.75, factor: 0.94 },
           });
         }
+        if (meshName === "Rock" && ROCK_STYLE === "photo" && src.map) {
+          // The rock as Spline has it — its photograph, lit at 90%, the photo
+          // as a bump map — but dry rather than wet: an even roughness in
+          // place of Spline's roughness-from-the-photo (which made the dark
+          // grain mirror-glossy), a weaker specular, and a multiplied
+          // fresnel that settles its edges.
+          const m = physical(PHYS(PHOTO_ROCK.roughness, 0), {
+            map: src.map,
+            bumpMap: src.map,
+            bumpScale: PHOTO_ROCK.bump,
+            specularIntensity: 1,
+            specularColor: new THREE.Color(PHOTO_ROCK.specular, PHOTO_ROCK.specular, PHOTO_ROCK.specular),
+          });
+          return applyLayers(m, {
+            base: { texture: true },
+            light: { mode: MODE.normal, alpha: 0.9, gain: PHOTO_ROCK.gain },
+            fresnel: { color: [PHOTO_ROCK.rim, PHOTO_ROCK.rim, PHOTO_ROCK.rim], mode: MODE.multiply, alpha: 1, bias: 0.1, scale: 1, power: 2, factor: 1 },
+          });
+        }
         if (meshName === "Rock") {
-          // The rock, built the way the MTB Summit scene's rock is: a flat
-          // colour with no photograph, lit in overlay with a rock normal map
-          // read as bump and roughness, three of its four fresnel rims stacked on top (the
-          // screened one, which washed the rock's edges white, left off),
-          // and a soft matcap screened over all of it.
+          // The rock, built the way the MTB Summit scene's rock is (try it
+          // with ?rockstyle=mtb): a flat colour with no photograph, lit in
+          // overlay with a rock normal map read as bump and roughness, three
+          // of its four fresnel rims stacked on top (the screened one, which
+          // washed the rock's edges white, left off), and a soft matcap
+          // screened over all of it.
           const m = physical(PHYS(1, 0.09), {
             roughnessMap: rockDetail,
             bumpMap: rockDetail,
@@ -191,7 +213,6 @@ export default function HeroScene({
           return applyLayers(m, {
             base: { color: rockColor },
             light: { mode: O, alpha: 1, gain: ROCK.gain },
-            // (gain also sets how dark the rock reads)
             fresnel: [
               { color: grey(0.847), mode: MODE.multiply, alpha: 1, bias: 0.1, scale: 1, power: 2, factor: 1 },
               { color: grey(0.847), mode: O, alpha: 1, bias: 0.1, scale: 1, power: 2, factor: 1 },
@@ -249,75 +270,51 @@ export default function HeroScene({
         }
         return new THREE.BufferAttribute(out, size);
       };
-      // ── A little more grass by the bike ─────────────────────────────────
-      // A few more of Spline's own tufts along the rock's edge, between the
-      // tuft nearest the bike and the bike's wheel, as the camera sees it.
+      // ── A few blades along the right of the ridge ───────────────────────
+      // Single blades from Spline's own tufts, a handful at each of three
+      // spots on the rock's skyline. A spot is given as a direction from
+      // the camera — (x, y) where y is the screen's own -1..1 and x is in
+      // the same units, so it holds at any window shape — and the blades
+      // stand where a ray in that direction, lowered until it meets the
+      // rock, first touches it.
       {
         const rg = byName("Responsive Group");
         const rock = byName("Rock") as THREE_NS.Mesh | undefined;
-        const bike = byName("Revamped Bike");
-        const tufts = (byName("Grass")?.children ?? []).filter((c) => !(c as THREE_NS.Mesh).isMesh && c.children.length > 0);
-        if (rg && rock && bike && tufts.length) {
+        const blades: THREE_NS.Mesh[] = [];
+        byName("Grass")?.traverse((o) => {
+          const mesh = o as THREE_NS.Mesh;
+          if (mesh.isMesh && mesh.parent && mesh.parent.name !== "Grass") blades.push(mesh);
+        });
+        if (rg && rock && blades.length) {
           scene.updateMatrixWorld(true);
-          const screenX = (o: THREE_NS.Object3D) => new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).project(camera).x;
-          const bikeLeft = new THREE.Box3().setFromObject(bike).min.clone().project(camera).x;
-          const bikeBox = new THREE.Box3().setFromObject(bike);
-          const corners = [0, 1].flatMap((i) => [0, 1].flatMap((j) => [0, 1].map((k) => new THREE.Vector3(i ? bikeBox.max.x : bikeBox.min.x, j ? bikeBox.max.y : bikeBox.min.y, k ? bikeBox.max.z : bikeBox.min.z).project(camera).x)));
-          const right = Math.min(bikeLeft, ...corners);
-          const near = tufts.map((t) => ({ t, x: screenX(t) })).filter((e) => e.x < right).sort((a, b) => b.x - a.x)[0];
-          const left = near ? near.x : right - 0.15;
-          // The rock's skyline in that span: down each column from above,
-          // the first point a ray from the camera meets the rock.
+          const toGroup = rg.matrixWorld.clone().invert();
           const ray = new THREE.Raycaster();
-          const line: THREE_NS.Vector3[] = [];
-          for (let c = 0; c < 12; c++) {
-            const x = left + ((c + 0.5) / 12) * (right - left);
-            for (let y = 0.6; y > -0.8; y -= 0.01) {
-              ray.setFromCamera(new THREE.Vector2(x, y), camera);
-              const hit = ray.intersectObject(rock, false)[0];
-              if (hit) {
-                line.push(hit.point);
-                break;
-              }
+          let seed = 11;
+          const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+          for (const spot of GRASS_SPOTS) {
+            let foot: THREE_NS.Vector3 | null = null;
+            for (let y = spot.y + 0.15; y > spot.y - 0.4 && !foot; y -= 0.004) {
+              ray.setFromCamera(new THREE.Vector2(spot.x / camera.aspect, y), camera);
+              foot = ray.intersectObject(rock, false)[0]?.point ?? null;
             }
-          }
-          // Copies of the tuft beside the bike, turned as it is, each slid
-          // along the skyline from where that tuft meets it.
-          const skyAt = (x: number) => {
-            for (let y = 0.6; y > -0.8; y -= 0.005) {
-              ray.setFromCamera(new THREE.Vector2(x, y), camera);
-              const hit = ray.intersectObject(rock, false)[0];
-              if (hit) return hit.point;
-            }
-            return null;
-          };
-          const template = near?.t;
-          const home = near ? skyAt(near.x) : null;
-          if (template && home) {
-            const toGroup = rg.matrixWorld.clone().invert();
-            const blades: THREE_NS.BufferGeometry[] = [];
-            let mat: THREE_NS.Material | null = null;
-            template.traverse((o) => {
-              const mesh = o as THREE_NS.Mesh;
-              if (!mesh.isMesh) return;
-              const bg = new THREE.BufferGeometry();
-              bg.setAttribute("position", floatAttr(mesh.geometry.attributes.position, 3));
-              if (mesh.geometry.attributes.normal) bg.setAttribute("normal", floatAttr(mesh.geometry.attributes.normal, 3));
-              if (mesh.geometry.index) bg.setIndex(Array.from(mesh.geometry.index.array as ArrayLike<number>));
-              bg.applyMatrix4(new THREE.Matrix4().multiplyMatrices(toGroup, mesh.matrixWorld));
-              blades.push(bg);
-              mat = mesh.material as THREE_NS.Material;
-            });
-            const tuft = blades.length ? mergeGeometries(blades, false) : null;
-            const homeLocal = home.clone().applyMatrix4(toGroup);
-            for (let k = 0; tuft && mat && k < GRASS.count; k++) {
-              const spot = line[Math.round(((k + 1) / (GRASS.count + 1)) * (line.length - 1))];
-              if (!spot) continue;
-              const m = new THREE.Mesh(tuft, mat);
-              // Scaled about the tuft's own foot, then moved to the new spot.
-              const s = GRASS.scale * (0.85 + 0.3 * (((k * 37) % 10) / 10));
-              m.scale.setScalar(s);
-              m.position.copy(spot.clone().applyMatrix4(toGroup)).sub(homeLocal.clone().multiplyScalar(s));
+            if (!foot) continue;
+            const footLocal = foot.applyMatrix4(toGroup);
+            for (let n = 0; n < spot.count; n++) {
+              const src = blades[Math.floor(rnd() * blades.length)];
+              const g = new THREE.BufferGeometry();
+              g.setAttribute("position", floatAttr(src.geometry.attributes.position, 3));
+              if (src.geometry.attributes.normal) g.setAttribute("normal", floatAttr(src.geometry.attributes.normal, 3));
+              if (src.geometry.index) g.setIndex(Array.from(src.geometry.index.array as ArrayLike<number>));
+              // In the group's frame, turned as it was in its tuft, its root
+              // at the origin.
+              g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(toGroup, src.matrixWorld));
+              g.computeBoundingBox();
+              const bb = g.boundingBox!;
+              g.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
+              const m = new THREE.Mesh(g, src.material);
+              const spread = GRASS_SPREAD;
+              m.position.copy(footLocal).add(new THREE.Vector3((rnd() - 0.5) * spread, -0.5, (rnd() - 0.5) * spread));
+              m.scale.setScalar(0.8 + rnd() * 0.4);
               rg.add(m);
             }
           }
@@ -527,5 +524,20 @@ const KEY_LIGHT = 1.57;
  * how much of this scene's (brighter) light it takes.
  */
 const ROCK = { color: "1a1918", bump: 3, repeat: 6, gain: 0.5 };
-/** The extra tufts by the bike: how many, and their size against Spline's. */
-const GRASS = { count: 3, scale: 0.8 };
+/**
+ * The photo rock, made matte: its roughness, its specular (the wet look
+ * was 10), its bump, and how far the multiplied fresnel darkens its edges
+ * (1 = not at all), and how much of the light it takes — less is blacker.
+ */
+const PHOTO_ROCK = { roughness: 0.6, specular: 2, bump: 3, rim: 0.75, gain: 0.5 };
+/**
+ * Where the blades on the right of the ridge go, from Kai's marked-up
+ * screenshot: directions from the camera, and how many blades at each.
+ */
+const GRASS_SPOTS = [
+  { x: 0.601, y: -0.223, count: 8 },
+  { x: 0.928, y: -0.419, count: 6 },
+  { x: 1.136, y: -0.594, count: 5 },
+];
+/** How far apart, in scene units, the blades at one spot stand. */
+const GRASS_SPREAD = 10;
