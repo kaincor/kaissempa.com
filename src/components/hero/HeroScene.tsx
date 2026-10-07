@@ -84,26 +84,17 @@ export default function HeroScene({
       const loader = new GLTFLoader();
       loader.setMeshoptDecoder(MeshoptDecoder);
       const texLoader = new THREE.TextureLoader();
-      const [gltf, matcapSharp, matcapSoft, matcapGrey, rockDetail] = await Promise.all([
+      const [gltf, matcapSharp, matcapSoft, matcapGrey] = await Promise.all([
         loader.loadAsync("/hero/cliff.glb"),
         texLoader.loadAsync("/hero/matcap-sharp.webp"),
         texLoader.loadAsync("/hero/matcap-soft.webp"),
         texLoader.loadAsync("/hero/matcap-grey.webp"),
-        texLoader.loadAsync("/hero/rock-detail.webp"),
       ]);
       if (disposed) {
         renderer.dispose();
         return;
       }
-      for (const t of [matcapSharp, matcapSoft, matcapGrey, rockDetail]) t.colorSpace = THREE.NoColorSpace;
-      rockDetail.wrapS = rockDetail.wrapT = THREE.RepeatWrapping;
-      rockDetail.repeat.set(ROCK.repeat, ROCK.repeat);
-      // The rock's colour: ROCK.color, or ?rock=<hex> in the address to try
-      // another without a rebuild.
-      const params = new URLSearchParams(window.location.search);
-      const ROCK_STYLE = params.get("rockstyle") === "mtb" ? "mtb" : "photo";
-      const rockHex = params.get("rock")?.replace(/[^0-9a-f]/gi, "") || ROCK.color;
-      const rockColor = [0, 2, 4].map((i) => parseInt(rockHex.padEnd(6, "0").slice(i, i + 2), 16) / 255);
+      for (const t of [matcapSharp, matcapSoft, matcapGrey]) t.colorSpace = THREE.NoColorSpace;
 
       const scene = gltf.scene;
       // The export wraps everything in a 1/100 scale. Undone, so the scene
@@ -178,44 +169,20 @@ export default function HeroScene({
             fresnel: { color: [0.5469, 0.7281, 1], mode: S, alpha: 1, bias: -0.06, scale: 0.53, power: 1.75, factor: 0.94 },
           });
         }
-        if (meshName === "Rock" && ROCK_STYLE === "photo" && src.map) {
+        if (meshName === "Rock" && src.map) {
           // The rock as Spline has it: its photograph, lit at 90%, the photo
           // as a bump map, and a wet sheen where the light falls. Matched
           // side by side against the Spline scene.
-          const m = physical(PHYS(PHOTO_ROCK.roughness, 0), {
+          const m = physical(PHYS(ROCK.roughness, 0), {
             map: src.map,
             bumpMap: src.map,
-            bumpScale: PHOTO_ROCK.bump,
+            bumpScale: ROCK.bump,
             specularIntensity: 1,
-            specularColor: new THREE.Color(PHOTO_ROCK.specular, PHOTO_ROCK.specular, PHOTO_ROCK.specular),
+            specularColor: new THREE.Color(ROCK.specular, ROCK.specular, ROCK.specular),
           });
           return applyLayers(m, {
             base: { texture: true },
-            light: { mode: MODE.normal, alpha: 0.9, gain: PHOTO_ROCK.gain },
-          });
-        }
-        if (meshName === "Rock") {
-          // The rock, built the way the MTB Summit scene's rock is (try it
-          // with ?rockstyle=mtb): a flat colour with no photograph, lit in
-          // overlay with a rock normal map read as bump and roughness, three
-          // of its four fresnel rims stacked on top (the screened one, which
-          // washed the rock's edges white, left off), and a soft matcap
-          // screened over all of it.
-          const m = physical(PHYS(1, 0.09), {
-            roughnessMap: rockDetail,
-            bumpMap: rockDetail,
-            bumpScale: ROCK.bump,
-          });
-          const grey = (v: number) => [v, v, v];
-          return applyLayers(m, {
-            base: { color: rockColor },
-            light: { mode: O, alpha: 1, gain: ROCK.gain },
-            fresnel: [
-              { color: grey(0.847), mode: MODE.multiply, alpha: 1, bias: 0.1, scale: 1, power: 2, factor: 1 },
-              { color: grey(0.847), mode: O, alpha: 1, bias: 0.1, scale: 1, power: 2, factor: 1 },
-              { color: grey(0.65), mode: O, alpha: 1, bias: -0.36, scale: 1.48, power: 1.16, factor: 0.08 },
-            ],
-            matcap: { tex: matcapSoft, mode: S, alpha: 1, intensity: 1 },
+            light: { mode: MODE.normal, alpha: 0.9, gain: ROCK.gain },
           });
         }
         if (hex === "373737") {
@@ -465,14 +432,8 @@ const AMBIENT = { value: 1.5 };
 /** The always-on light's strength in three's units (Spline: 2π). */
 const KEY_LIGHT = 1.57;
 /**
- * The rock, after the MTB Summit scene's: its colour (a charcoal; the MTB scene's own is #54291a), how
- * hard the normal map bumps it, how many times the map repeats across it, and
- * how much of this scene's (brighter) light it takes.
- */
-const ROCK = { color: "1a1918", bump: 3, repeat: 6, gain: 0.5 };
-/**
- * The photo rock, matched to Spline's: its roughness (lower is wetter), its
+ * The rock, matched to Spline's: its roughness (lower is wetter), its
  * specular, how hard the photo bumps it, and how much of the light it
  * takes — less is blacker.
  */
-const PHOTO_ROCK = { roughness: 0.3, specular: 14, bump: 6, gain: 0.45 };
+const ROCK = { roughness: 0.3, specular: 14, bump: 6, gain: 0.45 };
