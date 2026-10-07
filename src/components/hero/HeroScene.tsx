@@ -249,6 +249,81 @@ export default function HeroScene({
         }
         return new THREE.BufferAttribute(out, size);
       };
+      // ── A little more grass by the bike ─────────────────────────────────
+      // A few more of Spline's own tufts along the rock's edge, between the
+      // tuft nearest the bike and the bike's wheel, as the camera sees it.
+      {
+        const rg = byName("Responsive Group");
+        const rock = byName("Rock") as THREE_NS.Mesh | undefined;
+        const bike = byName("Revamped Bike");
+        const tufts = (byName("Grass")?.children ?? []).filter((c) => !(c as THREE_NS.Mesh).isMesh && c.children.length > 0);
+        if (rg && rock && bike && tufts.length) {
+          scene.updateMatrixWorld(true);
+          const screenX = (o: THREE_NS.Object3D) => new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).project(camera).x;
+          const bikeLeft = new THREE.Box3().setFromObject(bike).min.clone().project(camera).x;
+          const bikeBox = new THREE.Box3().setFromObject(bike);
+          const corners = [0, 1].flatMap((i) => [0, 1].flatMap((j) => [0, 1].map((k) => new THREE.Vector3(i ? bikeBox.max.x : bikeBox.min.x, j ? bikeBox.max.y : bikeBox.min.y, k ? bikeBox.max.z : bikeBox.min.z).project(camera).x)));
+          const right = Math.min(bikeLeft, ...corners);
+          const near = tufts.map((t) => ({ t, x: screenX(t) })).filter((e) => e.x < right).sort((a, b) => b.x - a.x)[0];
+          const left = near ? near.x : right - 0.15;
+          // The rock's skyline in that span: down each column from above,
+          // the first point a ray from the camera meets the rock.
+          const ray = new THREE.Raycaster();
+          const line: THREE_NS.Vector3[] = [];
+          for (let c = 0; c < 12; c++) {
+            const x = left + ((c + 0.5) / 12) * (right - left);
+            for (let y = 0.6; y > -0.8; y -= 0.01) {
+              ray.setFromCamera(new THREE.Vector2(x, y), camera);
+              const hit = ray.intersectObject(rock, false)[0];
+              if (hit) {
+                line.push(hit.point);
+                break;
+              }
+            }
+          }
+          // Copies of the tuft beside the bike, turned as it is, each slid
+          // along the skyline from where that tuft meets it.
+          const skyAt = (x: number) => {
+            for (let y = 0.6; y > -0.8; y -= 0.005) {
+              ray.setFromCamera(new THREE.Vector2(x, y), camera);
+              const hit = ray.intersectObject(rock, false)[0];
+              if (hit) return hit.point;
+            }
+            return null;
+          };
+          const template = near?.t;
+          const home = near ? skyAt(near.x) : null;
+          if (template && home) {
+            const toGroup = rg.matrixWorld.clone().invert();
+            const blades: THREE_NS.BufferGeometry[] = [];
+            let mat: THREE_NS.Material | null = null;
+            template.traverse((o) => {
+              const mesh = o as THREE_NS.Mesh;
+              if (!mesh.isMesh) return;
+              const bg = new THREE.BufferGeometry();
+              bg.setAttribute("position", floatAttr(mesh.geometry.attributes.position, 3));
+              if (mesh.geometry.attributes.normal) bg.setAttribute("normal", floatAttr(mesh.geometry.attributes.normal, 3));
+              if (mesh.geometry.index) bg.setIndex(Array.from(mesh.geometry.index.array as ArrayLike<number>));
+              bg.applyMatrix4(new THREE.Matrix4().multiplyMatrices(toGroup, mesh.matrixWorld));
+              blades.push(bg);
+              mat = mesh.material as THREE_NS.Material;
+            });
+            const tuft = blades.length ? mergeGeometries(blades, false) : null;
+            const homeLocal = home.clone().applyMatrix4(toGroup);
+            for (let k = 0; tuft && mat && k < GRASS.count; k++) {
+              const spot = line[Math.round(((k + 1) / (GRASS.count + 1)) * (line.length - 1))];
+              if (!spot) continue;
+              const m = new THREE.Mesh(tuft, mat);
+              // Scaled about the tuft's own foot, then moved to the new spot.
+              const s = GRASS.scale * (0.85 + 0.3 * (((k * 37) % 10) / 10));
+              m.scale.setScalar(s);
+              m.position.copy(spot.clone().applyMatrix4(toGroup)).sub(homeLocal.clone().multiplyScalar(s));
+              rg.add(m);
+            }
+          }
+        }
+      }
+
       // ── Fewer draw calls ────────────────────────────────────────────────
       // The scene is 300-odd separate meshes — the figurine alone is 191
       // flattened Figma shapes — and each costs a draw call every frame.
@@ -451,4 +526,6 @@ const KEY_LIGHT = 1.57;
  * hard the normal map bumps it, how many times the map repeats across it, and
  * how much of this scene's (brighter) light it takes.
  */
-const ROCK = { color: "2a2826", bump: 3, repeat: 6, gain: 0.5 };
+const ROCK = { color: "1a1918", bump: 3, repeat: 6, gain: 0.5 };
+/** The extra tufts by the bike: how many, and their size against Spline's. */
+const GRASS = { count: 3, scale: 0.8 };
