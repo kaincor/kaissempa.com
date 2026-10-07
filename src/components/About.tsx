@@ -2,6 +2,7 @@
 
 import { useInView, useReducedMotion } from "motion/react";
 import { useRef } from "react";
+import SwipeDeck from "@/components/SwipeDeck";
 import FanDeck, {
   fanDeckIntroMs,
   type FanDeckCard,
@@ -80,7 +81,24 @@ export default function About() {
         padding: "0 30px clamp(10px, 2.2vw, 35px)",
       }}
     >
-      <FanDeck cards={PHOTOS} frameHeight={460} />
+      {/* The fan on anything wider than a phone. On a phone it has to shrink
+          to fit seven across and the photos end up too small to see, so
+          there it becomes a pile you swipe through instead. Both are always
+          rendered and one is hidden, so the server and the first paint agree;
+          a hidden deck never comes into view, so it never animates or loads. */}
+      <div className="w-full max-sm:hidden">
+        <FanDeck cards={PHOTOS} frameHeight={460} />
+      </div>
+      <div className="sm:hidden" style={{ padding: "28px 0 8px" }}>
+        <SwipeDeck
+          cards={PHOTOS}
+          sizes="70vw"
+          radius={10}
+          shadow="0 15px 35px rgba(0, 0, 0, 0.5)"
+          label="Photos of Kai"
+          style={{ width: "min(64vw, 260px)", aspectRatio: "2 / 3" }}
+        />
+      </div>
 
       <div
         ref={copyRef}

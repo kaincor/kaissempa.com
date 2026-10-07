@@ -127,11 +127,9 @@ export default function Home() {
         <ProjectsAndProducts />
       </RidgeDivider>
 
-      {/* Heading and ridge are inside this now rather than above it. The
-          section pins, and anything left in flow above the pin has scrolled
-          away by the time the pin starts — which is why the screen went pure
-          black for the whole animation. It also carries the inherited lift
-          itself, so the chain down to the footer is unchanged. */}
+      {/* Heading and ridge are part of this block. It stops the inherited
+          lift rather than passing it on, so the chain down to the footer is
+          unchanged. */}
       <MoreAboutMe range={OPENING} />
 
       {/* The chips inside carry a drift of their own, on a shorter throw than
