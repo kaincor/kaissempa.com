@@ -94,8 +94,12 @@ export default function PhoneMockup({ width, grow = false, children }: { width: 
 /** The grid: dot spacing and size, its colour, and its padding around what sits on it. */
 const GRID = { pitch: 14, r: 1.25, color: "rgba(50, 68, 62, 0.28)" };
 const PAD = "clamp(36px, 6vw, 64px)";
-/** How far the dots drift against the page as it scrolls past, px each way. */
-const PARALLAX = 180;
+/**
+ * How still the dots hold while the page scrolls: 1 pins them to the screen,
+ * 0 carries them with the page. Near 1, so the phone slides over a grid that
+ * hardly moves.
+ */
+const STILL = 0.95;
 /** The grid's own fade, toward its edges. */
 const FADE = "radial-gradient(ellipse 70% 62% at 50% 50%, #000 45%, transparent 100%)";
 /**
@@ -114,8 +118,8 @@ const POP = { dots: 0.55, each: 0.16, phoneAt: 0.3 };
  *
  * As it comes into view the dots pop in one by one, quickly and in no
  * order, and then what sits on it — the phone — fades in, rising with a
- * bounce and growing into place. The dots drift against the page as it
- * scrolls, for a little depth behind the phone.
+ * bounce and growing into place. As the page scrolls the dots all but hold
+ * still on the screen while the phone slides over them.
  *
  * `captioned` softens the dots behind a caption under the phone, so the line
  * reads clean: the sharp dots are cut away there and a blurred copy of the
@@ -126,8 +130,10 @@ const POP = { dots: 0.55, each: 0.16, phoneAt: 0.3 };
  * recompute on every frame of a scroll.
  *
  * The dots are drawn once into a canvas — every frame of the pop, then never
- * again — and the drift is a transform on it, so scrolling past costs the
- * compositor and nothing else.
+ * again — and the holding still is a transform on it, so scrolling past costs
+ * the compositor and nothing else. The grid repeats every dot, so the canvas
+ * only ever needs to move within one dot's spacing: carried back by the
+ * scroll, wrapped round at each spacing, and the wrap is invisible.
  */
 export function DotField({ children, captioned = false }: { children: ReactNode; captioned?: boolean }) {
   const reduced = useReducedMotion();
@@ -135,10 +141,8 @@ export function DotField({ children, captioned = false }: { children: ReactNode;
   const sharp = useRef<HTMLCanvasElement>(null);
   const soft = useRef<HTMLCanvasElement>(null);
   const seen = useInView(box, { once: true, amount: 0.25 });
-  const { scrollYProgress } = useScroll({ target: box, offset: ["start end", "end start"] });
-  // Down the page as the page goes up: the dots move slower than it, so they
-  // read as further away.
-  const drift = useTransform(scrollYProgress, [0, 1], [-PARALLAX, PARALLAX]);
+  const { scrollY } = useScroll();
+  const drift = useTransform(scrollY, (v) => ((v * STILL) % GRID.pitch) - GRID.pitch);
 
   useEffect(() => {
     const c = sharp.current;
@@ -219,7 +223,7 @@ export function DotField({ children, captioned = false }: { children: ReactNode;
   }, [seen, reduced]);
 
   const layer = "absolute top-0 bottom-0 left-0 right-0 overflow-hidden max-sm:left-[calc(50%-50vw)] max-sm:right-[calc(50%-50vw)]";
-  const canvas = { position: "absolute", left: 0, top: -PARALLAX, width: "100%", height: `calc(100% + ${PARALLAX * 2}px)`, y: reduced ? 0 : drift } as const;
+  const canvas = { position: "absolute", left: 0, top: 0, width: "100%", height: `calc(100% + ${GRID.pitch * 2}px)`, y: reduced ? 0 : drift } as const;
 
   return (
     <div

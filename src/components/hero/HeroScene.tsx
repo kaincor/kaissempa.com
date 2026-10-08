@@ -33,7 +33,7 @@ const LAYOUT = {
     group: { p: [136.35, -0.66, -112.25] },
   },
   phone: {
-    title: { p: [152.059, 346.77, -339.687], s: 0.4 },
+    title: { p: [152.059, 346.77, -339.687], s: 0.46 },
     group: { p: [107.857, 23.315, -124.092] },
   },
 } as const;
@@ -251,7 +251,63 @@ export default function HeroScene({
       {
         const grassMats = new Map<THREE_NS.Material, THREE_NS.Material>();
         const widened = new Set<THREE_NS.BufferGeometry>();
-        byName("Grass")?.children.forEach((tuft) => {
+        // Out first: the odd shapes that swayed like black leaves, and the
+        // clump right of the figure lost in the rock's shade.
+        const grass = byName("Grass");
+        // The upright tufts of the left-hand clump, to copy from below.
+        const sources = grass?.children.filter((_, i) => GRASS_COPY.includes(i));
+        grass?.children.filter((_, i) => GRASS_DROP.includes(i)).forEach((t) => t.removeFromParent());
+
+        // In: tufts along the far skyline, behind the bike and the figure,
+        // copied from the clump that is already there. Each spot is a
+        // direction from the camera; the tuft stands where a ray down that
+        // column first meets the rock — its silhouette, the far side of the
+        // ridge — with its roots just under the surface. Found in the wide
+        // layout and kept in the group's own frame, so they ride with it.
+        const rg = byName("Responsive Group");
+        const rockMesh = byName("Rock") as THREE_NS.Mesh | undefined;
+        if (grass && rg && rockMesh && sources?.length) {
+          const home = rg.position.clone();
+          rg.position.set(...LAYOUT.wide.group.p);
+          scene.updateMatrixWorld(true);
+          camera.updateMatrixWorld();
+          const ray = new THREE.Raycaster();
+          let seed = 7;
+          const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+          GRASS_ADD.forEach(([x, y, size], k) => {
+            let hit: THREE_NS.Vector3 | undefined;
+            for (let yy = y + 0.12; yy > y - 0.4 && !hit; yy -= 0.003) {
+              ray.setFromCamera(new THREE.Vector2(x / camera.aspect, yy), camera);
+              hit = ray.intersectObject(rockMesh, false)[0]?.point.clone();
+            }
+            if (!hit) return;
+            const src = sources[k % sources.length];
+            const tuft = src.clone();
+            tuft.traverse((o) => {
+              const m = o as THREE_NS.Mesh;
+              if (m.isMesh) m.geometry = m.geometry.clone();
+            });
+            // Stood upright — the original leans with the slope it grew on —
+            // and turned only a little, so it shows the same long side to
+            // the camera as the clump it was copied from.
+            tuft.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), (rnd() - 0.5) * 0.6);
+            tuft.scale.multiplyScalar(size * (0.9 + rnd() * 0.2));
+            if (k % 2) tuft.scale.x *= -1;
+            grass.add(tuft);
+            tuft.updateMatrixWorld(true);
+            const box = new THREE.Box3().setFromObject(tuft);
+            const tall = box.max.y - box.min.y;
+            const base = new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y + tall * 0.12, (box.min.z + box.max.z) / 2);
+            // Set back past the skyline, along the line of sight, so its base
+            // is hidden behind the ridge and the blades rise from beyond it
+            // rather than standing on the very edge and overhanging it.
+            hit.addScaledVector(ray.ray.direction, tall * GRASS_BACK);
+            tuft.position.add(grass.worldToLocal(hit.clone()).sub(grass.worldToLocal(base)));
+          });
+          rg.position.copy(home);
+          scene.updateMatrixWorld(true);
+        }
+        grass?.children.forEach((tuft) => {
           tuft.traverse((o) => {
             const mesh = o as THREE_NS.Mesh;
             if (!mesh.isMesh) return;
@@ -309,6 +365,11 @@ export default function HeroScene({
        * up into dots, so each point is pushed out from the middle of its pair
        * by `k` — wider by that much, as long as before, and drawn exactly as
        * cheaply. A point's pair is the nearest other point on its own blade.
+       *
+       * Not every blade is built in tidy pairs, and where the nearest point
+       * is along the blade rather than across it the push went the wrong
+       * way and ballooned it into a black leaf. So no point moves further
+       * than its blade's typical half-width would grow by.
        */
       function widen(g: THREE_NS.BufferGeometry, k: number) {
         const pos = g.attributes.position;
@@ -332,6 +393,8 @@ export default function HeroScene({
         const w = new THREE.Vector3();
         const out = new Float32Array(n * 3);
         for (const ids of blades.values()) {
+          const pair = new Map<number, number>();
+          const gaps: number[] = [];
           for (const i of ids) {
             v.fromBufferAttribute(pos, i);
             let best = -1;
@@ -345,11 +408,21 @@ export default function HeroScene({
               }
             }
             if (best >= 0) {
-              w.fromBufferAttribute(pos, best);
-              const mx = (v.x + w.x) / 2;
-              const my = (v.y + w.y) / 2;
-              const mz = (v.z + w.z) / 2;
-              v.set(mx + (v.x - mx) * k, my + (v.y - my) * k, mz + (v.z - mz) * k);
+              pair.set(i, best);
+              gaps.push(Math.sqrt(bestD));
+            }
+          }
+          gaps.sort((a, b) => a - b);
+          const cap = ((k - 1) / 2) * (gaps[Math.floor(gaps.length / 2)] ?? 0);
+          for (const i of ids) {
+            v.fromBufferAttribute(pos, i);
+            const j = pair.get(i);
+            if (j !== undefined) {
+              // Away from the pair's middle, by at most `cap`.
+              w.fromBufferAttribute(pos, j);
+              const away = v.clone().sub(w).multiplyScalar((k - 1) / 2);
+              if (away.length() > cap) away.setLength(cap);
+              v.add(away);
             }
             out.set([v.x, v.y, v.z], i * 3);
           }
@@ -630,5 +703,29 @@ const ROCK = { roughness: 0.3, specular: 14, bump: 6, gain: 0.45 };
  * out of step tufts are across the ridge.
  */
 const WIND = { amount: 0.24, period: 4.5, gust: 12, spread: 0.02 };
+/**
+ * Grass tufts taken out, by their order in the scene: two small ones by the
+ * left-hand clump that drew as black leaves, and the pair right of the figure.
+ */
+const GRASS_DROP = [1, 4, 6, 9];
+/** The tufts the added grass is copied from: the two upright ones on the left. */
+const GRASS_COPY = [5, 7];
+/** How far the added tufts sit back past the skyline, in tuft heights. */
+const GRASS_BACK = 0.6;
+/**
+ * Grass added along the far skyline, from Kai's marked-up screenshot: a
+ * direction from the camera — x in units of the screen's height, y the
+ * screen's own -1..1 — and a size against the tuft it copies.
+ */
+const GRASS_ADD: [number, number, number][] = [
+  [0.253, -0.263, 0.8],
+  [0.411, -0.219, 0.85],
+  [0.596, -0.219, 0.95],
+  [0.729, -0.263, 0.75],
+  [0.851, -0.369, 0.9],
+  [0.905, -0.439, 0.8],
+  [0.958, -0.493, 0.85],
+  [1.125, -0.598, 0.8],
+];
 /** How much wider each grass blade is drawn than it was modelled. */
 const GRASS_WIDTH = 1.6;
