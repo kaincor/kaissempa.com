@@ -131,6 +131,11 @@ export type Block =
    * built the way the Kindred reel is.
    */
   | { kind: "reveal"; variant?: "kindred"; label?: string }
+  /**
+   * A phone on a dot grid, playing one of the swipe interactions the way a
+   * screen recording would. One per beat of "How we got there".
+   */
+  | { kind: "swipe-demo"; demo: "spine" }
 
 export type Section = {
   id: string;
@@ -486,6 +491,7 @@ export const SECTIONS: Section[] = [
         text: "Fortuna had to cost one gesture instead of several. Swiping already had a familiar mental model, so we hinged the user flow on it.",
       },
       { kind: "callout", text: "Swipe right to apply, and swipe left to dismiss." },
+      { kind: "swipe-demo", demo: "spine" },
 
       { kind: "subheading", text: "Swiping error" },
       {

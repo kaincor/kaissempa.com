@@ -194,8 +194,13 @@ export function AppliedFace({ refs }: { refs: (key: string) => (el: HTMLElement 
   );
 }
 
-/** The job seeker's home screen furniture: header and the two buttons. */
-export function AppChrome() {
+/**
+ * The job seeker's home screen furniture: header and the two buttons.
+ *
+ * `buttons: false` leaves the buttons to the caller, for a screen that
+ * presses them.
+ */
+export function AppChrome({ buttons = true }: { buttons?: boolean } = {}) {
   return (
     <>
       <svg style={{ position: "absolute", left: 32, top: 56 }} width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
@@ -210,21 +215,38 @@ export function AppChrome() {
         <rect x="1" y="7" width="26" height="18" rx="4" fill="#6f8b81" />
         <rect x="9" y="2" width="10" height="7" rx="2" fill="none" stroke="#6f8b81" strokeWidth="2.4" />
       </svg>
-      <div style={{ ...BUTTON, left: 98, background: "#ff8989" }}>
-        <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M7 7l10 10M17 7L7 17" stroke="#b01212" strokeWidth="2.6" strokeLinecap="round" />
-        </svg>
-      </div>
-      <div style={{ ...BUTTON, left: 214, background: "#ade495" }}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M5 12.5l4.5 4.5L19 7.5" stroke="#298800" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
+      {buttons && (
+        <>
+          <div style={{ ...BUTTON, left: 98, background: "#ff8989" }}>
+            <CrossIcon />
+          </div>
+          <div style={{ ...BUTTON, left: 214, background: "#ade495" }}>
+            <TickIcon />
+          </div>
+        </>
+      )}
     </>
   );
 }
 
-const BUTTON: CSSProperties = {
+/** The dismiss button's cross, and the apply button's tick. */
+export function CrossIcon({ size = 26, color = "#b01212" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 7l10 10M17 7L7 17" stroke={color} strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function TickIcon({ size = 26, color = "#298800" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 12.5l4.5 4.5L19 7.5" stroke={color} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export const BUTTON: CSSProperties = {
   position: "absolute",
   top: 671,
   width: 64,
