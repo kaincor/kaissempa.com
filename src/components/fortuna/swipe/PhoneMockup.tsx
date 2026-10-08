@@ -96,10 +96,10 @@ const GRID = { pitch: 14, r: 1.25, color: "rgba(50, 68, 62, 0.28)" };
 const PAD = "clamp(36px, 6vw, 64px)";
 /**
  * How still the dots hold while the page scrolls: 1 pins them to the screen,
- * 0 carries them with the page. Near 1, so the phone slides over a grid that
- * hardly moves.
+ * 0 carries them with the page. At 0.9 they drift up a tenth as fast as the
+ * phone slides over them.
  */
-const STILL = 0.95;
+const STILL = 0.9;
 /** The grid's own fade, toward its edges. */
 const FADE = "radial-gradient(ellipse 70% 62% at 50% 50%, #000 45%, transparent 100%)";
 /**

@@ -13,7 +13,7 @@ import {
   TickIcon,
   type Job,
 } from "../reel/cards";
-import { clamp01, easeInOut, easeOut, lerp, seg } from "../reel/motion";
+import { clamp01, easeInOut, easeOut, lerp, seg, spring } from "../reel/motion";
 import PhoneMockup, { DotField } from "./PhoneMockup";
 
 /**
@@ -55,6 +55,11 @@ type Demo = {
   slots: { s: number; y: number }[];
   /** How long one card's turn takes against the base pace (T): under 1 is quicker. */
   pace: number;
+  /**
+   * One unbroken stroke from the middle off the side, rather than a drag
+   * that holds at full stretch and then a throw.
+   */
+  fluid?: boolean;
   /**
    * A run through the deck once, ending on the empty feed, rather than a
    * loop: a beat on the first card before the first swipe, how long the end
@@ -139,6 +144,7 @@ const DEMOS: Record<"spine" | "error" | "comeback", Demo> = {
     buttonsY: 677,
     slots: PLAIN,
     pace: 0.2,
+    fluid: true,
     run: { lead: 0.9, hold: 3, reset: 0.6 },
   },
 };
@@ -174,7 +180,7 @@ export default function SwipeDemo({ demo = "spine", caption }: { demo?: Kind; ca
   const end = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const { deck, feedback, slots, pace, run } = D;
+    const { deck, feedback, slots, pace, run, fluid } = D;
     const n = deck.length;
     const P = {
       touch: T.touch * pace,
@@ -192,8 +198,11 @@ export default function SwipeDemo({ demo = "spine", caption }: { demo?: Kind; ca
       const dir = apply ? 1 : -1;
       const pull = easeInOut(seg(u, P.drag, P.hold - 0.25 * pace));
       const thrown = easeOut(seg(u, P.out, P.gone)) ** 1.4;
-      const dx = dir * (DRAG * pull + (THROW - DRAG) * thrown);
-      const lift = -14 * pull;
+      // A fluid swipe is one ease from rest to off the screen, over the
+      // drag and the throw together.
+      const sweep = easeInOut(seg(u, P.drag, P.gone - 0.05 * pace));
+      const dx = fluid ? dir * THROW * sweep : dir * (DRAG * pull + (THROW - DRAG) * thrown);
+      const lift = -14 * (fluid ? Math.sin(Math.PI * Math.min(1, sweep * 1.4)) : pull);
       if (el) {
         el.style.transform = `translate(${dx.toFixed(2)}px, ${lift.toFixed(2)}px) rotate(${(dx / 16).toFixed(3)}deg)`;
         el.style.opacity = String(1 - seg(u, P.gone - 0.2 * pace, P.gone));
@@ -222,7 +231,7 @@ export default function SwipeDemo({ demo = "spine", caption }: { demo?: Kind; ca
       if (touch.current) {
         const on = easeOut(seg(u, P.touch, P.touch + 0.3 * Math.min(1, pace * 2))) * (1 - seg(u, P.out - 0.05 * pace, P.out + 0.2 * pace));
         const press = 1 - 0.18 * easeOut(seg(u, P.touch + 0.1 * pace, P.touch + 0.45 * pace));
-        const tx = dir * DRAG * pull + dir * 40 * seg(u, P.out - 0.05 * pace, P.out + 0.2 * pace);
+        const tx = fluid ? dx * 0.9 : dir * DRAG * pull + dir * 40 * seg(u, P.out - 0.05 * pace, P.out + 0.2 * pace);
         touch.current.style.opacity = String(on);
         touch.current.style.transform = `translate(${tx.toFixed(2)}px, ${lift.toFixed(2)}px) scale(${press.toFixed(3)})`;
       }
@@ -288,7 +297,24 @@ export default function SwipeDemo({ demo = "spine", caption }: { demo?: Kind; ca
         else rest(j, 1, 0, j === turn + 1 ? 1 : 0);
       }
       if (turn >= n && touch.current) touch.current.style.opacity = "0";
-      if (end.current) end.current.style.opacity = String(empty);
+      // The empty feed arrives in turn: the folder bounces in, then the
+      // heading, then the line under it.
+      if (end.current) {
+        end.current.style.opacity = String(1 - back);
+        const [folder, head, line] = Array.from(end.current.children) as HTMLElement[];
+        const a = c - through;
+        const f = turn >= n ? spring(seg(a, 0, 0.7), 0.6) : 0;
+        folder.style.opacity = String(clamp01(seg(a, 0, 0.2)) * (turn >= n ? 1 : 0));
+        folder.style.transform = `translateY(${((1 - f) * 18).toFixed(2)}px) scale(${(0.6 + 0.4 * f).toFixed(3)})`;
+        for (const [el, at] of [
+          [head, 0.35],
+          [line, 0.5],
+        ] as const) {
+          const k = turn >= n ? easeOut(seg(a, at, at + 0.4)) : 0;
+          el.style.opacity = String(k);
+          el.style.transform = `translateY(${((1 - k) * 10).toFixed(2)}px)`;
+        }
+      }
       for (const b of [yes.current, no.current]) if (b) b.style.opacity = String(1 - empty);
     };
 
@@ -438,7 +464,7 @@ function Stamp({ set, word, mark }: { set: (el: HTMLDivElement | null) => void; 
 function AllCaughtUp({ set }: { set: React.Ref<HTMLDivElement> }) {
   return (
     <div ref={set} style={{ position: "absolute", inset: 0, opacity: 0, color: "#6f8b81", fontFamily: "var(--f-body)", textAlign: "center" }}>
-      <div style={{ position: "absolute", left: 110, top: 219, width: 155, height: 137 }}>
+      <div style={{ position: "absolute", left: 110, top: 219, width: 155, height: 137, transformOrigin: "50% 80%" }}>
         <Image src="/fortuna/reel/all-caught-up.webp" alt="" fill sizes="160px" unoptimized draggable={false} />
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: 394, fontSize: 21, fontWeight: 600, letterSpacing: "-0.01em" }}>All Caught Up!</div>

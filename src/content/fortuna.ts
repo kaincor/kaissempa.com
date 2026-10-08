@@ -504,10 +504,15 @@ export const SECTIONS: Section[] = [
         kind: "text",
         text: "Testers were swiping through listings so fast that they wouldn't realize they skimmed past a potentially interesting job until it was too late.",
       },
-      { kind: "swipe-demo", demo: "comeback" },
+      { kind: "swipe-demo", demo: "comeback", caption: "Users were swiping wayyy too fast" },
       {
         kind: "text",
         text: "We'd spent weeks stripping friction out of Fortuna, but that made it easy to get lost in the sauce of the swipe, so to speak. Driving the cost towards zero had cheapened the interaction. The psychological delta between a thirty minute application process and a one second swipe was large enough to stop users from caring.",
+      },
+      {
+        kind: "quote",
+        rules: true,
+        text: "The psychological delta between a 30-minute application process and a one-second swipe was large enough to stop users from caring.",
       },
       {
         kind: "text",
@@ -517,9 +522,10 @@ export const SECTIONS: Section[] = [
         kind: "text",
         text: "Was there a reason the fence was up? We removed the friction fence because it drove the interaction cost up. But some of that friction had been quietly doing a job. It pushed people to pause long enough to make deliberate decisions.",
       },
+      // A line on its own rather than a pull-quote: the conclusion of the
+      // paragraph above, a beat apart from it, in the run of the text.
       {
-        kind: "quote",
-        rules: true,
+        kind: "text",
         text: "So we'd removed the effort, but we'd also removed some of the intention.",
       },
 
