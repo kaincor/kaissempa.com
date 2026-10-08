@@ -35,6 +35,13 @@ body {
   overflow-x: clip;
 }
 
+/* No rubber-band at the ends of the page. The bounce scrolls past the end
+   and springs back, and every scroll-driven ridge rode it — the footer shook
+   each time a phone reached the bottom. */
+html {
+  overscroll-behavior-y: none;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

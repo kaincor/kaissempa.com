@@ -1,8 +1,8 @@
 "use client";
 
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { useEffect, useState } from "react";
 import type { MountainRange as Range } from "@/data/mountainRanges";
+import { useStableVh } from "@/lib/useStableVh";
 
 export type RidgeLayerProps = {
   range: Range;
@@ -48,14 +48,7 @@ export default function RidgeLayer({
 }: RidgeLayerProps) {
   const reduced = useReducedMotion();
   const { scrollY } = useScroll();
-  const [vh, setVh] = useState(0);
-
-  useEffect(() => {
-    const sync = () => setVh(window.innerHeight);
-    sync();
-    window.addEventListener("resize", sync);
-    return () => window.removeEventListener("resize", sync);
-  }, []);
+  const vh = useStableVh();
 
   const y = useTransform(scrollY, [0, vh || 1], [0, -rise]);
 

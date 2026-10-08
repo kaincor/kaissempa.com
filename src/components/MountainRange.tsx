@@ -1,8 +1,9 @@
 "use client";
 
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { useEffect, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { MountainRange as Range } from "@/data/mountainRanges";
+import { useStableVh } from "@/lib/useStableVh";
 
 export type MountainRangeProps = {
   range: Range;
@@ -48,14 +49,7 @@ export type MountainRangeProps = {
  */
 export function useRangeLift(rise: number) {
   const { scrollY } = useScroll();
-  const [vh, setVh] = useState(0);
-
-  useEffect(() => {
-    const sync = () => setVh(window.innerHeight);
-    sync();
-    window.addEventListener("resize", sync);
-    return () => window.removeEventListener("resize", sync);
-  }, []);
+  const vh = useStableVh();
 
   return useTransform(scrollY, [0, vh || 1], [0, -rise]);
 }

@@ -65,7 +65,10 @@ export default function Hero({
   const phoneQuery = `(max-width: ${PHONE_MAX}px)`;
 
   return (
-    <section className="relative w-full overflow-hidden bg-background" style={{ height: "100dvh" }}>
+    // svh, not dvh: the small viewport height stays put while a phone's
+    // address bar slides, where dvh resized the hero, and the scene with it,
+    // on every scroll.
+    <section className="relative w-full overflow-hidden bg-background" style={{ height: "100svh" }}>
       {/* The scene's own text is geometry, so the page would otherwise have no
           heading at all for search engines or a screen reader. */}
       <h1 className="sr-only">

@@ -731,7 +731,7 @@ function blockNode(
     case "reveal":
       return block.variant === "kindred" ? <KindredReel key={i} label={block.label} /> : <Reel key={i} label={block.label} />;
     case "swipe-demo":
-      return <SpineDemo key={i} />;
+      return <SpineDemo key={i} caption={block.caption} />;
   }
 }
 

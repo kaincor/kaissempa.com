@@ -45,8 +45,8 @@ const POP_STAGGER = 0.07;
 /** How long after the pop the hint comes up, s. */
 const HINT_AFTER = 0.5;
 /** How long the hint stays up, and when in that time the top card demonstrates, s. */
-const HINT_FOR = 1.5;
-const DEMO_AT = 0.55;
+const HINT_FOR = 0.5;
+const DEMO_AT = 0.2;
 
 const SETTLE = { type: "spring", stiffness: 320, damping: 28 } as const;
 const POP = { type: "spring", stiffness: 420, damping: 22 } as const;
@@ -267,7 +267,7 @@ function Card({
   );
 }
 
-/** A roughly drawn pointing hand and "Swipe", sliding back and forth over the bottom of the deck. */
+/** A roughly drawn pointing hand and "SWIPE!", sliding back and forth over the bottom of the deck. */
 function Hint({ on }: { on: boolean }) {
   return (
     <motion.div
@@ -306,7 +306,7 @@ function Hint({ on }: { on: boolean }) {
         }}
       >
         <SketchHand />
-        Swipe
+        SWIPE!
       </motion.div>
     </motion.div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 import {
   AppChrome,
@@ -69,7 +69,7 @@ const SLOTS = [
 ];
 const RED = "#f34545";
 
-export default function SpineDemo() {
+export default function SpineDemo({ caption }: { caption?: string }) {
   const reduced = useReducedMotion();
   const host = useRef<HTMLDivElement>(null);
   const cards = useRef<(HTMLDivElement | null)[]>([]);
@@ -231,6 +231,26 @@ export default function SpineDemo() {
           />
         </PhoneMockup>
       </div>
+      {caption && (
+        // One row of the dot grid below the phone, and up into place with a
+        // small bounce as it comes on screen.
+        <motion.p
+          initial={reduced ? false : { opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 1 }}
+          transition={{ type: "spring", stiffness: 170, damping: 13, mass: 0.9, opacity: { duration: 0.35 } }}
+          style={{
+            margin: "14px 0 0",
+            textAlign: "center",
+            fontFamily: "var(--f-body)",
+            fontSize: "clamp(13px, 1.1vw, 14.5px)",
+            lineHeight: 1.5,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {caption}
+        </motion.p>
+      )}
     </DotField>
   );
 }

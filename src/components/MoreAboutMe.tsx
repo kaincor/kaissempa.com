@@ -3,7 +3,7 @@
 import { useInView, useReducedMotion } from "motion/react";
 import { useRef } from "react";
 import SectionHeading from "@/components/SectionHeading";
-import SwipeDeck, { type Pose } from "@/components/SwipeDeck";
+import SwipeDeck from "@/components/SwipeDeck";
 import type { MountainRange as Range } from "@/data/mountainRanges";
 
 /**
@@ -53,27 +53,6 @@ const SLIDES: Slide[] = [
     line: "I enjoy bodybuilding, mountain biking & embroidery.",
   },
 ];
-
-/**
- * The pile, front first: the scatter the old landed pile settled into, so it
- * looks the same at rest. The front is the tightest and most upright; each
- * one behind leaves an edge showing past the one above it.
- */
-const POSES: Pose[] = [
-  { x: -6, y: 6, rot: -2.5 },
-  { x: 36, y: -26, rot: 9 },
-  { x: -24, y: 34, rot: -4 },
-  { x: 30, y: 24, rot: 6.5 },
-  { x: -38, y: -30, rot: -9 },
-];
-
-/**
- * Headroom around the pile for the scatter to bleed into, so a tilted corner
- * never lands on the copy beside or below it.
- */
-const PILE_PAD = "clamp(24px, 4svh, 44px)";
-/** The same reserve sideways, where the tilt throws the corners furthest. */
-const PILE_SIDE = "clamp(20px, 3.8vw, 46px)";
 
 export default function MoreAboutMe({
   range,
@@ -155,25 +134,17 @@ export default function MoreAboutMe({
             gap: "clamp(28px, 5vw, 72px)",
           }}
         >
-          {/* The pile. The 38vw slope reaches its ceiling at around 760px,
-              where a tablet sits: the pile goes full size, the row can no
-              longer hold both columns, and the layout stacks. */}
-          <div
-            style={{
-              position: "relative",
-              zIndex: 1,
-              flex: "0 1 clamp(165px, min(38vw, 37svh), 290px)",
-              paddingBlock: PILE_PAD,
-              paddingInline: PILE_SIDE,
-              boxSizing: "content-box",
-            }}
-          >
+          {/* The pile: the same deck, at the same size, as the one under the
+              hero on a phone, so the page's two stacks of photographs read
+              as one thing. */}
+          <div style={{ flex: "0 0 auto", padding: "28px 0 8px" }}>
             <SwipeDeck
               cards={SLIDES}
-              poses={POSES}
-              sizes="(max-width: 760px) 60vw, 290px"
+              sizes="(max-width: 640px) 70vw, 260px"
+              radius={10}
+              shadow="0 15px 35px rgba(0, 0, 0, 0.5)"
               label="Photos of Kai"
-              style={{ width: "100%", aspectRatio: "3 / 4" }}
+              style={{ width: "min(64vw, 260px)", aspectRatio: "2 / 3" }}
             />
           </div>
 

@@ -22,7 +22,10 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, prune, weld, simplifyPrimitive, quantize, meshopt, textureCompress, reorder } from '@gltf-transform/functions';
 import { MeshoptSimplifier, MeshoptEncoder } from 'meshoptimizer';
 import sharp from 'sharp';
-const [,, inp, out, eScale='1'] = process.argv;
+// eScale loosens every simplify budget; tex is the longest edge the textures
+// are resized to. (A 1024 rock photo was tried for phones and lost the
+// rock's fine grain.)
+const [,, inp, out, eScale='1', tex='1536'] = process.argv;
 await MeshoptSimplifier.ready; await MeshoptEncoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
 const doc = await io.read(inp);
@@ -74,7 +77,7 @@ await doc.transform(
   // Keep the texture coordinates: with its photo gone the rock references no
   // texture, but the page maps its normal map through them.
   prune({ keepAttributes: true }),
-  textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [1536, 1536], quality: 74, slots: /^baseColor/ }),
+  textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [Number(tex), Number(tex)], quality: 74, slots: /^baseColor/ }),
   reorder({ encoder: MeshoptEncoder }),
   quantize(),
   meshopt({ encoder: MeshoptEncoder, level: 'high' }),

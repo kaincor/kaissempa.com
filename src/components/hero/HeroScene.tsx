@@ -72,11 +72,17 @@ export default function HeroScene({
       const { mergeGeometries } = await import("three/addons/utils/BufferGeometryUtils.js");
       if (disposed) return;
 
+      // A phone draws at 1.5x rather than 2x: 44% fewer pixels on every
+      // frame, and indistinguishable at that size. (A lighter model was
+      // tried too — the rock photo at 1024 — but the rock lost the fine grain
+      // that makes it Spline's, for a quarter of a megabyte.) Decided by the
+      // device's screen, not the window, so it never switches mid-visit.
+      const phone = Math.min(window.screen.width, window.screen.height) <= 500;
       const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
       renderer.setClearColor(0x000000, 0);
       renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
       renderer.toneMapping = THREE.NoToneMapping;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, phone ? 1.5 : 2));
       const canvas = renderer.domElement;
       canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block";
       el.appendChild(canvas);
@@ -369,6 +375,9 @@ export default function HeroScene({
         followAim.copy(follow.parent ? follow.parent.worldToLocal(world) : world);
       };
       const onMove = (e: PointerEvent) => {
+        // A mouse only. On a phone every scroll is a touch moving across the
+        // screen, and the light chased the reader's thumb all over the rock.
+        if (e.pointerType !== "mouse") return;
         const r = canvas.getBoundingClientRect();
         aimAt(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1));
       };
