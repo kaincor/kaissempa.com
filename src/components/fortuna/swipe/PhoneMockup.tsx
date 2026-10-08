@@ -16,9 +16,20 @@ import { PHONE_BODY } from "../reel/phone-shape";
 export const PHONE = { w: 415, h: 838 };
 export const SCREEN = { x: 20, y: 18, w: 375, h: 801 };
 
-export default function PhoneMockup({ width, children }: { width: string; children: ReactNode }) {
+/** How small the phone starts, growing to full size as it scrolls on screen. */
+const GROW_FROM = 0.9;
+
+/**
+ * `grow` ties the phone's size to the scroll: 90% as its top comes on
+ * screen, full size once 90% of it is showing, and back again on the way up.
+ * It grows from its base, so whatever sits under it keeps its distance.
+ */
+export default function PhoneMockup({ width, grow = false, children }: { width: string; grow?: boolean; children: ReactNode }) {
   const box = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(0);
+  const reduced = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: box, offset: ["start end", "0.9 end"] });
+  const size = useTransform(scrollYProgress, [0, 1], [GROW_FROM, 1]);
 
   useEffect(() => {
     const el = box.current;
@@ -31,7 +42,16 @@ export default function PhoneMockup({ width, children }: { width: string; childr
   }, []);
 
   return (
-    <div ref={box} style={{ position: "relative", width, aspectRatio: `${PHONE.w} / ${PHONE.h}` }}>
+    <motion.div
+      ref={box}
+      style={{
+        position: "relative",
+        width,
+        aspectRatio: `${PHONE.w} / ${PHONE.h}`,
+        scale: grow && !reduced ? size : 1,
+        transformOrigin: "50% 100%",
+      }}
+    >
       <div
         style={{
           position: "absolute",
@@ -67,7 +87,7 @@ export default function PhoneMockup({ width, children }: { width: string; childr
           <div style={{ position: "absolute", left: 77, top: 11, width: 46, height: 5, borderRadius: 3, background: "#26352f" }} />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -75,7 +95,7 @@ export default function PhoneMockup({ width, children }: { width: string; childr
 const GRID = { pitch: 14, r: 1.25, color: "rgba(50, 68, 62, 0.28)" };
 const PAD = "clamp(36px, 6vw, 64px)";
 /** How far the dots drift against the page as it scrolls past, px each way. */
-const PARALLAX = 36;
+const PARALLAX = 180;
 /** The grid's own fade, toward its edges. */
 const FADE = "radial-gradient(ellipse 70% 62% at 50% 50%, #000 45%, transparent 100%)";
 /**

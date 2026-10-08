@@ -27,8 +27,9 @@ import PhoneMockup, { DotField } from "./PhoneMockup";
  *   or red as it goes, the button it answers to lifts, and the card is
  *   thrown off with the stack moving up behind it.
  * - `error` (Swiping error) shows the same gesture with nothing to confirm
- *   it: no colour, no button, the card simply gone at the end of the drag.
- *   That absence is the point the section makes.
+ *   it: the card goes off the screen just the same, but with no colour and
+ *   no button to say which way it counted. That absence is the point the
+ *   section makes.
  *
  * Slow on purpose. Each card sits long enough to be read, and the drag holds
  * at its furthest point before the card goes. Driven off one clock in a
@@ -140,13 +141,12 @@ export default function SwipeDemo({ demo = "spine", caption }: { demo?: "spine" 
       const apply = deck[front].apply;
       const dir = apply ? 1 : -1;
 
-      // The drag: out to its furthest, held, then thrown — or, with no
-      // feedback, simply gone where the drag let go of it.
+      // The drag: out to its furthest, held, then thrown off the screen.
       const pull = easeInOut(seg(u, T.drag, T.hold - 0.25));
-      const thrown = feedback ? easeOut(seg(u, T.out, T.gone)) ** 1.4 : 0;
+      const thrown = easeOut(seg(u, T.out, T.gone)) ** 1.4;
       const dx = dir * (DRAG * pull + (THROW - DRAG) * thrown);
       const lift = -14 * pull;
-      const fade = feedback ? 1 - seg(u, T.gone - 0.2, T.gone) : 1 - seg(u, T.out, T.out + 0.08);
+      const fade = 1 - seg(u, T.gone - 0.2, T.gone);
       // The stack moving up behind the card as it goes.
       const advance = easeInOut(seg(u, T.out + 0.05, T.gone + 0.15));
 
@@ -194,7 +194,7 @@ export default function SwipeDemo({ demo = "spine", caption }: { demo?: "spine" 
       if (touch.current) {
         const on = easeOut(seg(u, T.touch, T.touch + 0.3)) * (1 - seg(u, T.out - 0.05, T.out + 0.2));
         const press = 1 - 0.18 * easeOut(seg(u, T.touch + 0.1, T.touch + 0.45));
-        const tx = dir * DRAG * pull + (feedback ? dir * 40 * seg(u, T.out - 0.05, T.out + 0.2) : 0);
+        const tx = dir * DRAG * pull + dir * 40 * seg(u, T.out - 0.05, T.out + 0.2);
         touch.current.style.opacity = String(on);
         touch.current.style.transform = `translate(${tx.toFixed(2)}px, ${lift.toFixed(2)}px) scale(${press.toFixed(3)})`;
       }
@@ -245,7 +245,7 @@ export default function SwipeDemo({ demo = "spine", caption }: { demo?: "spine" 
   return (
     <DotField captioned={!!caption}>
       <div ref={host} role="img" aria-label={label}>
-        <PhoneMockup width="min(300px, 68vw)">
+        <PhoneMockup width="min(300px, 68vw)" grow>
           <AppChrome buttons={false} profileDone={!D.bio} />
           {D.bio && <BioBanner />}
           {D.deck.map(({ job }, j) => (

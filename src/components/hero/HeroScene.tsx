@@ -250,10 +250,15 @@ export default function HeroScene({
       const windTime = { value: 0 };
       {
         const grassMats = new Map<THREE_NS.Material, THREE_NS.Material>();
+        const widened = new Set<THREE_NS.BufferGeometry>();
         byName("Grass")?.children.forEach((tuft) => {
           tuft.traverse((o) => {
             const mesh = o as THREE_NS.Mesh;
             if (!mesh.isMesh) return;
+            if (!widened.has(mesh.geometry)) {
+              widen(mesh.geometry, GRASS_WIDTH);
+              widened.add(mesh.geometry);
+            }
             mesh.updateWorldMatrix(true, false);
             const pos = mesh.geometry.attributes.position;
             const v = new THREE.Vector3();
@@ -296,6 +301,61 @@ export default function HeroScene({
             mesh.material = grassMats.get(src)!;
           });
         });
+      }
+
+      /**
+       * Each blade is a flat ribbon: points in pairs across its width, all
+       * the way up. At hero size a ribbon is narrower than a pixel and breaks
+       * up into dots, so each point is pushed out from the middle of its pair
+       * by `k` — wider by that much, as long as before, and drawn exactly as
+       * cheaply. A point's pair is the nearest other point on its own blade.
+       */
+      function widen(g: THREE_NS.BufferGeometry, k: number) {
+        const pos = g.attributes.position;
+        const index = g.index;
+        if (!index) return;
+        const n = pos.count;
+        const root = Array.from({ length: n }, (_, i) => i);
+        const find = (x: number): number => (root[x] === x ? x : (root[x] = find(root[x])));
+        for (let i = 0; i < index.count; i += 3) {
+          const a = find(index.getX(i));
+          root[find(index.getX(i + 1))] = a;
+          root[find(index.getX(i + 2))] = a;
+        }
+        const blades = new Map<number, number[]>();
+        for (let i = 0; i < n; i++) {
+          const r = find(i);
+          if (!blades.has(r)) blades.set(r, []);
+          blades.get(r)!.push(i);
+        }
+        const v = new THREE.Vector3();
+        const w = new THREE.Vector3();
+        const out = new Float32Array(n * 3);
+        for (const ids of blades.values()) {
+          for (const i of ids) {
+            v.fromBufferAttribute(pos, i);
+            let best = -1;
+            let bestD = Infinity;
+            for (const j of ids) {
+              if (j === i) continue;
+              const d = w.fromBufferAttribute(pos, j).distanceToSquared(v);
+              if (d < bestD) {
+                bestD = d;
+                best = j;
+              }
+            }
+            if (best >= 0) {
+              w.fromBufferAttribute(pos, best);
+              const mx = (v.x + w.x) / 2;
+              const my = (v.y + w.y) / 2;
+              const mz = (v.z + w.z) / 2;
+              v.set(mx + (v.x - mx) * k, my + (v.y - my) * k, mz + (v.z - mz) * k);
+            }
+            out.set([v.x, v.y, v.z], i * 3);
+          }
+        }
+        for (let i = 0; i < n; i++) pos.setXYZ(i, out[i * 3], out[i * 3 + 1], out[i * 3 + 2]);
+        pos.needsUpdate = true;
       }
 
       // ── Fewer draw calls ────────────────────────────────────────────────
@@ -569,4 +629,6 @@ const ROCK = { roughness: 0.3, specular: 14, bump: 6, gain: 0.45 };
  * height), the seconds for one slow swing and for the gust over it, and how
  * out of step tufts are across the ridge.
  */
-const WIND = { amount: 0.12, period: 6.5, gust: 17, spread: 0.02 };
+const WIND = { amount: 0.24, period: 4.5, gust: 12, spread: 0.02 };
+/** How much wider each grass blade is drawn than it was modelled. */
+const GRASS_WIDTH = 1.6;
