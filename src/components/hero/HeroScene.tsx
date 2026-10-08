@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type * as THREE_NS from "three";
 import { PHONE_MAX } from "./constants";
+import { GRASS_STROKES } from "./grassStrokes";
 import { applyLayers, MODE } from "./splineLayers";
 
 /**
@@ -254,59 +255,8 @@ export default function HeroScene({
         // Out first: the odd shapes that swayed like black leaves, and the
         // clump right of the figure lost in the rock's shade.
         const grass = byName("Grass");
-        // The upright tufts of the left-hand clump, to copy from below.
-        const sources = grass?.children.filter((_, i) => GRASS_COPY.includes(i));
         grass?.children.filter((_, i) => GRASS_DROP.includes(i)).forEach((t) => t.removeFromParent());
 
-        // In: tufts along the far skyline, behind the bike and the figure,
-        // copied from the clump that is already there. Each spot is a
-        // direction from the camera; the tuft stands where a ray down that
-        // column first meets the rock — its silhouette, the far side of the
-        // ridge — with its roots just under the surface. Found in the wide
-        // layout and kept in the group's own frame, so they ride with it.
-        const rg = byName("Responsive Group");
-        const rockMesh = byName("Rock") as THREE_NS.Mesh | undefined;
-        if (grass && rg && rockMesh && sources?.length) {
-          const home = rg.position.clone();
-          rg.position.set(...LAYOUT.wide.group.p);
-          scene.updateMatrixWorld(true);
-          camera.updateMatrixWorld();
-          const ray = new THREE.Raycaster();
-          let seed = 7;
-          const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-          GRASS_ADD.forEach(([x, y, size], k) => {
-            let hit: THREE_NS.Vector3 | undefined;
-            for (let yy = y + 0.12; yy > y - 0.4 && !hit; yy -= 0.003) {
-              ray.setFromCamera(new THREE.Vector2(x / camera.aspect, yy), camera);
-              hit = ray.intersectObject(rockMesh, false)[0]?.point.clone();
-            }
-            if (!hit) return;
-            const src = sources[k % sources.length];
-            const tuft = src.clone();
-            tuft.traverse((o) => {
-              const m = o as THREE_NS.Mesh;
-              if (m.isMesh) m.geometry = m.geometry.clone();
-            });
-            // Stood upright — the original leans with the slope it grew on —
-            // and turned only a little, so it shows the same long side to
-            // the camera as the clump it was copied from.
-            tuft.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), (rnd() - 0.5) * 0.6);
-            tuft.scale.multiplyScalar(size * (0.9 + rnd() * 0.2));
-            if (k % 2) tuft.scale.x *= -1;
-            grass.add(tuft);
-            tuft.updateMatrixWorld(true);
-            const box = new THREE.Box3().setFromObject(tuft);
-            const tall = box.max.y - box.min.y;
-            const base = new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y + tall * 0.12, (box.min.z + box.max.z) / 2);
-            // Set back past the skyline, along the line of sight, so its base
-            // is hidden behind the ridge and the blades rise from beyond it
-            // rather than standing on the very edge and overhanging it.
-            hit.addScaledVector(ray.ray.direction, tall * GRASS_BACK);
-            tuft.position.add(grass.worldToLocal(hit.clone()).sub(grass.worldToLocal(base)));
-          });
-          rg.position.copy(home);
-          scene.updateMatrixWorld(true);
-        }
         grass?.children.forEach((tuft) => {
           tuft.traverse((o) => {
             const mesh = o as THREE_NS.Mesh;
@@ -357,6 +307,93 @@ export default function HeroScene({
             mesh.material = grassMats.get(src)!;
           });
         });
+
+        // ── Kai's blades ──
+        // Each stroke Kai drew on the hero is one blade (grassStrokes.ts),
+        // drawn as he drew it: a flat ribbon facing the camera, tapering to
+        // its tip, standing on a plane just behind the rock's skyline where
+        // its base is. A base drawn above the skyline is dropped onto it, and
+        // every blade runs on a little below its base, so the rock's edge
+        // hides its root and it grows out of the black line rather than
+        // standing on it. Built in the wide layout, in the group's own frame.
+        const rg = byName("Responsive Group");
+        const rockMesh = byName("Rock") as THREE_NS.Mesh | undefined;
+        const mat = grassMats.values().next().value;
+        if (rg && rockMesh && mat) {
+          const home = rg.position.clone();
+          rg.position.set(...LAYOUT.wide.group.p);
+          scene.updateMatrixWorld(true);
+          camera.updateMatrixWorld();
+          const toGroup = rg.matrixWorld.clone().invert();
+          const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+          const fwd = camera.getWorldDirection(new THREE.Vector3());
+          const eye = camera.getWorldPosition(new THREE.Vector3());
+          const ray = new THREE.Raycaster();
+          // A screen direction at a depth, into the group's frame.
+          const at = (u: number, v: number, d: number) =>
+            new THREE.Vector3(u * d * tan, v * d * tan, -d).applyMatrix4(camera.matrixWorld).applyMatrix4(toGroup);
+          const pos: number[] = [];
+          const sway: number[] = [];
+          const index: number[] = [];
+          let seed = 3;
+          const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+          for (const stroke of GRASS_STROKES) {
+            const [bu, bv] = stroke[0];
+            // The skyline below the base: the first of the rock down its column.
+            let sky: THREE_NS.Vector3 | undefined;
+            let skyV = 0;
+            for (let v = bv + 0.05; v > bv - 0.12 && !sky; v -= 0.002) {
+              ray.setFromCamera(new THREE.Vector2(bu / camera.aspect, v), camera);
+              sky = ray.intersectObject(rockMesh, false)[0]?.point;
+              skyV = v;
+            }
+            if (!sky) continue;
+            const depth = sky.clone().sub(eye).dot(fwd) * (1 + BLADE.back);
+            const drop = Math.max(0, bv - skyV);
+            // The stroke as a smooth curve, root first: run on below the base,
+            // then through Kai's points with a touch of extra bend.
+            const pts = stroke.map(([u, v]) => new THREE.Vector2(u, v - drop));
+            const root = pts[0].clone().add(new THREE.Vector2(0, -BLADE.root));
+            const tip = pts[pts.length - 1];
+            const bend = (rnd() - 0.5) * BLADE.bend * root.distanceTo(tip);
+            const curve = new THREE.SplineCurve([root, ...pts]);
+            const n = 8;
+            const line = curve.getSpacedPoints(n).map((p, i) => {
+              const t = i / n;
+              const side = new THREE.Vector2(-(tip.y - root.y), tip.x - root.x).normalize();
+              return p.clone().addScaledVector(side, bend * Math.sin(Math.PI * t));
+            });
+            const base = pos.length / 3;
+            const tall = at(root.x, root.y, depth).distanceTo(at(tip.x, tip.y, depth));
+            line.forEach((p, i) => {
+              const t = i / n;
+              const next = line[Math.min(i + 1, n)];
+              const prev = line[Math.max(i - 1, 0)];
+              const dir = next.clone().sub(prev).normalize();
+              const half = (BLADE.width * (1 - 0.88 * t)) / 2;
+              for (const s of [-1, 1]) {
+                const q = at(p.x - dir.y * half * s, p.y + dir.x * half * s, depth);
+                pos.push(q.x, q.y, q.z);
+                sway.push(t * t * tall);
+              }
+              if (i < n) {
+                const a = base + i * 2;
+                // Wound to face the camera.
+                index.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+              }
+            });
+          }
+          if (index.length) {
+            const g = new THREE.BufferGeometry();
+            g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+            g.setAttribute("sway", new THREE.Float32BufferAttribute(sway, 1));
+            g.setIndex(index);
+            g.computeVertexNormals();
+            rg.add(new THREE.Mesh(g, mat));
+          }
+          rg.position.copy(home);
+          scene.updateMatrixWorld(true);
+        }
       }
 
       /**
@@ -708,24 +745,12 @@ const WIND = { amount: 0.24, period: 4.5, gust: 12, spread: 0.02 };
  * left-hand clump that drew as black leaves, and the pair right of the figure.
  */
 const GRASS_DROP = [1, 4, 6, 9];
-/** The tufts the added grass is copied from: the two upright ones on the left. */
-const GRASS_COPY = [5, 7];
-/** How far the added tufts sit back past the skyline, in tuft heights. */
-const GRASS_BACK = 0.6;
 /**
- * Grass added along the far skyline, from Kai's marked-up screenshot: a
- * direction from the camera — x in units of the screen's height, y the
- * screen's own -1..1 — and a size against the tuft it copies.
+ * Kai's blades: how wide at the base and how far each runs on below it (both
+ * in units of the screen's height), how far behind the skyline it stands (a
+ * share of its distance from the camera), and how much each bows at random
+ * (a share of its length).
  */
-const GRASS_ADD: [number, number, number][] = [
-  [0.253, -0.263, 0.8],
-  [0.411, -0.219, 0.85],
-  [0.596, -0.219, 0.95],
-  [0.729, -0.263, 0.75],
-  [0.851, -0.369, 0.9],
-  [0.905, -0.439, 0.8],
-  [0.958, -0.493, 0.85],
-  [1.125, -0.598, 0.8],
-];
+const BLADE = { width: 0.0045, root: 0.012, back: 0.004, bend: 0.12 };
 /** How much wider each grass blade is drawn than it was modelled. */
 const GRASS_WIDTH = 1.6;
