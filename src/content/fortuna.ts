@@ -135,7 +135,7 @@ export type Block =
    * A phone on a dot grid, playing one of the swipe interactions the way a
    * screen recording would. One per beat of "How we got there".
    */
-  | { kind: "swipe-demo"; demo: "spine" | "error"; caption?: string }
+  | { kind: "swipe-demo"; demo: "spine" | "error" | "comeback"; caption?: string }
 
 export type Section = {
   id: string;
@@ -504,6 +504,7 @@ export const SECTIONS: Section[] = [
         kind: "text",
         text: "Testers were swiping through listings so fast that they wouldn't realize they skimmed past a potentially interesting job until it was too late.",
       },
+      { kind: "swipe-demo", demo: "comeback" },
       {
         kind: "text",
         text: "We'd spent weeks stripping friction out of Fortuna, but that made it easy to get lost in the sauce of the swipe, so to speak. Driving the cost towards zero had cheapened the interaction. The psychological delta between a thirty minute application process and a one second swipe was large enough to stop users from caring.",
