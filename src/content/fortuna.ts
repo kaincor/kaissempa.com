@@ -135,7 +135,7 @@ export type Block =
    * A phone on a dot grid, playing one of the swipe interactions the way a
    * screen recording would. One per beat of "How we got there".
    */
-  | { kind: "swipe-demo"; demo: "spine"; caption?: string }
+  | { kind: "swipe-demo"; demo: "spine" | "error"; caption?: string }
 
 export type Section = {
   id: string;
@@ -497,6 +497,7 @@ export const SECTIONS: Section[] = [
         kind: "text",
         text: "The swipe interaction was familiar, but its outcome wasn't. When a job card disappeared, there was no immediate feedback to indicate whether the action had been an application or a dismissal. The interaction looked and felt like something users already understood, but without a perceivable confirmation, it broke the mental model they brought to it.",
       },
+      { kind: "swipe-demo", demo: "error", caption: "No interaction confirmation = confused users" },
 
       { kind: "subheading", text: "Wait, come back" },
       {

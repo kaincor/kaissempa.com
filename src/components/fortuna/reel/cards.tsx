@@ -198,15 +198,17 @@ export function AppliedFace({ refs }: { refs: (key: string) => (el: HTMLElement 
  * The job seeker's home screen furniture: header and the two buttons.
  *
  * `buttons: false` leaves the buttons to the caller, for a screen that
- * presses them.
+ * presses them. `profileDone` draws the profile icon as it is once the bio is
+ * complete: grey, with no orange dot asking for attention.
  */
-export function AppChrome({ buttons = true }: { buttons?: boolean } = {}) {
+export function AppChrome({ buttons = true, profileDone = false }: { buttons?: boolean; profileDone?: boolean } = {}) {
+  const person = profileDone ? "#6f8b81" : GREEN;
   return (
     <>
       <svg style={{ position: "absolute", left: 32, top: 56 }} width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
-        <circle cx="12" cy="9" r="6" fill={GREEN} />
-        <path d="M1 27c0-6.6 5-11 11-11s11 4.4 11 11z" fill={GREEN} />
-        <circle cx="24" cy="4" r="3" fill={ORANGE} />
+        <circle cx="12" cy="9" r="6" fill={person} />
+        <path d="M1 27c0-6.6 5-11 11-11s11 4.4 11 11z" fill={person} />
+        {!profileDone && <circle cx="24" cy="4" r="3" fill={ORANGE} />}
       </svg>
       <div style={{ position: "absolute", left: 129, top: 59, display: "flex", fontSize: 22.5, lineHeight: 0 }}>
         <FortunaWordmark title="fortuna" />

@@ -9,7 +9,7 @@ import GoalList from "./GoalList";
 import Persona from "./Persona";
 import KindredReel from "./reel/KindredReel";
 import Reel from "./reel/Reel";
-import SpineDemo from "./swipe/SpineDemo";
+import SwipeDemo from "./swipe/SwipeDemo";
 import NightSky from "./NightSky";
 import { hasFill } from "@/content/fortuna";
 import type { Align, Block, Rich, Token, Tone } from "@/content/fortuna";
@@ -731,7 +731,7 @@ function blockNode(
     case "reveal":
       return block.variant === "kindred" ? <KindredReel key={i} label={block.label} /> : <Reel key={i} label={block.label} />;
     case "swipe-demo":
-      return <SpineDemo key={i} caption={block.caption} />;
+      return <SwipeDemo key={i} demo={block.demo} caption={block.caption} />;
   }
 }
 
