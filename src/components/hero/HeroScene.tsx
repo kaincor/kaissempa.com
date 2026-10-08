@@ -280,13 +280,14 @@ export default function HeroScene({
             const sway = new Float32Array(pos.count);
             for (let i = 0; i < pos.count; i++) sway[i] = ((ys[i] - lo) / h) ** 2 * h;
             mesh.geometry.setAttribute("sway", new THREE.BufferAttribute(sway, 1));
+            mesh.geometry.setAttribute("lean", new THREE.BufferAttribute(new Float32Array(pos.count), 1));
             const src = mesh.material as THREE_NS.Material;
             if (!grassMats.has(src)) {
               const m = src.clone();
               m.onBeforeCompile = (shader) => {
                 shader.uniforms.windTime = windTime;
                 shader.vertexShader = shader.vertexShader
-                  .replace("#include <common>", "#include <common>\nattribute float sway;\nuniform float windTime;")
+                  .replace("#include <common>", "#include <common>\nattribute float sway;\nattribute float lean;\nuniform float windTime;")
                   .replace(
                     "#include <begin_vertex>",
                     `#include <begin_vertex>
@@ -296,9 +297,19 @@ export default function HeroScene({
                       float ph = position.x * ${WIND.spread.toFixed(4)} + position.z * ${(WIND.spread * 0.7).toFixed(4)};
                       float w = windTime * ${((2 * Math.PI) / WIND.period).toFixed(4)};
                       float g = windTime * ${((2 * Math.PI) / WIND.gust).toFixed(4)};
-                      float k = 0.75 * (sin(w + ph) - sin(ph)) + 0.25 * (sin(g + ph * 0.6) - sin(ph * 0.6));
-                      transformed.x += k * sway * ${WIND.amount.toFixed(4)};
-                      transformed.z += k * sway * ${(WIND.amount * 0.35).toFixed(4)};
+                      // The wave runs left to right across the ridge, and
+                      // pushes harder rightward than it lets go, so it reads
+                      // as a wind from the left rather than a rocking.
+                      float k = 0.75 * (sin(w - ph) + sin(ph)) + 0.25 * (sin(g - ph * 0.6) + sin(ph * 0.6));
+                      k = 0.75 * k + 0.25 * abs(k);
+                      // A blade growing sideways (lean near 1) is pushed along
+                      // its own length by a sideways wind, which only looks
+                      // like squeezing; it bobs instead, dipping as the gust
+                      // comes through. Upright blades sway side to side.
+                      float side = 1.0 - 0.85 * abs(lean);
+                      transformed.x += k * sway * side * ${WIND.amount.toFixed(4)};
+                      transformed.y -= k * sway * lean * ${(WIND.amount * 0.7).toFixed(4)};
+                      transformed.z += k * sway * side * ${(WIND.amount * 0.35).toFixed(4)};
                     }`,
                   );
               };
@@ -337,7 +348,31 @@ export default function HeroScene({
           const index: number[] = [];
           let seed = 3;
           const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+          // Each of Kai's strokes, and around it a few more of its kind — the
+          // same base give or take a hair, turned a little, longer or shorter
+          // — so each spot he marked grows a cluster rather than a few
+          // separate blades.
+          const strokes: [number, number][][] = [];
           for (const stroke of GRASS_STROKES) {
+            strokes.push(stroke);
+            const [fu, fv] = stroke[0];
+            for (let c = 0; c < BLADE.cluster; c++) {
+              const turn = (rnd() - 0.5) * 0.5;
+              const scale = 0.7 + rnd() * 0.45;
+              const du = (rnd() - 0.5) * 0.012;
+              const cos = Math.cos(turn);
+              const sin = Math.sin(turn);
+              strokes.push(
+                stroke.map(([u, v]) => {
+                  const x = (u - fu) * scale;
+                  const y = (v - fv) * scale;
+                  return [fu + du + x * cos - y * sin, fv + x * sin + y * cos] as [number, number];
+                }),
+              );
+            }
+          }
+          const lean: number[] = [];
+          for (const stroke of strokes) {
             const [bu, bv] = stroke[0];
             // The skyline below the base: the first of the rock down its column.
             let sky: THREE_NS.Vector3 | undefined;
@@ -388,6 +423,7 @@ export default function HeroScene({
                 const q = at(p.x - dir.y * half * s, p.y + dir.x * half * s, depth);
                 pos.push(q.x, q.y, q.z);
                 sway.push(t * t * tall * give);
+                lean.push(along.x);
               }
               if (i < n) {
                 const a = base + i * 2;
@@ -400,6 +436,7 @@ export default function HeroScene({
             const g = new THREE.BufferGeometry();
             g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
             g.setAttribute("sway", new THREE.Float32BufferAttribute(sway, 1));
+            g.setAttribute("lean", new THREE.Float32BufferAttribute(lean, 1));
             g.setIndex(index);
             g.computeVertexNormals();
             rg.add(new THREE.Mesh(g, mat));
@@ -501,6 +538,7 @@ export default function HeroScene({
             g.setAttribute("position", floatAttr(src.attributes.position, 3));
             if (src.attributes.normal) g.setAttribute("normal", floatAttr(src.attributes.normal, 3));
             if (src.attributes.sway) g.setAttribute("sway", floatAttr(src.attributes.sway, 1));
+            if (src.attributes.lean) g.setAttribute("lean", floatAttr(src.attributes.lean, 1));
             g.setAttribute("uv", src.attributes.uv ? floatAttr(src.attributes.uv, 2) : new THREE.BufferAttribute(new Float32Array(src.attributes.position.count * 2), 2));
             const idx = src.index ? Array.from(src.index.array as ArrayLike<number>) : Array.from({ length: src.attributes.position.count }, (_, i) => i);
             const m = new THREE.Matrix4().multiplyMatrices(inv, mesh.matrixWorld);
@@ -762,9 +800,10 @@ const GRASS_DROP = [1, 4, 6, 9];
  * Kai's blades: how wide at the base and how far each runs on below it (in
  * units of the screen's height), how far behind the skyline it stands (a
  * share of its distance from the camera), how many times its drawn length
- * it grows to and the least length it may have (screen-height units), and
- * how far its tip droops (a share of its length).
+ * it grows to and the least length it may have (screen-height units), how
+ * far its tip droops (a share of its length), and how many more blades grow
+ * around each one Kai drew.
  */
-const BLADE = { width: 0.0024, root: 0.012, back: 0.004, grow: 2, min: 0.075, droop: 0.22 };
+const BLADE = { width: 0.0018, root: 0.012, back: 0.004, grow: 2, min: 0.075, droop: 0.22, cluster: 2 };
 /** How much wider each grass blade is drawn than it was modelled. */
 const GRASS_WIDTH = 1.6;
