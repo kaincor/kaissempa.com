@@ -33,7 +33,7 @@ const LAYOUT = {
     group: { p: [136.35, -0.66, -112.25] },
   },
   phone: {
-    title: { p: [152.059, 346.77, -339.687], s: 0.3 },
+    title: { p: [152.059, 346.77, -339.687], s: 0.4 },
     group: { p: [107.857, 23.315, -124.092] },
   },
 } as const;
@@ -72,20 +72,18 @@ export default function HeroScene({
       const { mergeGeometries } = await import("three/addons/utils/BufferGeometryUtils.js");
       if (disposed) return;
 
-      // A phone draws at 1.5x rather than 2x: 44% fewer pixels on every
-      // frame, and indistinguishable at that size. (A lighter model was
-      // tried too — the rock photo at 1024 — but the rock lost the fine grain
-      // that makes it Spline's, for a quarter of a megabyte.) Decided by the
-      // device's screen, not the window, so it never switches mid-visit.
+      // A phone, by its screen rather than its window, so it never switches
+      // mid-visit. On a phone the rock is a still (see "The rock as a still"
+      // below), which takes the heaviest shader in the scene off the GPU, so
+      // the rest can draw at full sharpness.
       const phone = Math.min(window.screen.width, window.screen.height) <= 500;
       const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
       renderer.setClearColor(0x000000, 0);
       renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
       renderer.toneMapping = THREE.NoToneMapping;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, phone ? 1.5 : 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       const canvas = renderer.domElement;
       canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block";
-      el.appendChild(canvas);
 
       const loader = new GLTFLoader();
       loader.setMeshoptDecoder(MeshoptDecoder);
@@ -138,6 +136,7 @@ export default function HeroScene({
       const O = MODE.overlay;
       const PHYS = (rough: number, metal: number) => ({ rough, metal });
       const swapped = new Map<THREE_NS.Material, THREE_NS.Material>();
+      let rockMat: THREE_NS.Material | undefined;
       const restyle = (src: THREE_NS.MeshStandardMaterial, meshName: string): THREE_NS.Material => {
         const hex = src.color.getHexString(THREE.SRGBColorSpace);
         // Spline uses its hex values as linear numbers; so do we.
@@ -186,10 +185,11 @@ export default function HeroScene({
             specularIntensity: 1,
             specularColor: new THREE.Color(ROCK.specular, ROCK.specular, ROCK.specular),
           });
-          return applyLayers(m, {
+          rockMat = applyLayers(m, {
             base: { texture: true },
             light: { mode: MODE.normal, alpha: 0.9, gain: ROCK.gain },
           });
+          return rockMat;
         }
         if (hex === "373737") {
           // The saddle.
@@ -349,6 +349,38 @@ export default function HeroScene({
         for (const root of moving) mergeUnder(root, moving);
       }
 
+      // ── The rock as a still, on a phone ─────────────────────────────────
+      // The rock fills most of a phone's screen and is the costliest thing
+      // drawn: a wet, bumped, physically lit surface, every pixel, every
+      // frame, scroll or no scroll. On a phone there is no cursor to move its
+      // light, so it never changes — and a picture of it, rendered by this
+      // same renderer (rock.webp, taken from /lab/hero), is all it needs to
+      // be. The rock stays in the scene as depth alone, drawn first and
+      // invisibly, so the grass roots and the figure's feet still tuck behind
+      // its edge; the bike, the figure, the title and the grass stay live.
+      // Only in the phone layout: a phone turned on its side gets the wide
+      // layout, and the live rock with it.
+      let rock: THREE_NS.Mesh | undefined;
+      scene.traverse((o) => {
+        if ((o as THREE_NS.Mesh).isMesh && (o as THREE_NS.Mesh).material === rockMat) rock = o as THREE_NS.Mesh;
+      });
+      const depthOnly = new THREE.MeshBasicMaterial({ colorWrite: false });
+      const still = document.createElement("picture");
+      still.style.cssText = "position:absolute;inset:0;pointer-events:none;display:none";
+      // Filled in on a phone only, so nothing else ever downloads it.
+      if (phone) {
+        still.innerHTML = '<source type="image/avif" srcset="/hero/rock-phone.avif"><img src="/hero/rock-phone.webp" alt="" decoding="async" draggable="false">';
+        (still.lastElementChild as HTMLElement).style.cssText = "position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none;transform:translateX(-50%)";
+      }
+      el.appendChild(still);
+      el.appendChild(canvas);
+      const showStill = (on: boolean) => {
+        if (!rock || !rockMat) return;
+        rock.material = on ? depthOnly : rockMat;
+        rock.renderOrder = on ? -1 : 0;
+        still.style.display = on ? "block" : "none";
+      };
+
       // ── Layout, floats and the cursor light ─────────────────────────────
       const title = byName("Floating Title");
       const group = byName("Responsive Group");
@@ -409,6 +441,7 @@ export default function HeroScene({
           layoutAt = clock;
           layoutFrom = 0;
         }
+        showStill(phone && layout === "phone");
       };
       let clock = 0;
       layout = (el.clientWidth || 1) <= PHONE_MAX ? "phone" : "wide";
@@ -434,7 +467,17 @@ export default function HeroScene({
       // /lab/hero, so the swap from still to live shows no change. Retake
       // them whenever the scene's look changes.
       if (process.env.NODE_ENV !== "production") {
-        (window as unknown as Record<string, unknown>).__heroPoster = async (w: number, h: number, phone: boolean) => {
+        // `rockOnly` renders the rock by itself, for the phone's still of it.
+        (window as unknown as Record<string, unknown>).__heroPoster = async (w: number, h: number, phone: boolean, rockOnly = false) => {
+          showStill(false);
+          const hidden: THREE_NS.Object3D[] = [];
+          if (rockOnly)
+            scene.traverse((o) => {
+              if ((o as THREE_NS.Mesh).isMesh && o !== rock && o.visible) {
+                o.visible = false;
+                hidden.push(o);
+              }
+            });
           layout = phone ? "phone" : "wide";
           layoutAt = -10;
           place(1);
@@ -453,7 +496,9 @@ export default function HeroScene({
             o.rotation.y = ry;
           }
           renderer.render(scene, camera);
-          return await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
+          const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
+          for (const o of hidden) o.visible = true;
+          return blob;
         };
       }
 
@@ -463,12 +508,23 @@ export default function HeroScene({
       let visible = true;
       const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting));
       io.observe(el);
+      // A phone that cannot keep up draws every other frame instead of
+      // dropping them at random: the grass and the floats are slow enough
+      // that 30 even frames read smoother than 60 ragged ones, and the page's
+      // own scrolling gets the time back. Judged on a running average of
+      // the frame time, so a single slow frame never trips it.
+      let avg = 1 / 60;
+      let half = false;
+      let skip = false;
       const tick = (now: number) => {
         raf = requestAnimationFrame(tick);
         const dt = Math.min(0.1, (now - last) / 1000);
         last = now;
         if (!visible) return;
         clock += dt;
+        avg += (dt - avg) * 0.05;
+        if (phone && !half && avg > 1 / 45) half = true;
+        if (half && (skip = !skip)) return;
         draw(clock);
         if (first) {
           first = false;
@@ -484,6 +540,7 @@ export default function HeroScene({
         window.removeEventListener("pointermove", onMove);
         renderer.dispose();
         canvas.remove();
+        still.remove();
       };
     })();
 

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {
+  AnimatePresence,
   animate,
   motion,
   motionValue,
@@ -45,8 +46,8 @@ const POP_STAGGER = 0.07;
 /** How long after the pop the hint comes up, s. */
 const HINT_AFTER = 0.5;
 /** How long the hint stays up, and when in that time the top card demonstrates, s. */
-const HINT_FOR = 0.5;
-const DEMO_AT = 0.2;
+const HINT_FOR = 1;
+const DEMO_AT = 0.35;
 
 const SETTLE = { type: "spring", stiffness: 320, damping: 28 } as const;
 const POP = { type: "spring", stiffness: 420, damping: 22 } as const;
@@ -187,7 +188,9 @@ export default function SwipeDeck({
               front={slot === 0}
               sizes={sizes}
               radius={radius}
-              shadow={shadow}
+              // Only the cards that can show one. Deeper in the pile a blurred
+              // shadow is hidden under the cards above it but still painted.
+              shadow={slot < 3 ? shadow : "none"}
               priority={slot < 2}
               onDragStart={dismiss}
               onDragEnd={(info) => onDragEnd(i, info)}
@@ -200,7 +203,10 @@ export default function SwipeDeck({
         );
       })}
 
-      <Hint on={hint} />
+      {/* Off the page entirely once it has faded, not just transparent: its
+          frosted blur is costly to keep composited on a phone, and it was
+          being redrawn behind the deck on every frame of a scroll past. */}
+      <AnimatePresence>{hint && <Hint key="hint" />}</AnimatePresence>
     </div>
   );
 }
@@ -249,7 +255,8 @@ function Card({
         cursor: front ? "grab" : undefined,
         // Vertical swipes still scroll the page on a phone.
         touchAction: "pan-y",
-        willChange: "transform",
+        // Its own layer only on top, the one card that moves under a finger.
+        willChange: front ? "transform" : undefined,
       }}
       whileDrag={{ cursor: "grabbing" }}
     >
@@ -268,12 +275,13 @@ function Card({
 }
 
 /** A roughly drawn pointing hand and "SWIPE!", sliding back and forth over the bottom of the deck. */
-function Hint({ on }: { on: boolean }) {
+function Hint() {
   return (
     <motion.div
       aria-hidden="true"
-      initial={false}
-      animate={{ opacity: on ? 1 : 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
       style={{
         position: "absolute",
@@ -287,8 +295,8 @@ function Hint({ on }: { on: boolean }) {
       }}
     >
       <motion.div
-        animate={on ? { x: [-18, 18] } : { x: 0 }}
-        transition={on ? { duration: 0.5, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" } : { duration: 0.25 }}
+        animate={{ x: [-18, 18] }}
+        transition={{ duration: 0.5, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
         className="display"
         style={{
           display: "flex",
