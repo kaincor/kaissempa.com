@@ -356,7 +356,9 @@ export default function HeroScene({
           for (const stroke of GRASS_STROKES) {
             strokes.push(stroke);
             const [fu, fv] = stroke[0];
-            for (let c = 0; c < BLADE.cluster; c++) {
+            // `cluster` may be fractional: the remainder is the chance of one more.
+            const more = Math.floor(BLADE.cluster) + (rnd() < BLADE.cluster % 1 ? 1 : 0);
+            for (let c = 0; c < more; c++) {
               const turn = (rnd() - 0.5) * 0.5;
               const scale = 0.7 + rnd() * 0.45;
               const du = (rnd() - 0.5) * 0.012;
@@ -802,8 +804,8 @@ const GRASS_DROP = [1, 4, 6, 9];
  * share of its distance from the camera), how many times its drawn length
  * it grows to and the least length it may have (screen-height units), how
  * far its tip droops (a share of its length), and how many more blades grow
- * around each one Kai drew.
+ * around each one Kai drew, on average.
  */
-const BLADE = { width: 0.0018, root: 0.012, back: 0.004, grow: 2, min: 0.075, droop: 0.22, cluster: 2 };
+const BLADE = { width: 0.0018, root: 0.012, back: 0.004, grow: 2, min: 0.075, droop: 0.22, cluster: 1.4 };
 /** How much wider each grass blade is drawn than it was modelled. */
 const GRASS_WIDTH = 1.6;
