@@ -352,29 +352,42 @@ export default function HeroScene({
             const drop = Math.max(0, bv - skyV);
             // The stroke as a smooth curve, root first: run on below the base,
             // then through Kai's points with a touch of extra bend.
-            const pts = stroke.map(([u, v]) => new THREE.Vector2(u, v - drop));
-            const root = pts[0].clone().add(new THREE.Vector2(0, -BLADE.root));
+            // Kai's stroke, drawn out longer from its base the way it points
+            // — his marks are short for grass this size — with the shortest
+            // brought up to a floor, so every blade reads as long and slender
+            // like the clump left of the bike.
+            const drawn = stroke.map(([u, v]) => new THREE.Vector2(u, v - drop));
+            const foot = drawn[0];
+            const reach = foot.distanceTo(drawn[drawn.length - 1]) || 1e-6;
+            const grow = Math.max(BLADE.grow, BLADE.min / reach) * (0.85 + rnd() * 0.3);
+            const pts = drawn.map((p) => foot.clone().add(p.clone().sub(foot).multiplyScalar(grow)));
+            const root = foot.clone().add(new THREE.Vector2(0, -BLADE.root));
             const tip = pts[pts.length - 1];
-            const bend = (rnd() - 0.5) * BLADE.bend * root.distanceTo(tip);
+            const len = root.distanceTo(tip);
+            // A droop toward the way it leans, growing toward the tip, as a
+            // long blade's own weight would bend it; upright ones droop to
+            // either side at random.
+            const along = tip.clone().sub(root).normalize();
+            const down = new THREE.Vector2(along.y, -along.x);
+            if (down.y > 0 || (Math.abs(along.x) < 0.15 && rnd() < 0.5)) down.negate();
+            const droop = BLADE.droop * (0.6 + rnd() * 0.8) * len;
             const curve = new THREE.SplineCurve([root, ...pts]);
-            const n = 8;
-            const line = curve.getSpacedPoints(n).map((p, i) => {
-              const t = i / n;
-              const side = new THREE.Vector2(-(tip.y - root.y), tip.x - root.x).normalize();
-              return p.clone().addScaledVector(side, bend * Math.sin(Math.PI * t));
-            });
+            const n = 12;
+            const line = curve.getSpacedPoints(n).map((p, i) => p.clone().addScaledVector(down, droop * (i / n) ** 2));
             const base = pos.length / 3;
             const tall = at(root.x, root.y, depth).distanceTo(at(tip.x, tip.y, depth));
+            // Each blade moves a little more or less than its neighbours.
+            const give = 0.7 + rnd() * 0.6;
             line.forEach((p, i) => {
               const t = i / n;
               const next = line[Math.min(i + 1, n)];
               const prev = line[Math.max(i - 1, 0)];
               const dir = next.clone().sub(prev).normalize();
-              const half = (BLADE.width * (1 - 0.88 * t)) / 2;
+              const half = (BLADE.width * (1 - 0.94 * t)) / 2;
               for (const s of [-1, 1]) {
                 const q = at(p.x - dir.y * half * s, p.y + dir.x * half * s, depth);
                 pos.push(q.x, q.y, q.z);
-                sway.push(t * t * tall);
+                sway.push(t * t * tall * give);
               }
               if (i < n) {
                 const a = base + i * 2;
@@ -746,11 +759,12 @@ const WIND = { amount: 0.24, period: 4.5, gust: 12, spread: 0.02 };
  */
 const GRASS_DROP = [1, 4, 6, 9];
 /**
- * Kai's blades: how wide at the base and how far each runs on below it (both
- * in units of the screen's height), how far behind the skyline it stands (a
- * share of its distance from the camera), and how much each bows at random
- * (a share of its length).
+ * Kai's blades: how wide at the base and how far each runs on below it (in
+ * units of the screen's height), how far behind the skyline it stands (a
+ * share of its distance from the camera), how many times its drawn length
+ * it grows to and the least length it may have (screen-height units), and
+ * how far its tip droops (a share of its length).
  */
-const BLADE = { width: 0.0045, root: 0.012, back: 0.004, bend: 0.12 };
+const BLADE = { width: 0.0024, root: 0.012, back: 0.004, grow: 2, min: 0.075, droop: 0.22 };
 /** How much wider each grass blade is drawn than it was modelled. */
 const GRASS_WIDTH = 1.6;
