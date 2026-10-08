@@ -70,12 +70,31 @@ export default function PhoneMockup({ width, children }: { width: string; childr
   );
 }
 
+/** The dot grid's spacing and its padding around what sits on it. */
+const DOTS = "radial-gradient(circle, rgba(50, 68, 62, 0.28) 1.1px, transparent 1.6px)";
+const PAD = "clamp(36px, 6vw, 64px)";
+/** The grid's own fade, toward its edges. */
+const FADE = "radial-gradient(ellipse 70% 62% at 50% 50%, #000 45%, transparent 100%)";
+/**
+ * The patch behind a caption under the phone: an ellipse around its one line,
+ * centred half a line above the grid's bottom padding.
+ */
+const PATCH = `radial-gradient(ellipse 230px 30px at 50% calc(100% - ${PAD} - 11px), #000 50%, transparent 100%)`;
+
 /**
  * The dot grid the demos sit on: a designer's canvas, so the phone reads as
  * a mockup of how the app is used rather than a product shot. Faint, and
- * fading out toward its edges.
+ * fading out toward its edges. On a phone it runs out to the screen's edges
+ * rather than stopping at the text column's.
+ *
+ * `captioned` softens the dots behind a caption under the phone, so the line
+ * reads clean: the sharp dots are cut away there and a blurred copy of the
+ * same grid, in the same place, shows instead. A blurred copy rather than a
+ * backdrop blur, which a phone would recompute on every frame of a scroll.
  */
-export function DotField({ children }: { children: ReactNode }) {
+export function DotField({ children, captioned = false }: { children: ReactNode; captioned?: boolean }) {
+  const layer = "absolute top-0 bottom-0 left-0 right-0 max-sm:left-[calc(50%-50vw)] max-sm:right-[calc(50%-50vw)]";
+  const dots = { backgroundImage: DOTS, backgroundSize: "14px 14px", backgroundPosition: "center" };
   return (
     <div
       style={{
@@ -83,22 +102,28 @@ export function DotField({ children }: { children: ReactNode }) {
         width: "100%",
         display: "flex",
         justifyContent: "center",
-        padding: "clamp(36px, 6vw, 64px) 0",
+        padding: `${PAD} 0`,
         margin: "8px 0",
       }}
     >
       <div
         aria-hidden="true"
+        className={layer}
         style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: "radial-gradient(circle, rgba(50, 68, 62, 0.28) 1.1px, transparent 1.6px)",
-          backgroundSize: "14px 14px",
-          backgroundPosition: "center",
-          maskImage: "radial-gradient(ellipse 70% 62% at 50% 50%, #000 45%, transparent 100%)",
-          WebkitMaskImage: "radial-gradient(ellipse 70% 62% at 50% 50%, #000 45%, transparent 100%)",
+          ...dots,
+          maskImage: captioned ? `${FADE}, ${PATCH}` : FADE,
+          WebkitMaskImage: captioned ? `${FADE}, ${PATCH}` : FADE,
+          maskComposite: captioned ? "subtract" : undefined,
+          WebkitMaskComposite: captioned ? "source-out" : undefined,
         }}
       />
+      {captioned && (
+        <div
+          aria-hidden="true"
+          className={layer}
+          style={{ ...dots, filter: "blur(1.6px)", opacity: 0.75, maskImage: PATCH, WebkitMaskImage: PATCH }}
+        />
+      )}
       <div style={{ position: "relative" }}>{children}</div>
     </div>
   );

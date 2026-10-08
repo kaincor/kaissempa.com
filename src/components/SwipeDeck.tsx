@@ -19,8 +19,9 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
  * iMessage: drag the top one off to either side, or tap it, and it tucks in
  * at the back while the next comes up to the front.
  *
- * The cards pop in when the deck comes into view, and then, so the gesture is
- * discoverable without buttons, a small hand slides back and forth saying
+ * When the deck comes into view the cards rise into a fan, like the fan deck
+ * on a wider screen, hold it a moment, then gather into the middle and grow
+ * into the pile. Then, so the gesture is discoverable without buttons, a small hand slides back and forth saying
  * "Swipe" while the top card demonstrates once by jumping to the back on its
  * own. Both stop for good the moment the reader touches the deck.
  */
@@ -41,16 +42,38 @@ function defaultPose(slot: number): Pose {
 /** Past this far, or this fast, a drag sends the card to the back. */
 const THROW_DISTANCE = 70;
 const THROW_VELOCITY = 450;
-/** When the cards start popping in once the deck is in view, and their spacing. */
-const POP_STAGGER = 0.07;
-/** How long after the pop the hint comes up, s. */
-const HINT_AFTER = 0.5;
+/**
+ * The entrance, in seconds: the fan rises in from the middle outward, holds,
+ * then gathers. `fanStagger` is the delay per card away from the middle.
+ */
+const ENTER = { fanStagger: 0.06, gatherAt: 1.15, gathered: 2.0 };
+/** How long after the gather the hint comes up, s. */
+const HINT_AFTER = 0.3;
 /** How long the hint stays up, and when in that time the top card demonstrates, s. */
 const HINT_FOR = 1;
 const DEMO_AT = 0.35;
 
 const SETTLE = { type: "spring", stiffness: 320, damping: 28 } as const;
-const POP = { type: "spring", stiffness: 420, damping: 22 } as const;
+const FAN_IN = { type: "spring", stiffness: 240, damping: 24 } as const;
+const GATHER = { type: "spring", stiffness: 190, damping: 21 } as const;
+
+/**
+ * Where each card sits in the fan, by its depth in the pile: the top card in
+ * the middle, the next either side of it, and so on outward, so every card
+ * is already stacked in the order the pile will have it and nothing has to
+ * cross over anything as they gather. The fan deck's own arc, tilt and
+ * falloff (FanDeck: 13px drop per step squared, 10 degrees, 7% smaller per
+ * step, neighbours half a card apart), scaled to fit the screen.
+ */
+function fanPose(slot: number, k: number, deckW: number) {
+  const step = Math.ceil(slot / 2);
+  const d = slot % 2 ? step : -step;
+  const w = deckW * k;
+  return {
+    d,
+    pose: { x: d * w * 0.49, y: 13 * (w / 240) * d * d, rotate: 10 * d, scale: k * (1 - 0.07 * Math.abs(d)) },
+  };
+}
 
 export default function SwipeDeck({
   cards,
@@ -89,11 +112,18 @@ export default function SwipeDeck({
   const [xs] = useState(() => cards.map(() => motionValue(0)));
   const busy = useRef(false);
 
-  /** Hint: up briefly after the pop, and gone early at the first touch. */
+  /** Hint: up briefly after the gather, and gone early at the first touch. */
   const [hint, setHint] = useState(false);
   const touched = useRef(false);
-  /** Whether the pop is over, after which a change of depth has no delay. */
+  /** Whether the entrance is over, after which a change of depth has no delay. */
   const [popped, setPopped] = useState(false);
+  /**
+   * The entrance. `set` puts the cards in the fan, unseen and a little low,
+   * in one step; `fan` raises them into view; `pile` gathers them.
+   */
+  const [phase, setPhase] = useState<"hidden" | "set" | "fan" | "pile">(reduced ? "pile" : "hidden");
+  /** The fan's size: its card scale, and the deck's width it is measured from. */
+  const [fan, setFan] = useState({ k: 0.4, w: 240 });
   const dismiss = useCallback(() => {
     touched.current = true;
     setHint(false);
@@ -121,10 +151,27 @@ export default function SwipeDeck({
     [n, xs],
   );
 
-  // After the pop: the hint comes up, and the top card shows the move once.
+  // The entrance: measured as it starts, so the fan fills the screen it is
+  // on — as wide as the window allows, but no wider than about twice the
+  // deck, where on a wide screen it would sweep across the copy beside it.
+  useEffect(() => {
+    if (!shown || reduced) return;
+    const w = box.current?.offsetWidth ?? 240;
+    const span = Math.min(window.innerWidth - 32, w * 1.9);
+    setFan({ k: Math.min(0.6, span / (w * (1 + (n - 1) * 0.49))), w });
+    setPhase("set");
+    let raf = requestAnimationFrame(() => (raf = requestAnimationFrame(() => setPhase("fan"))));
+    const g = setTimeout(() => setPhase("pile"), ENTER.gatherAt * 1000);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(g);
+    };
+  }, [shown, reduced, n]);
+
+  // After the gather: the hint comes up, and the top card shows the move once.
   useEffect(() => {
     if (!shown || reduced || n < 2) return;
-    const after = (POP_STAGGER * n + HINT_AFTER) * 1000;
+    const after = (ENTER.gathered + HINT_AFTER) * 1000;
     const a = setTimeout(() => {
       setPopped(true);
       if (!touched.current) setHint(true);
@@ -169,16 +216,33 @@ export default function SwipeDeck({
         const slot = order.indexOf(i);
         const pose = poseAt(slot);
         const at = { x: pose.x, y: pose.y, rotate: pose.rot, scale: pose.scale ?? 1 };
+        const f = fanPose(slot, fan.k, fan.w);
+        const far = Math.ceil((n - 1) / 2);
+        const target =
+          phase === "hidden"
+            ? { ...at, opacity: 0 }
+            : phase === "set"
+              ? { ...f.pose, y: f.pose.y + 30, opacity: 0 }
+              : phase === "fan"
+                ? { ...f.pose, opacity: 1 }
+                : { ...at, opacity: 1 };
+        const delayIn = Math.abs(f.d) * ENTER.fanStagger;
+        // The outer cards start in a beat ahead, so the fan closes from its
+        // ends toward the middle like a hand squaring up a deck.
+        const delayGather = (far - Math.abs(f.d)) * 0.035;
         return (
           <motion.div
             key={card.src}
-            initial={reduced ? false : { ...at, opacity: 0, scale: 0.6, y: pose.y + 24 }}
-            animate={shown ? { ...at, opacity: 1 } : undefined}
-            // The pop runs back to front so the top card lands last.
+            initial={reduced ? false : { ...at, opacity: 0 }}
+            animate={target}
             transition={
               popped
                 ? SETTLE
-                : { ...POP, delay: (n - 1 - slot) * POP_STAGGER, opacity: { duration: 0.2, delay: (n - 1 - slot) * POP_STAGGER } }
+                : phase === "fan"
+                  ? { ...FAN_IN, delay: delayIn, opacity: { duration: 0.35, delay: delayIn } }
+                  : phase === "pile"
+                    ? { ...GATHER, delay: delayGather }
+                    : { duration: 0 }
             }
             style={{ position: "absolute", inset: 0, zIndex: n - slot }}
           >

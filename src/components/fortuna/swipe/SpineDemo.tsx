@@ -181,7 +181,7 @@ export default function SpineDemo({ caption }: { caption?: string }) {
   }, [reduced]);
 
   return (
-    <DotField>
+    <DotField captioned={!!caption}>
       <div ref={host} role="img" aria-label="The Fortuna app's home screen: job cards swiped right to apply and left to dismiss, one after another.">
         <PhoneMockup width="min(300px, 68vw)">
           <AppChrome buttons={false} />
