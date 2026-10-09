@@ -498,6 +498,10 @@ export const SECTIONS: Section[] = [
       { kind: "swipe-demo", demo: "comeback", caption: "Users were swiping wayyy too fast" },
       {
         kind: "text",
+        text: "Fortuna was a young pup back then, and every listing came from us knocking on doors around Miami (and it probably would be that way until the app gained some traction). So when users flew through the feed, they could run out of jobs in a single sitting before locking in and looking with more intention.",
+      },
+      {
+        kind: "text",
         text: "We'd spent weeks stripping friction out of Fortuna, but that made it easy to get lost in the sauce of the swipe, so to speak. Driving the cost towards zero had cheapened the interaction. The psychological delta between a thirty minute application process and a one second swipe was large enough to stop users from caring.",
       },
       {
