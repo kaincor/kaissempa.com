@@ -125,12 +125,8 @@ export type Block =
   | { kind: "globe"; caption: Rich }
   /** The research persona, rebuilt as the sheet it came from. */
   | { kind: "persona"; persona: PersonaSheet }
-  /**
-   * The looping reel that reveals the product. Two cuts of it for now,
-   * labelled, so they can be compared on the page: the bouncy one, and one
-   * built the way the Kindred reel is.
-   */
-  | { kind: "reveal"; variant?: "kindred"; label?: string }
+  /** The looping reel that reveals the product. */
+  | { kind: "reveal" }
   /**
    * A phone on a dot grid, playing one of the swipe interactions the way a
    * screen recording would. One per beat of "How we got there".
@@ -383,15 +379,11 @@ export const SECTIONS: Section[] = [
         text: [
           "If you really get into the nitty gritty of what Sarah needs, it isn't really a job.",
           { br: true },
+          { br: true },
           "The jobs? They're out there. But sitting between Sarah and a job are lengthy commutes, childcare stuff, a carousel of applications, a waiting game (that may all lead to nothing). It all really just boils down to friction.",
           { br: true },
           "Sarah just needs to reduce the friction between her current reality and the life she wants to build.",
         ],
-      },
-      {
-        kind: "quote",
-        rules: true,
-        text: "How do we reduce the cost of getting back to work?",
       },
       {
         kind: "text",
@@ -408,6 +400,11 @@ export const SECTIONS: Section[] = [
             fill: true,
           },
         ],
+      },
+      {
+        kind: "quote",
+        rules: true,
+        text: "How do we reduce the cost of getting back to work?",
       },
     ],
   },
@@ -462,13 +459,7 @@ export const SECTIONS: Section[] = [
     heading: "Introducing Fortuna",
     tone: "cream",
     blocks: [
-      {
-        kind: "quote",
-        rules: true,
-        text: "Looking for work shouldn't feel like another job. Apply with a swipe and respond to employer interest with an in-app video introduction.",
-      },
-      { kind: "reveal", label: "A · Bouncy" },
-      { kind: "reveal", variant: "kindred", label: "B · After Kindred" },
+      { kind: "reveal" },
     ],
   },
   {

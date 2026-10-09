@@ -16,7 +16,6 @@ import {
   ORANGE,
 } from "./cards";
 import { PROMO_DOTS, SPLASH_DOTS } from "./dots";
-import { ReelLabel } from "./KindredReel";
 import {
   at,
   between,
@@ -307,7 +306,7 @@ function stageColour(t: number) {
 type El = HTMLElement | SVGElement;
 type Reg = (key: string) => (el: El | null) => void;
 
-export default function Reel({ label }: { label?: string }) {
+export default function Reel() {
   const reduced = useReducedMotion();
   const stage = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ W: 1200, H: 800 });
@@ -1124,7 +1123,6 @@ export default function Reel({ label }: { label?: string }) {
         <path ref={reg("mk-dot")} d={DOT} fill={ORANGE} />
       </svg>
 
-      {label && <ReelLabel text={label} />}
     </div>
   );
 }
