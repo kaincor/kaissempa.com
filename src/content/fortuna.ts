@@ -511,7 +511,7 @@ export const SECTIONS: Section[] = [
       },
       {
         kind: "text",
-        text: "My friend Athena brought up Chesterson's Fence, which says that you shouldn't tear down a fence or tradition without understanding why it was put there in the first place.",
+        text: "My friend Athena brought up Chesterton's Fence, a concept that warns against eliminating a rule or tradition before understanding why it was established in the first place.",
       },
       {
         kind: "text",
