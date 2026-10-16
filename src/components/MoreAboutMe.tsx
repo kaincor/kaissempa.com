@@ -60,6 +60,8 @@ export default function MoreAboutMe({
   ridgeHeight = "clamp(75px, 11vw, 190px)",
   color = "#000000",
   aboveColor = "#d4d4d4",
+  headingAs,
+  topPad = "clamp(34px, 8svh, 84px)",
 }: {
   /** The ridge that opens the section. */
   range: Range;
@@ -67,6 +69,10 @@ export default function MoreAboutMe({
   ridgeHeight?: string;
   color?: string;
   aboveColor?: string;
+  /** "h1" on the About page, where this section opens the page. */
+  headingAs?: "h1" | "h2";
+  /** Room above the heading; more where it is the top of a page. */
+  topPad?: string;
 }) {
   const reduced = useReducedMotion();
   const copy = useRef<HTMLDivElement>(null);
@@ -91,11 +97,11 @@ export default function MoreAboutMe({
         style={{
           // Enough to clear the floating navbar, which sits at top 20 and is
           // 42 tall and centred on the same axis as this heading.
-          paddingTop: "clamp(34px, 8svh, 84px)",
+          paddingTop: topPad,
           paddingBottom: "clamp(6px, 1.4svh, 18px)",
         }}
       >
-        <SectionHeading paddingTop={0} paddingBottom={0}>
+        <SectionHeading paddingTop={0} paddingBottom={0} as={headingAs}>
           {heading}
         </SectionHeading>
       </div>

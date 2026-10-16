@@ -36,7 +36,29 @@ const ZORZAL_WINE = { rgb: "152 60 68", alpha: 0.6 };
 const FORTUNA_GREEN = { rgb: "105 189 69", alpha: 0.62 };
 const POND_MAGE_PURPLE = { rgb: "157 114 170", alpha: 0.62 };
 
-export default function ProjectsAndProducts() {
+/**
+ * A line or two about each project, shown under its thumbnail on the Work
+ * page. `filler` marks copy Kai has yet to write: faded and tagged, so it
+ * cannot pass for the real thing.
+ */
+type Info = { role: string; year: string; blurb: string; filler?: boolean };
+const INFO: Record<string, Info> = {
+  Fortuna: {
+    role: "Product designer",
+    year: "2022",
+    blurb: "A swipe-to-work app that launched in Miami. I worked on the brand, the app, and everything in between.",
+  },
+  Zorzal: { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
+  "Mark of the Witch": { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
+  "Pond Mage": { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
+};
+
+/**
+ * `detailed` is the Work page: the same thumbnails, each with its role, year
+ * and a line about it, and the heading set as the page's own title.
+ */
+export default function ProjectsAndProducts({ detailed = false }: { detailed?: boolean } = {}) {
+  const info = (label: string) => (detailed ? INFO[label] : undefined);
   return (
     <section
       style={{
@@ -49,13 +71,15 @@ export default function ProjectsAndProducts() {
         gap: GAP,
       }}
     >
-      <SectionHeading paddingTop={40}>Projects &amp; Products</SectionHeading>
+      <SectionHeading paddingTop={detailed ? "clamp(110px, 18svh, 170px)" : 40} as={detailed ? "h1" : undefined}>
+        Projects &amp; Products
+      </SectionHeading>
 
-      <Thumb label="Fortuna" href={null} shadow={FORTUNA_GREEN}>
+      <Thumb label="Fortuna" href={null} shadow={FORTUNA_GREEN} info={info("Fortuna")}>
         <FortunaThumb href="/fortuna" label="Fortuna" />
       </Thumb>
 
-      <Thumb label="Zorzal" background="#ffffff" shadow={ZORZAL_WINE}>
+      <Thumb label="Zorzal" background="#ffffff" shadow={ZORZAL_WINE} info={info("Zorzal")}>
         <CloudDrift
           layers={[
             { src: "/case-studies/cloud-1.svg", heightPct: 94.6, aspect: 2.452, duration: 26 },
@@ -100,7 +124,7 @@ export default function ProjectsAndProducts() {
         />
       </Thumb>
 
-      <Thumb label="Mark of the Witch">
+      <Thumb label="Mark of the Witch" info={info("Mark of the Witch")}>
         <Image
           src="/case-studies/mark-of-the-witch.jpg"
           alt="Mark of the Witch"
@@ -111,7 +135,7 @@ export default function ProjectsAndProducts() {
         />
       </Thumb>
 
-      <Thumb label="Pond Mage" shadow={POND_MAGE_PURPLE}>
+      <Thumb label="Pond Mage" shadow={POND_MAGE_PURPLE} info={info("Pond Mage")}>
         <Image
           src="/case-studies/pond-mage.jpg"
           alt="Pond Mage"
@@ -133,9 +157,12 @@ function Thumb({
   href = WIP,
   background,
   shadow,
+  info,
   children,
 }: {
   label: string;
+  /** The Work page's line about the project, under the thumbnail. */
+  info?: Info;
   /**
    * null means "not a link". It cannot be undefined: a default parameter only
    * applies to undefined, so `href={undefined}` silently falls back to WIP and
@@ -197,6 +224,40 @@ function Thumb({
           {frame}
         </div>
       )}
+      {info ? <Details label={label} info={info} /> : null}
     </motion.div>
+  );
+}
+
+function Details({ label, info }: { label: string; info: Info }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        gap: "6px 24px",
+        padding: "18px 6px 0",
+        opacity: info.filler ? 0.55 : 1,
+      }}
+    >
+      <div>
+        <div className="display" style={{ fontSize: "clamp(18px, 2vw, 22px)", color: "#111" }}>
+          {label}
+        </div>
+        <div style={{ fontSize: 14, color: "#555", marginTop: 4 }}>
+          {info.role} · {info.year}
+        </div>
+      </div>
+      <p style={{ margin: 0, flex: "1 1 320px", maxWidth: 520, fontSize: 15, lineHeight: 1.5, color: "#333" }}>
+        {info.filler ? (
+          <span style={{ fontWeight: 600, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#c2410c", marginRight: 8 }}>
+            filler
+          </span>
+        ) : null}
+        {info.blurb}
+      </p>
+    </div>
   );
 }

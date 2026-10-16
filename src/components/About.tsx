@@ -16,7 +16,7 @@ import FanDeck, {
  * long edge, which still covers a 240x360 card at 3x. Order here is the
  * left-to-right order in the fan.
  */
-const PHOTOS: FanDeckCard[] = [
+export const PHOTOS: FanDeckCard[] = [
   { src: "/photos/eating-breakfast-in-utah.jpg", alt: "Eating breakfast in Utah" },
   { src: "/photos/snowboarding-with-ben.jpg", alt: "Snowboarding with Ben" },
   { src: "/photos/kai-and-dia.jpg", alt: "Kai and Dia" },

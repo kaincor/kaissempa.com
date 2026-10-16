@@ -6,9 +6,23 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 const LINKS = [
-  { label: "Work", href: "/" },
+  { label: "Home", href: "/" },
+  { label: "Work", href: "/work" },
   { label: "About", href: "/about" },
 ];
+
+/**
+ * A link home from the home page glides back to the top rather than
+ * reloading: a reload would throw away the live hero and make the reader wait
+ * for it all over again, for a page they are already on. Anywhere else it is
+ * an ordinary link home.
+ */
+function toTopIfHome(e: React.MouseEvent, href: string, pathname: string | null) {
+  if (href !== "/" || pathname !== "/") return;
+  e.preventDefault();
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+}
 
 const NAV_WIDTH = 264;
 const BAR_HEIGHT = 42;
@@ -211,6 +225,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
         {logo ? (
           <Link
             href="/"
+            onClick={(e) => toTopIfHome(e, "/", pathname)}
             aria-label="Kai Ssempa, home"
             style={{ display: "flex", position: "relative", zIndex: 1 }}
           >
@@ -289,7 +304,10 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
             font={theme?.font}
             size={theme?.size}
             weight={theme?.weight}
-            onNavigate={() => setOpen(false)}
+            onNavigate={(e) => {
+              toTopIfHome(e, l.href, pathname);
+              setOpen(false);
+            }}
           >
             {l.label}
           </MenuLink>
@@ -313,7 +331,7 @@ function MenuLink({
   font?: string;
   size?: number;
   weight?: number;
-  onNavigate: () => void;
+  onNavigate: (e: React.MouseEvent) => void;
 }) {
   const [hot, setHot] = useState(false);
   return (

@@ -19,20 +19,24 @@ export default function SectionHeading({
   paddingBottom = 0,
   /** Negative values pull whatever follows upward. */
   marginBottom = 0,
+  /** "h1" where the heading is the page's own title rather than a section's. */
+  as = "h2",
 }: {
   children: ReactNode;
   color?: string;
-  paddingTop?: number;
-  paddingBottom?: number;
+  paddingTop?: number | string;
+  paddingBottom?: number | string;
   marginBottom?: number;
+  as?: "h1" | "h2";
 }) {
   const ref = useRef<HTMLHeadingElement>(null);
   const reduced = useReducedMotion();
   const inView = useInView(ref, { once: true, amount: 0.6 });
   const play = reduced ? true : inView;
 
+  const Tag = as === "h1" ? motion.h1 : motion.h2;
   return (
-    <motion.h2
+    <Tag
       ref={ref}
       className="display"
       initial={false}
@@ -52,6 +56,6 @@ export default function SectionHeading({
       }}
     >
       {children}
-    </motion.h2>
+    </Tag>
   );
 }
