@@ -659,7 +659,11 @@ function blockNode(
     case "text":
       return (
         <Body key={i} align={align} rules={block.rules}>
-          {hasFill(block.text) ? (
+          {block.filler ? (
+            <Filler>
+              <Inline nodes={block.text} />
+            </Filler>
+          ) : hasFill(block.text) ? (
             <ScrollFillLine nodes={block.text} />
           ) : (
             <Inline nodes={block.text} />
@@ -711,7 +715,17 @@ function blockNode(
         />
       );
     case "step":
-      return (
+      return block.filler ? (
+        <Filler key={i} block>
+          <Step
+            n={block.n}
+            title={block.title}
+            flow={block.flow}
+            text={block.text}
+            dark={dark}
+          />
+        </Filler>
+      ) : (
         <Step
           key={i}
           n={block.n}
@@ -735,3 +749,38 @@ function blockNode(
 }
 
 export { toneIsDark };
+
+/**
+ * Stand-in copy, marked as such: faded, in italics, with a small tag in front
+ * of it — the same flag an unnamed heading carries ("needs a title").
+ */
+function Filler({ children, block = false }: { children: ReactNode; block?: boolean }) {
+  const tag = (
+    <span
+      style={{
+        fontFamily: "var(--f-grotesk)",
+        fontStyle: "normal",
+        fontWeight: 600,
+        fontSize: 11,
+        letterSpacing: "0.1em",
+        textTransform: "uppercase",
+        color: "var(--f-accent)",
+        marginRight: 8,
+        verticalAlign: "middle",
+      }}
+    >
+      filler
+    </span>
+  );
+  return block ? (
+    <div style={{ opacity: 0.6 }}>
+      <div style={{ marginBottom: 6 }}>{tag}</div>
+      {children}
+    </div>
+  ) : (
+    <span style={{ opacity: 0.6, fontStyle: "italic" }}>
+      {tag}
+      {children}
+    </span>
+  );
+}

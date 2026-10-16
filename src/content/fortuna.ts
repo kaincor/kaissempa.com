@@ -88,6 +88,11 @@ export type Block =
        * line that is a finding rather than a step in the argument.
        */
       rules?: boolean;
+      /**
+       * Stand-in copy Kai has yet to write. Rendered faded and tagged, so it
+       * reads as a placeholder on the page and cannot ship by mistake.
+       */
+      filler?: boolean;
     }
   /** Set in italics in the doc — rendered as a serif pull-quote. */
   /** `tone` picks a brand colour for a line that has to land harder. */
@@ -115,7 +120,7 @@ export type Block =
       items: string[];
     }
   /** A labelled step with an arrow flow and its own explanation. */
-  | { kind: "step"; n: number; title: string; flow?: string; text: string[] }
+  | { kind: "step"; n: number; title: string; flow?: string; text: string[]; filler?: boolean }
   /** A note to self in the doc about a visual that does not exist yet. */
   | { kind: "figure"; note: string }
   /**
@@ -231,6 +236,38 @@ export const HERO = {
 };
 
 export const SECTIONS: Section[] = [
+  {
+    // Proof first, story second: the product, the brand and the facts up
+    // front, before the narrative asks the reader for their attention.
+    id: "overview",
+    heading: "At a glance",
+    headingPending: true,
+    tone: "cream",
+    align: "center",
+    reveal: true,
+    blocks: [
+      { kind: "reveal" },
+      {
+        kind: "text",
+        filler: true,
+        text: "Two sentences on what Fortuna is: a swipe-to-apply job app for hourly work in Miami, built for job seekers and the small businesses hiring them.",
+      },
+      {
+        kind: "text",
+        filler: true,
+        text: [
+          "Role — product designer, then product design across job seeker and employer",
+          { br: true },
+          "Team — two designers, a couple of engineers, a PM / co-CEO",
+          { br: true },
+          "Timeline — early 2022 to fall 2022",
+          { br: true },
+          "Launch — Miami, summer 2022",
+        ],
+      },
+      { kind: "figure", note: "Brand strip + 3–4 hero screens — add later" },
+    ],
+  },
   {
     id: "clunky",
     heading: "The job search is clunky",
@@ -410,12 +447,19 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "data-frameworks",
-    heading: "Data frameworks on research",
+    heading: "Mapping Sarah's friction",
     headingPending: true,
     tone: "cream",
+    align: "center",
     reveal: true,
-    draft: "Add later",
-    blocks: [],
+    blocks: [
+      {
+        kind: "text",
+        filler: true,
+        text: "A line or two on how the seven interviews were synthesized: what we clustered, and where the friction kept showing up for Sarah — search, the wait, childcare, the commute.",
+      },
+      { kind: "figure", note: "Whiteboard photo: Sarah's friction map — each step on her way back to work, tagged cognitive, emotional or logistical" },
+    ],
   },
   {
     id: "hamster-wheel",
@@ -453,21 +497,10 @@ export const SECTIONS: Section[] = [
     ],
   },
   {
-    id: "introducing-fortuna",
+    id: "the-swipe",
     align: "center",
     reveal: true,
-    heading: "Introducing Fortuna",
-    tone: "cream",
-    blocks: [
-      { kind: "reveal" },
-    ],
-  },
-  {
-    id: "how-we-got-there",
-    align: "center",
-    reveal: true,
-    heading: "How we got there",
-    headingPending: true,
+    heading: "The swipe",
     tone: "cream-deep",
     blocks: [
       { kind: "figure", note: "Questions that informed design strategy — add later" },
@@ -524,37 +557,10 @@ export const SECTIONS: Section[] = [
         text: "So we'd removed the effort, but we'd also removed some of the intention.",
       },
 
-      { kind: "subheading", text: "Maybe in the middle" },
-      {
-        kind: "text",
-        text: "Swipes on Tinder work because attraction is often immediate, but choosing a job is a little different. It means considering the commute, reading responsibilities, weighing tradeoffs, and imagining your future. These are slower cognitive tasks that don't always lend themselves to an immediate yes or no.",
-      },
-      {
-        kind: "text",
-        text: "Maybe some users wanted to save a job for later, or maybe they wanted to compare it to another listing. Maybe they just wanted a little bit more time to think on it. Maybe we needed a maybe.",
-      },
-
-      { kind: "figure", note: "Spectrums and situations framework — add later" },
+      { kind: "figure", note: "Whiteboard photo: the effort / intention spectrum — from a 30-minute application to a one-second swipe" },
       { kind: "figure", note: "New how might we's, relating to swiping issues — add later" },
-    ],
-  },
-  {
-    id: "new-feature-ideas",
-    align: "center",
-    reveal: true,
-    heading: "New feature ideas",
-    headingPending: true,
-    tone: "cream",
-    draft: "Will remove",
-    blocks: [],
-  },
-  {
-    id: "testing-job-seeker",
-    align: "center",
-    reveal: true,
-    heading: "Testing on the job seeker flow",
-    tone: "cream",
-    blocks: [
+
+      { kind: "subheading", text: "What we shipped" },
       {
         kind: "text",
         text: "Testing showed that reducing the number of steps did exactly what we wanted: users could move through opportunities quickly, without the usual application fatigue. But that efficiency came with a tradeoff. When the cost of a decision approached zero, some decisions started to feel disposable. Users would swipe quickly, sometimes realizing only afterward that they had passed over a job they were interested in.",
@@ -563,6 +569,28 @@ export const SECTIONS: Section[] = [
         kind: "text",
         text: "The undo interaction became a small counterweight to that speed. It gave users a way to recover from a mistake, but limiting the number of undos available each day meant that reversing a decision still carried some weight. It was a small interaction, but it helped restore something we had accidentally designed away: intentionality.",
       },
+      { kind: "figure", note: "Mockup: the undo, and how many are left today" },
+    ],
+  },
+  {
+    id: "job-seeker-flow",
+    heading: "The job seeker flow",
+    tone: "cream-deep",
+    align: "center",
+    reveal: true,
+    blocks: [
+      {
+        kind: "text",
+        filler: true,
+        text: "One line that zooms back out: with the swipe settled, here's the whole job seeker side, start to finish.",
+      },
+      { kind: "step", n: 1, title: "Sign up and bio", filler: true, text: ["A line on getting started: an account, a short bio, and what Fortuna asks for (and what it doesn't)."] },
+      { kind: "step", n: 2, title: "The feed", filler: true, text: ["A line on how jobs are chosen and shown: nearby, hourly, one card at a time."] },
+      { kind: "step", n: 3, title: "Apply with a swipe", filler: true, text: ["A line on the swipe, the stamps and the undo — the chapter above, in a sentence."] },
+      { kind: "step", n: 4, title: "Hear back", filler: true, text: ["A line on employer interest: how a job seeker finds out someone wants to talk."] },
+      { kind: "step", n: 5, title: "Video introduction", filler: true, text: ["A line on answering interest with a short in-app video instead of a cover letter."] },
+      { kind: "step", n: 6, title: "Interview booked", filler: true, text: ["A line on picking a time and getting connected."] },
+      { kind: "figure", note: "Screens or a mockup for each step — add later" },
     ],
   },
   {
@@ -584,11 +612,12 @@ export const SECTIONS: Section[] = [
     ],
   },
   {
-    id: "employer-flow",
+    id: "meet-jonathan",
+    heading: "Meet Jonathan",
+    headingPending: true,
+    tone: "cream",
     align: "center",
     reveal: true,
-    heading: "Employer flow",
-    tone: "cream",
     blocks: [
       {
         kind: "text",
@@ -598,6 +627,16 @@ export const SECTIONS: Section[] = [
         kind: "quote",
         text: "For Jonathan, the ideal hiring experience wasn't one with more tools. It was one that helped him make the right decision with as little administrative work as possible.",
       },
+      { kind: "figure", note: "Jonathan's persona sheet, rebuilt like Sarah's so the two sides mirror each other — add later" },
+    ],
+  },
+  {
+    id: "employer-flow",
+    align: "center",
+    reveal: true,
+    heading: "Employer flow",
+    tone: "cream",
+    blocks: [
       {
         kind: "step",
         n: 1,
@@ -643,25 +682,90 @@ export const SECTIONS: Section[] = [
         ],
       },
       { kind: "figure", note: "Intentions surrounding the employer flow — add later" },
-      { kind: "figure", note: "Employer persona — add later" },
       { kind: "figure", note: "Design challenges that ensued — add later" },
-      { kind: "figure", note: "Whiteboard sketches — add later" },
+      { kind: "figure", note: "Whiteboard photo: the employer flow, sketched — add later" },
       { kind: "figure", note: "Employer flow pictures — add later" },
     ],
   },
   {
-    id: "branding",
+    // The nuance: what made the sprint, what got cut, and why.
+    id: "cutting-room-floor",
+    heading: "On the cutting-room floor",
+    tone: "cream",
     align: "center",
     reveal: true,
-    heading: "Branding",
+    blocks: [
+      {
+        kind: "text",
+        filler: true,
+        text: "A line on the sprint docs: not everything we designed made it in, and some of what got cut taught us the most.",
+      },
+      { kind: "subheading", text: "Maybe in the middle" },
+      {
+        kind: "text",
+        text: "Swipes on Tinder work because attraction is often immediate, but choosing a job is a little different. It means considering the commute, reading responsibilities, weighing tradeoffs, and imagining your future. These are slower cognitive tasks that don't always lend themselves to an immediate yes or no.",
+      },
+      {
+        kind: "text",
+        text: "Maybe some users wanted to save a job for later, or maybe they wanted to compare it to another listing. Maybe they just wanted a little bit more time to think on it. Maybe we needed a maybe.",
+      },
+
+      {
+        kind: "text",
+        filler: true,
+        text: "Whether Maybe shipped or was cut, and why. (If it shipped, this beat moves back into The swipe.)",
+      },
+      { kind: "subheading", text: "Another idea we killed" },
+      {
+        kind: "text",
+        filler: true,
+        text: "The idea, why it was cut, and what it taught us.",
+      },
+      { kind: "subheading", text: "One that changed shape" },
+      {
+        kind: "text",
+        filler: true,
+        text: "What it started as, what it became, and why.",
+      },
+    ],
+  },
+  {
+    // The full brand chapter: the overview teased it, this pays it off.
+    id: "brand",
+    heading: "Brand in the world",
     headingPending: true,
     tone: "cream-deep",
-    draft: "Add later — may move to the front",
-    blocks: [],
+    align: "center",
+    reveal: true,
+    blocks: [
+      {
+        kind: "text",
+        filler: true,
+        text: "A line on the brand: what it needed to say to job seekers and to employers, and where it showed up.",
+      },
+      { kind: "subheading", text: "Website" },
+      { kind: "figure", note: "Website — add later" },
+      { kind: "subheading", text: "App Store screens" },
+      { kind: "figure", note: "App Store screens, with the A/B test — add later" },
+      { kind: "subheading", text: "Video resume" },
+      { kind: "figure", note: "Video resume — add later" },
+      { kind: "subheading", text: "Promotional shoots and flyers" },
+      { kind: "figure", note: "Promotional video shoots + flyers — add later" },
+    ],
   },
-  { id: "website", heading: "Website", headingPending: true, tone: "cream", draft: "Add later", align: "center", reveal: true, blocks: [] },
-  { id: "video-resume", heading: "Video resume", headingPending: true, tone: "cream-deep", draft: "Add later", align: "center", reveal: true, blocks: [] },
-  { id: "app-store", heading: "App Store screens", headingPending: true, tone: "cream", draft: "Add later — A and B testing", align: "center", reveal: true, blocks: [] },
-  { id: "promo", heading: "Promotional video shoots + flyers", headingPending: true, tone: "card", draft: "Add later", align: "center", reveal: true, blocks: [] },
-  { id: "closing", heading: "Closing reflection", headingPending: true, tone: "forest", draft: "Add later", align: "center", reveal: true, blocks: [] },
+  {
+    id: "closing",
+    heading: "Closing reflection",
+    headingPending: true,
+    tone: "forest",
+    align: "center",
+    reveal: true,
+    blocks: [
+      {
+        kind: "text",
+        filler: true,
+        text: "Outcomes — any numbers you have — then what you'd do differently, and what you carried into later work.",
+      },
+    ],
+  },
 ];
