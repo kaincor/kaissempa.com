@@ -55,6 +55,9 @@ const DEMO_AT = 0.35;
 
 const SETTLE = { type: "spring", stiffness: 320, damping: 28 } as const;
 const FAN_IN = { type: "spring", stiffness: 240, damping: 24 } as const;
+/** The plain entrance: each card pops up into the pile, back to front. */
+const POP = { type: "spring", stiffness: 420, damping: 22 } as const;
+const POP_STAGGER = 0.07;
 const GATHER = { type: "spring", stiffness: 190, damping: 21 } as const;
 
 /**
@@ -82,6 +85,7 @@ export default function SwipeDeck({
   radius = 14,
   shadow = "0 18px 40px rgba(0, 0, 0, 0.45)",
   label = "Photos",
+  entrance = "fan",
   onFrontChange,
   style,
 }: {
@@ -97,6 +101,12 @@ export default function SwipeDeck({
   onFrontChange?: (index: number) => void;
   /** Sizes the deck. The cards fill it. */
   style?: CSSProperties;
+  /**
+   * How the cards arrive: rising into a fan and gathering into the pile, or
+   * popping straight up into it — for a deck to one side of the page, where
+   * a fan would spread off the edge of the screen.
+   */
+  entrance?: "fan" | "pop";
 }) {
   const n = cards.length;
   const reduced = !!useReducedMotion();
@@ -156,6 +166,8 @@ export default function SwipeDeck({
   // deck, where on a wide screen it would sweep across the copy beside it.
   useEffect(() => {
     if (!shown || reduced) return;
+    // A pop needs no measuring and no stages: it goes straight to the pile.
+    if (entrance === "pop") return;
     const w = box.current?.offsetWidth ?? 240;
     const span = Math.min(window.innerWidth - 32, w * 1.9);
     setFan({ k: Math.min(0.6, span / (w * (1 + (n - 1) * 0.49))), w });
@@ -166,12 +178,13 @@ export default function SwipeDeck({
       cancelAnimationFrame(raf);
       clearTimeout(g);
     };
-  }, [shown, reduced, n]);
+  }, [shown, reduced, n, entrance]);
 
   // After the gather: the hint comes up, and the top card shows the move once.
   useEffect(() => {
     if (!shown || reduced || n < 2) return;
-    const after = (ENTER.gathered + HINT_AFTER) * 1000;
+    const arrived = entrance === "pop" ? POP_STAGGER * n + 0.4 : ENTER.gathered;
+    const after = (arrived + HINT_AFTER) * 1000;
     const a = setTimeout(() => {
       setPopped(true);
       if (!touched.current) setHint(true);
@@ -183,7 +196,7 @@ export default function SwipeDeck({
       clearTimeout(b);
       clearTimeout(c);
     };
-  }, [shown, reduced, n, cycle]);
+  }, [shown, reduced, n, cycle, entrance]);
 
   const poseAt = (slot: number): Pose =>
     poses ? poses[Math.min(slot, poses.length - 1)] : defaultPose(slot);
@@ -218,12 +231,17 @@ export default function SwipeDeck({
         const at = { x: pose.x, y: pose.y, rotate: pose.rot, scale: pose.scale ?? 1 };
         const f = fanPose(slot, fan.k, fan.w);
         const far = Math.ceil((n - 1) / 2);
+        const stage = entrance === "pop" ? (shown ? "pile" : "hidden") : phase;
+        // Where a popping card waits before its turn: small and a little low.
+        const low = { ...at, opacity: 0, scale: 0.6, y: pose.y + 24 };
         const target =
-          phase === "hidden"
-            ? { ...at, opacity: 0 }
-            : phase === "set"
+          stage === "hidden"
+            ? entrance === "pop"
+              ? low
+              : { ...at, opacity: 0 }
+            : stage === "set"
               ? { ...f.pose, y: f.pose.y + 30, opacity: 0 }
-              : phase === "fan"
+              : stage === "fan"
                 ? { ...f.pose, opacity: 1 }
                 : { ...at, opacity: 1 };
         const delayIn = Math.abs(f.d) * ENTER.fanStagger;
@@ -233,11 +251,13 @@ export default function SwipeDeck({
         return (
           <motion.div
             key={card.src}
-            initial={reduced ? false : { ...at, opacity: 0 }}
+            initial={reduced ? false : entrance === "pop" ? low : { ...at, opacity: 0 }}
             animate={target}
             transition={
               popped
                 ? SETTLE
+                : entrance === "pop" && stage === "pile"
+                  ? { ...POP, delay: (n - 1 - slot) * POP_STAGGER, opacity: { duration: 0.2, delay: (n - 1 - slot) * POP_STAGGER } }
                 : phase === "fan"
                   ? { ...FAN_IN, delay: delayIn, opacity: { duration: 0.35, delay: delayIn } }
                   : phase === "pile"

@@ -144,6 +144,9 @@ export default function MoreAboutMe({
               radius={10}
               shadow="0 15px 35px rgba(0, 0, 0, 0.5)"
               label="Photos of Kai"
+              // Popping straight into its pile: this deck sits to one side of
+              // the copy, and a fan from here would spread off the screen.
+              entrance="pop"
               style={{ width: "min(64vw, 260px)", aspectRatio: "2 / 3" }}
             />
           </div>
