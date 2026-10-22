@@ -368,11 +368,9 @@ export const SECTIONS: Section[] = [
       },
       { kind: "persona", persona: SARAH },
       {
-        kind: "quote",
-        rules: true,
+        kind: "text",
         text: "Sarah didn't think the job applications were horrid. They just assumed she had time to search when she didn't.",
       },
-      { kind: "figure", note: "Draw up framework" },
     ],
   },
   {
