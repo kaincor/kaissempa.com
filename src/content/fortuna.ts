@@ -168,31 +168,55 @@ export type Section = {
 };
 
 /**
- * The persona sheet, as the research produced it.
+ * The persona sheet, as the research produced it — Figma's "Persona - Job
+ * Seeker" frame, word for word.
  *
  * Rebuilt rather than dropped in as a picture: a screenshot of a deliverable
- * is unreadable on a phone, unselectable, invisible to search and impossible
- * to animate. The colours, the wording and the spacing are the artefact's own.
+ * is unreadable on a phone, unselectable and invisible to search. On the page
+ * it starts as a sliver of the sheet that can be opened out to the whole of
+ * it.
  */
 export type PersonaSheet = {
+  /** The sheet's header label. */
+  label: string;
   portrait: { src: string; alt: string };
-  /** The two prose columns at the top of the sheet. */
+  /** Name, age, job, location — under the portrait. */
+  facts: { label: string; value: string }[];
+  /**
+   * The two prose columns at the top of the sheet. In `body`, an empty string
+   * is a blank line between paragraphs; otherwise lines run straight on.
+   */
   notes: { title: string; body: string[] }[];
   /** Goals, needs, frustrations — the three card columns underneath. */
   columns: { title: string; tone: "white" | "amber" | "rose"; items: string[] }[];
 };
 
 export const SARAH: PersonaSheet = {
+  label: "Persona / Job seeker",
   portrait: {
-    src: "/images/sarah-persona.png",
+    src: "/images/sarah-persona-photo.webp",
     alt: "Sarah, the job seeker persona",
   },
+  facts: [
+    { label: "Name", value: "Sarah Anderson" },
+    { label: "Age", value: "31" },
+    { label: "Job", value: "Unemployed" },
+    { label: "Located", value: "Chicago, IL" },
+  ],
   notes: [
     {
       title: "User-persona situation:",
       body: [
-        "Sarah is a 31-year-old administrative assistant and former receptionist who recently lost her job. As a single mother of a two year old, time is tight and childcare is expensive, so finding work nearby would give her more time with her daughter.",
-        "She's eager to find a gig quickly while continuing her search for a longer-term job.",
+        "Sarah is a 31-year-old administrative assistant. She worked as a receptionist for the last 4 years but recently lost her job. Sarah is a fast learner person who can adapt to different work enviroments. As a people person, she has excellent communication skills, and is always ready to face the day with a positive attitude. In fact, in her last job, she was recognized as the smiliest worker.",
+        "Sarah is a single mother of a 2-year-old girl and lack of time is a daily worry as she is currently paying for a babysitter. Finding a job within the neighbourhood would mean spending more time with her daughter. She wants to get a gig as fast as possible while looking for another job.",
+      ],
+    },
+    {
+      title: "Situation related needs:",
+      body: [
+        "Sarah needs to find a job as fast as possible given the fact she is a single mother. In the meantime, getting a gig seems a really good idea.",
+        "",
+        "As she wants to spend more time with her daughter, Sarah needs to find a job that’s not far from the neighbourhood.",
       ],
     },
   ],
@@ -216,10 +240,10 @@ export const SARAH: PersonaSheet = {
       title: "Frustrations",
       tone: "rose",
       items: [
-        "Doesn't know where to start searching, and feels overwhelmed by all the different job searching apps",
-        "Searching in conventional recruiting apps takes her too much time, as she has to think about and then search for the specific type of job she needs",
-        "Applying for each job and waiting to hear back makes her anxious, as she needs an income as soon as possible",
-        "Attending an interview means paying for a babysitter while she is gone, and she doesn't have the income to cover that",
+        "Don’t know where to start searching and feel overwhelmed with all the different job searching apps.",
+        "Searching in conventional recruiting apps takes her too much time as she needs to think and search for the specific type of job that she needs",
+        "Apply for each job and waiting to hear back from them makes her anxious as she needs an income as soon as possible",
+        "Attending to an inverview means she needs to pay for a baby sitter while she is gone, and she doesn’t have the income to cover that.",
       ],
     },
   ],

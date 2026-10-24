@@ -6,7 +6,7 @@ import FadeIn from "./FadeIn";
 import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
 import GoalList from "./GoalList";
-import Persona from "./Persona";
+import PersonaSheet from "./PersonaSheet";
 import Reel from "./reel/Reel";
 import SwipeDemo from "./swipe/SwipeDemo";
 import NightSky from "./NightSky";
@@ -740,7 +740,7 @@ function blockNode(
     case "globe":
       return <MiamiGlobe key={i} caption={block.caption} />;
     case "persona":
-      return <Persona key={i} persona={block.persona} />;
+      return <PersonaSheet key={i} persona={block.persona} />;
     case "reveal":
       return <Reel key={i} />;
     case "swipe-demo":
