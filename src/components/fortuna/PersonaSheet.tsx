@@ -22,16 +22,26 @@ const COLOURS = {
   ink: "#111111",
   label: "#3a3a3a",
   tone: { white: "#fefefe", amber: "#ffe1a6", rose: "#ffbbbb" },
-  // The button: the case study's own forest, with its orange arrows.
-  button: "var(--f-forest)",
-  arrow: "var(--f-orange)",
+  // The button: the header's white, with Fortuna green arrows.
+  button: "#ffffff",
+  arrow: "var(--f-green)",
 };
 
 /** How much of the sheet shows while it is closed, under its header. */
 const SLIVER = "clamp(230px, 26vw, 360px)";
 
-/** The bounce, open and closed. */
-const SPRING = { type: "spring", stiffness: 150, damping: 15, mass: 1 } as const;
+/**
+ * The bounce. Opening is slower and more drawn out than closing, which has
+ * a whole sheet's height to travel and would otherwise snap open.
+ */
+const OPEN = { type: "spring", stiffness: 70, damping: 13, mass: 1.2 } as const;
+const CLOSE = { type: "spring", stiffness: 150, damping: 15, mass: 1 } as const;
+/**
+ * The progressive blur over the closed sheet, from the top of its first
+ * lines to the bottom: next to nothing at the top, so the first sentences
+ * still read, and heavier band by band to fully blurred at the foot.
+ */
+const BLUR = [0.6, 1.4, 2.6, 4.5, 7, 11];
 
 const text: CSSProperties = {
   margin: 0,
@@ -49,13 +59,13 @@ export default function PersonaSheet({ persona: p }: { persona: Sheet }) {
   const header = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const sliver = useRef<HTMLDivElement>(null);
-  const [heights, setHeights] = useState({ closed: 0, full: 0 });
+  const [heights, setHeights] = useState({ closed: 0, full: 0, head: 0 });
 
   // The sheet's two heights, measured: its whole length, and the sliver.
   useEffect(() => {
     const measure = () => {
       const h = header.current?.offsetHeight ?? 0;
-      setHeights({ closed: h + (sliver.current?.offsetHeight ?? 0), full: h + (content.current?.offsetHeight ?? 0) });
+      setHeights({ closed: h + (sliver.current?.offsetHeight ?? 0), full: h + (content.current?.offsetHeight ?? 0), head: h });
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -87,7 +97,7 @@ export default function PersonaSheet({ persona: p }: { persona: Sheet }) {
       h.set(to);
       return;
     }
-    const c = animate(h, to, SPRING);
+    const c = animate(h, to, open ? OPEN : CLOSE);
     return () => c.stop();
   }, [open, heights, reduced, h]);
 
@@ -138,30 +148,37 @@ export default function PersonaSheet({ persona: p }: { persona: Sheet }) {
           <Contents p={p} />
         </div>
 
-        {/* The progressive blur the sliver runs out into: blurs stacked in
-            bands, each stronger and lower than the last. Only while closed. */}
+        {/* The progressive blur: from just under the header, where it is
+            barely there, to fully blurred at the foot of the sliver. Each
+            band is a heavier blur that only begins lower down. Only while
+            closed. */}
         <motion.div
           aria-hidden="true"
           initial={false}
           animate={{ opacity: open ? 0 : 1 }}
           transition={{ duration: 0.35 }}
-          style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "62%", pointerEvents: "none" }}
+          style={{ position: "absolute", left: 0, right: 0, top: heights.head || 70, height: `calc(${SLIVER} + 2px)`, pointerEvents: "none" }}
         >
           {!open &&
-            [1, 3, 6, 11].map((b, i) => (
-              <div
-                key={b}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  backdropFilter: `blur(${b}px)`,
-                  WebkitBackdropFilter: `blur(${b}px)`,
-                  maskImage: `linear-gradient(to bottom, transparent ${i * 20}%, #000 ${i * 20 + 30}%)`,
-                  WebkitMaskImage: `linear-gradient(to bottom, transparent ${i * 20}%, #000 ${i * 20 + 30}%)`,
-                }}
-              />
-            ))}
-          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 40%, ${COLOURS.sheet}cc 100%)` }} />
+            BLUR.map((b, i) => {
+              const from = (i / BLUR.length) * 85;
+              const to = from + 100 / BLUR.length + 6;
+              const mask = `linear-gradient(to bottom, transparent ${from}%, #000 ${to}%)`;
+              return (
+                <div
+                  key={b}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    backdropFilter: `blur(${b}px)`,
+                    WebkitBackdropFilter: `blur(${b}px)`,
+                    maskImage: mask,
+                    WebkitMaskImage: mask,
+                  }}
+                />
+              );
+            })}
+          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 55%, ${COLOURS.sheet}b3 100%)` }} />
         </motion.div>
 
         <button
@@ -179,7 +196,7 @@ export default function PersonaSheet({ persona: p }: { persona: Sheet }) {
             borderRadius: "clamp(12px, 1.3vw, 18px)",
             border: "none",
             background: COLOURS.button,
-            boxShadow: "0 10px 24px rgba(20, 40, 20, 0.25)",
+            boxShadow: "0 10px 24px rgba(20, 40, 20, 0.18)",
             display: "grid",
             placeItems: "center",
             cursor: "pointer",
@@ -203,7 +220,7 @@ function Arrows({ inward, still }: { inward: boolean; still: boolean }) {
   // Inward, the heads stop short of the middle and are kept small, so the
   // four read as arrows meeting rather than a star.
   const inn = "M3.5 3.5 L8.8 8.8 M8.8 8.8 H5.6 M8.8 8.8 V5.6";
-  const push = inward ? 1.6 : -1.6;
+  const push = inward ? 1.8 : -1.8;
   return (
     <svg width="60%" height="60%" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       {[0, 90, 180, 270].map((r) => (
@@ -215,7 +232,7 @@ function Arrows({ inward, still }: { inward: boolean; still: boolean }) {
             strokeLinecap="round"
             strokeLinejoin="round"
             animate={still ? undefined : { x: [0, push, 0], y: [0, push, 0] }}
-            transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity }}
+            transition={{ duration: 2.8, ease: "easeInOut", repeat: Infinity }}
           />
         </g>
       ))}
