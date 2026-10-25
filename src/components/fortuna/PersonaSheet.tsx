@@ -217,10 +217,10 @@ export default function PersonaSheet({ persona: p }: { persona: Sheet }) {
 function Arrows({ inward, still }: { inward: boolean; still: boolean }) {
   // One arrow, toward the top-left corner of a 24 box; the others are it turned.
   const out = "M10 10 L4.5 4.5 M4.5 4.5 H9 M4.5 4.5 V9";
-  // Inward, the heads stop short of the middle and are kept small, so the
-  // four read as arrows meeting rather than a star.
-  const inn = "M3.5 3.5 L8.8 8.8 M8.8 8.8 H5.6 M8.8 8.8 V5.6";
-  const push = inward ? 1.8 : -1.8;
+  // Inward, the heads stop well short of the middle and ease in less, so the
+  // four keep a clear square of white between them rather than meeting.
+  const inn = "M2.6 2.6 L7 7 M7 7 H4.3 M7 7 V4.3";
+  const push = inward ? 0.9 : -1.8;
   return (
     <svg width="60%" height="60%" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       {[0, 90, 180, 270].map((r) => (
