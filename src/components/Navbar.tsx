@@ -83,14 +83,11 @@ const CASE_THEMES: {
     // Tiempos Headline, the case study's own display face, in place of
     // Kaicords. Defined in src/app/fortuna/theme.css.
     font: "var(--f-display-stack)",
-    // Sixteen, not the seventeen Aktiv was sitting at. Measured off the two
-    // files: Tiempos Medium's cap height is 0.702em against Aktiv Medium's
-    // 0.714, and "Work" sets 2.522em wide against 2.502 — near enough
-    // identical, so the same number would have been the same apparent size
-    // rather than the smaller one asked for.
-    size: 16,
-    // Semibold, the same weight the headings are set in. The size stays
-    // down at 16.
+    // Fourteen: sixteen still read large against the bar. Tiempos and Aktiv
+    // measure near identically (cap height 0.702em against 0.714), so the
+    // number is the apparent size.
+    size: 14,
+    // Semibold, the same weight the headings are set in.
     weight: 600,
   },
 ];
