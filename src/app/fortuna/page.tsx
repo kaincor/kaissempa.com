@@ -3,7 +3,6 @@ import "./theme.css";
 import { HERO, SECTIONS } from "@/content/fortuna";
 import {
   Band,
-  Eyebrow,
   Display,
   Figure,
   renderBlock,
@@ -37,12 +36,9 @@ export default function FortunaPage() {
               each piece on the shared queue, so on load they arrive a beat
               apart from the top down. */}
           <FadeIn>
-            <Eyebrow>{HERO.eyebrow}</Eyebrow>
-          </FadeIn>
-          <FadeIn>
             <h1
               style={{
-                margin: "0 0 20px",
+                margin: "0 0 clamp(24px, 3vw, 36px)",
                 fontFamily: "var(--f-display)",
                 fontWeight: 600,
                 fontSize: "clamp(40px, 8vw, 78px)",
@@ -58,24 +54,7 @@ export default function FortunaPage() {
           <FadeIn>
             <p
               style={{
-                margin: "0 0 40px",
-                maxWidth: "var(--f-measure-body)",
-                fontFamily: "var(--f-serif)",
-                fontStyle: "italic",
-                fontWeight: 500,
-                fontSize: "clamp(19px, 2.6vw, 26px)",
-                lineHeight: 1.45,
-                letterSpacing: "-0.02em",
-                color: "var(--f-muted)",
-              }}
-            >
-              {HERO.standfirst}
-            </p>
-          </FadeIn>
-          <FadeIn>
-            <p
-              style={{
-                margin: "0 0 18px",
+                margin: 0,
                 maxWidth: "var(--f-measure-body)",
                 fontFamily: "var(--f-body)",
                 fontSize: "var(--f-body-size)",
@@ -84,24 +63,6 @@ export default function FortunaPage() {
               }}
             >
               {HERO.intro}
-            </p>
-          </FadeIn>
-          <FadeIn>
-            <p
-              style={{
-                margin: "36px 0 0",
-                maxWidth: "var(--f-measure-body)",
-                fontFamily: "var(--f-serif)",
-                fontStyle: "italic",
-                fontWeight: 500,
-                fontSize: "clamp(18px, 2.3vw, 22px)",
-                lineHeight: 1.55,
-                letterSpacing: "-0.02em",
-                borderLeft: "2px solid var(--f-green)",
-                paddingLeft: "clamp(18px, 3vw, 30px)",
-              }}
-            >
-              {HERO.pullquote}
             </p>
           </FadeIn>
         </div>

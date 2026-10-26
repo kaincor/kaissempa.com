@@ -250,13 +250,9 @@ export const SARAH: PersonaSheet = {
 };
 
 export const HERO = {
-  eyebrow: "Case study — 2022",
   title: "A Tale of Two Users",
-  standfirst: "A case study in making job seeking feel less like work.",
   intro:
     "We built a swipe to work app in Miami. I worked on the brand, the app… and everything in between. It's the project I think about first when I talk about my work.",
-  pullquote:
-    "The pandemic exposed a disconnect between small businesses trying to hire and local job seekers trying to find work. Most small businesses still relied on offline hiring. I joined Fortuna to design a faster, simpler way for both sides to connect.",
 };
 
 export const SECTIONS: Section[] = [
