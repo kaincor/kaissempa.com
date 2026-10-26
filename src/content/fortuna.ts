@@ -444,22 +444,6 @@ export const SECTIONS: Section[] = [
     ],
   },
   {
-    id: "data-frameworks",
-    heading: "Mapping Sarah's friction",
-    headingPending: true,
-    tone: "cream",
-    align: "center",
-    reveal: true,
-    blocks: [
-      {
-        kind: "text",
-        filler: true,
-        text: "A line or two on how the seven interviews were synthesized: what we clustered, and where the friction kept showing up for Sarah — search, the wait, childcare, the commute.",
-      },
-      { kind: "figure", note: "Whiteboard photo: Sarah's friction map — each step on her way back to work, tagged cognitive, emotional or logistical" },
-    ],
-  },
-  {
     id: "hamster-wheel",
     // Centred and staggered from here down, so the back half of the
     // piece is read the same way as the front. `align` reaches the
