@@ -485,12 +485,9 @@ export const SECTIONS: Section[] = [
     id: "the-swipe",
     align: "center",
     reveal: true,
-    heading: "The swipe",
+    heading: "Tinder's spine",
     tone: "cream-deep",
     blocks: [
-      { kind: "figure", note: "Questions that informed design strategy — add later" },
-
-      { kind: "subheading", text: "Tinder's spine" },
       {
         kind: "text",
         text: "Job applications are full of small costs: read a job post, hit apply, reroute to another site, fill out another form. Individually these costs are trivial, but together it's enough to spur a job seeker from submitting an application.",
