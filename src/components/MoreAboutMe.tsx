@@ -26,9 +26,9 @@ type Slide = { src: string; alt: string };
  * the browser and the optimiser to each interpret.
  */
 const SLIDES: Slide[] = [
+  { src: "/photos/kai-main-quad-headshot.jpg", alt: "Kai on Stanford's Main Quad" },
   { src: "/photos/kai-and-cyprien.jpg", alt: "Kai and Cyprien at Stanford" },
   { src: "/photos/kai-with-stick.jpg", alt: "Kai holding a stick" },
-  { src: "/photos/kai-main-quad-headshot.jpg", alt: "Kai on Stanford's Main Quad" },
   { src: "/photos/parents-at-graduation.jpg", alt: "Kai's parents at his graduation" },
 ];
 
