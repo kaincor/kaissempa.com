@@ -482,6 +482,27 @@ export const SECTIONS: Section[] = [
     ],
   },
   {
+    // The fork in the road: the app has two sides, and the job seeker's
+    // comes first. Holds the sitemap, so everything after it has a place on
+    // the map before the mechanics start.
+    id: "two-sides",
+    heading: "Two sides, one app",
+    tone: "cream",
+    align: "center",
+    reveal: true,
+    blocks: [
+      {
+        kind: "text",
+        text: "Fortuna was a marketplace, so it had two sides: job seekers looking for work and employers looking for help. They met in the same matches, but almost everything else was different: the goals, the screens, and the story behind them.",
+      },
+      {
+        kind: "text",
+        text: "We'll start with the job seeker. That's the side with the swipe, the onboarding, the bio and the video resume, and it's where most of Sarah's friction lived.",
+      },
+      { kind: "figure", note: "Sitemap: the job seeker side, from the splash screen to hearing back from an employer" },
+    ],
+  },
+  {
     id: "the-swipe",
     align: "center",
     reveal: true,
@@ -716,6 +737,40 @@ export const SECTIONS: Section[] = [
       { kind: "figure", note: "Design challenges that ensued — add later" },
       { kind: "figure", note: "Whiteboard photo: the employer flow, sketched — add later" },
       { kind: "figure", note: "Employer flow pictures — add later" },
+    ],
+  },
+  {
+    // The foundations: the work behind the screens that the narrative
+    // above only shows the result of.
+    id: "under-the-hood",
+    heading: "Under the hood",
+    tone: "cream-deep",
+    align: "center",
+    reveal: true,
+    blocks: [
+      {
+        kind: "text",
+        text: "None of these screens happened in one pass. Behind the final app are rounds of prototypes, a UI kit built from scratch, and a pile of assets made by hand.",
+      },
+      { kind: "subheading", text: "The UI kit" },
+      {
+        kind: "text",
+        text: "One set of colours, type and components shared by both sides, so the job seeker and employer apps felt like the same product.",
+      },
+      { kind: "figure", note: "UI kit: colours, type, buttons, cards and form fields" },
+      { kind: "subheading", text: "From prototype to final" },
+      {
+        kind: "text",
+        text: "Every round of testing fed the next prototype. Here's how the core screens changed on the way to the version we shipped.",
+      },
+      { kind: "figure", note: "Prototypes: early, middle and final versions of the core screens, side by side" },
+      { kind: "figure", note: "The final prototype, clicked through" },
+      { kind: "subheading", text: "Assets" },
+      {
+        kind: "text",
+        text: "The icons, illustrations and imagery that gave Fortuna its personality.",
+      },
+      { kind: "figure", note: "Assets: icons, illustrations and imagery" },
     ],
   },
   {
