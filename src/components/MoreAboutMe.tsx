@@ -13,45 +13,32 @@ import type { MountainRange as Range } from "@/data/mountainRanges";
  * page scrolled, landing one at a time. The reader had no say in the pace
  * there; now the pile pops in whole and they go through it themselves.
  */
-type Slide = { src: string; alt: string; line: string };
+type Slide = { src: string; alt: string };
 
 /**
- * Kai's photographs, paired one to a sentence, in the order they come up.
+ * Kai's photographs, in the order they come up: the first is the top of the
+ * pile.
  *
- * All five are cropped to the same 3:4, which keeps the pile tidy. Four of
- * them are natively 3:4 so nothing is lost; blender-nodes is a 9:16
- * screenshot and gets a centre crop.
- *
- * rural-uganda arrived with EXIF orientation 6 — stored landscape, displayed
- * portrait. That is baked into the file in public/photos rather than left for
+ * All four are cropped to the same 3:4, which keeps the pile tidy. The two
+ * from assets/images (kai-and-cyprien, kai-main-quad-headshot) were resized
+ * and cropped into public/photos with their EXIF orientation baked in — the
+ * headshot is stored landscape and displays portrait — rather than left for
  * the browser and the optimiser to each interpret.
  */
 const SLIDES: Slide[] = [
-  {
-    src: "/photos/rural-uganda.jpg",
-    alt: "Rural Uganda",
-    line: "I grew up in rural Uganda.",
-  },
-  {
-    src: "/photos/parents-at-graduation.jpg",
-    alt: "Kai's parents at his graduation",
-    line: "My parents devoted their careers to public health work in remote villages & I grew up working alongside them.",
-  },
-  {
-    src: "/photos/blender-nodes.jpg",
-    alt: "A Blender node graph Kai built",
-    line: "At Stanford, I study design & computer science. I'm also on the leadership team for the Black Student Engineers Club.",
-  },
-  {
-    src: "/photos/working-at-amouage.jpg",
-    alt: "Kai working at Amouage",
-    line: "I try to put a piece of myself into my work: assets from scratch. Illustrations. Custom fonts. I hand drew this font I'm using right now.",
-  },
-  {
-    src: "/photos/helmet.jpg",
-    alt: "Kai in a mountain biking helmet",
-    line: "I enjoy bodybuilding, mountain biking & embroidery.",
-  },
+  { src: "/photos/kai-and-cyprien.jpg", alt: "Kai and Cyprien at Stanford" },
+  { src: "/photos/kai-with-stick.jpg", alt: "Kai holding a stick" },
+  { src: "/photos/kai-main-quad-headshot.jpg", alt: "Kai on Stanford's Main Quad" },
+  { src: "/photos/parents-at-graduation.jpg", alt: "Kai's parents at his graduation" },
+];
+
+/** The sentences beside the pile. No longer one to a photograph. */
+const LINES = [
+  "I grew up in rural Uganda.",
+  "My parents devoted their careers to public health work in remote villages & I grew up working alongside them.",
+  "At Stanford, I study design & computer science. I'm also on the leadership team for the Black Student Engineers Club.",
+  "I try to put a piece of myself into my work: assets from scratch. Illustrations. Custom fonts. I hand drew this font I'm using right now.",
+  "I enjoy bodybuilding, mountain biking & embroidery.",
 ];
 
 export default function MoreAboutMe({
@@ -170,9 +157,9 @@ export default function MoreAboutMe({
               gap: "0.7em",
             }}
           >
-            {SLIDES.map((slide, i) => (
+            {LINES.map((line, i) => (
               <p
-                key={slide.src}
+                key={line}
                 style={{
                   margin: 0,
                   opacity: play ? 1 : 0,
@@ -183,7 +170,7 @@ export default function MoreAboutMe({
                     : `opacity 0.6s ease-out ${i * 0.12}s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.12}s`,
                 }}
               >
-                {slide.line}
+                {line}
               </p>
             ))}
           </div>

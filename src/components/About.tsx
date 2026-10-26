@@ -20,7 +20,7 @@ export const PHOTOS: FanDeckCard[] = [
   { src: "/photos/eating-breakfast-in-utah.jpg", alt: "Eating breakfast in Utah" },
   { src: "/photos/snowboarding-with-ben.jpg", alt: "Snowboarding with Ben" },
   { src: "/photos/kai-and-dia.jpg", alt: "Kai and Dia" },
-  { src: "/photos/kai-with-stick.jpg", alt: "Kai holding a stick" },
+  { src: "/photos/helmet.jpg", alt: "Kai in a mountain biking helmet" },
   { src: "/photos/bay-to-breakers.jpg", alt: "Kai at Bay to Breakers" },
   { src: "/photos/kai-in-lake-lagunita.jpg", alt: "Kai in Lake Lagunita" },
   { src: "/photos/irving-raghad-cyprien-kai.jpg", alt: "Irving, Raghad, Cyprien and Kai" },
