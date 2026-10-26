@@ -394,9 +394,9 @@ export const SECTIONS: Section[] = [
   {
     id: "reflections",
     heading: "Seeing Sarah",
-    // Green as well, so the research runs as one stretch of colour from the
-    // goals to here. Data frameworks below it keeps its cream and ends the run.
-    tone: "green",
+    // Forest, the hamster wheel's colour: Seeing Sarah and the wheel run on
+    // as one dark stretch, the green research above handing over to it.
+    tone: "forest",
     // Centred, like the two green sections above it. The whole green run now
     // reads as one held statement rather than an argument that changes its
     // mind about where the left edge is halfway down.
