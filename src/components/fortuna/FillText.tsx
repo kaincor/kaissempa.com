@@ -22,7 +22,6 @@ import type { Rich, Token } from "@/content/fortuna";
 const TONE_COLOR: Record<string, string> = {
   orange: "var(--f-orange)",
   green: "var(--f-green)",
-  "green-light": "var(--f-green-light)",
   brown: "var(--f-brown)",
   cream: "var(--f-cream)",
 };

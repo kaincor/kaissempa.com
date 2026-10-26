@@ -52,7 +52,7 @@ export type Token =
   | {
       text: string;
       /** Left off to keep the sentence's own colour. */
-      tone?: "orange" | "green" | "green-light" | "brown" | "cream" | "dim";
+      tone?: "orange" | "green" | "brown" | "cream" | "dim";
       italic?: boolean;
       /**
        * Starts the colour of the sentence and floods in, left to right, as
@@ -430,9 +430,10 @@ export const SECTIONS: Section[] = [
           ", but rather ",
           {
             text: "“how do we reduce the cognitive, emotional, and logistical costs of getting back to work?”",
-            // Fortuna's light green: on the forest the sentence is already
-            // cream, so cream would not stand out.
-            tone: "green-light",
+            // Fortuna's orange: on the forest the sentence is already cream,
+            // so cream would not stand out, and orange holds more contrast
+            // against it than the light green did.
+            tone: "orange",
             italic: true,
             fill: true,
           },
