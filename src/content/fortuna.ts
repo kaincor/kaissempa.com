@@ -140,7 +140,8 @@ export type Block =
 
 export type Section = {
   id: string;
-  heading: string;
+  /** Left out where the section speaks for itself, as the reel does. */
+  heading?: string;
   /** The doc says "Title" where Kai has not named the section yet. */
   headingPending?: boolean;
   tone: Tone;
@@ -260,14 +261,11 @@ export const SECTIONS: Section[] = [
     // Proof first, story second: the product, the brand and the facts up
     // front, before the narrative asks the reader for their attention.
     id: "overview",
-    heading: "At a glance",
-    headingPending: true,
     tone: "cream",
     align: "center",
     reveal: true,
     blocks: [
       { kind: "reveal" },
-      { kind: "figure", note: "Brand strip + 3–4 hero screens — add later" },
     ],
   },
   {

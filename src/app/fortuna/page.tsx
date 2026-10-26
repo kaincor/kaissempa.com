@@ -77,7 +77,7 @@ export default function FortunaPage() {
             tight={section.tight}
             ink={section.bodyTone ? `var(--f-${section.bodyTone})` : undefined}
           >
-            {(() => {
+            {section.heading ? (() => {
               const heading = (
                 <Display
                   align={section.align}
@@ -109,7 +109,7 @@ export default function FortunaPage() {
                 </Display>
               );
               return section.reveal ? <FadeIn>{heading}</FadeIn> : heading;
-            })()}
+            })() : null}
 
             {section.draft ? (
               section.reveal ? (
