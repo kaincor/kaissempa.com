@@ -61,7 +61,10 @@ export default function ProjectsAndProducts({ detailed = false }: { detailed?: b
   const info = (label: string) => (detailed ? INFO[label] : undefined);
   return (
     <section
+      id="work"
       style={{
+        // Clears the floating navbar when the Work link scrolls here.
+        scrollMarginTop: 40,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

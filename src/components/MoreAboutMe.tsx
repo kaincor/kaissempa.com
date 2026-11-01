@@ -68,6 +68,8 @@ export default function MoreAboutMe({
 
   return (
     <div
+      // The About link's target on the home page.
+      id="about"
       style={{
         position: "relative",
         // Above the ridge that closes this section. That ridge extends its

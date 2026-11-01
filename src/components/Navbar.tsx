@@ -4,24 +4,36 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { scrollToSection } from "@/lib/scrollToSection";
 
+/**
+ * Work and About point at their sections on the home page for now. The
+ * /work and /about pages exist but are not linked until they are built out.
+ */
 const LINKS = [
   { label: "Home", href: "/" },
-  { label: "Work", href: "/work" },
-  { label: "About", href: "/about" },
+  { label: "Work", href: "/#work" },
+  { label: "About", href: "/#about" },
 ];
 
 /**
- * A link home from the home page glides back to the top rather than
+ * A link into the home page, from the home page, glides there rather than
  * reloading: a reload would throw away the live hero and make the reader wait
- * for it all over again, for a page they are already on. Anywhere else it is
- * an ordinary link home.
+ * for it all over again, for a page they are already on. Home goes to the
+ * top; the others to their section. Anywhere else it is an ordinary link,
+ * and the router scrolls to the section once the home page is up.
  */
-function toTopIfHome(e: React.MouseEvent, href: string, pathname: string | null) {
-  if (href !== "/" || pathname !== "/") return;
+function glideIfHome(e: React.MouseEvent, href: string, pathname: string | null) {
+  if (pathname !== "/" || !href.startsWith("/")) return;
+  const hash = href.slice(1);
+  if (hash && !hash.startsWith("#")) return;
   e.preventDefault();
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+  const behavior = still ? "auto" : "smooth";
+  if (hash) scrollToSection(hash.slice(1), behavior);
+  else window.scrollTo({ top: 0, behavior });
+  // Keep the address bar honest without adding a history entry per click.
+  history.replaceState(null, "", href);
 }
 
 const NAV_WIDTH = 264;
@@ -105,6 +117,16 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
 
   const pathname = usePathname();
   const theme = CASE_THEMES.find((t) => pathname?.startsWith(t.prefix));
+
+  // Arriving on the home page with a section in the address (Work or About
+  // from another page): the router's own jump measures the section before
+  // the parallax has settled, so it is corrected here, without a glide.
+  useEffect(() => {
+    if (pathname !== "/" || !window.location.hash) return;
+    const id = window.location.hash.slice(1);
+    const t = setTimeout(() => scrollToSection(id, "auto"), 60);
+    return () => clearTimeout(t);
+  }, [pathname]);
   // The bar keeps its own grey underneath; the theme rides over it as a wipe.
   // The menu is never on screen while that runs, so it just takes the colour.
   const menuTint = theme?.menu ?? MENU_TINT;
@@ -222,7 +244,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
         {logo ? (
           <Link
             href="/"
-            onClick={(e) => toTopIfHome(e, "/", pathname)}
+            onClick={(e) => glideIfHome(e, "/", pathname)}
             aria-label="Kai Ssempa, home"
             style={{ display: "flex", position: "relative", zIndex: 1 }}
           >
@@ -302,7 +324,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
             size={theme?.size}
             weight={theme?.weight}
             onNavigate={(e) => {
-              toTopIfHome(e, l.href, pathname);
+              glideIfHome(e, l.href, pathname);
               setOpen(false);
             }}
           >
