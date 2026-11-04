@@ -1,0 +1,22 @@
+/* The Zorzal case study's palette, taken from Kai's Zorzal art: the
+   wordmark's wine (#983c44), the landscape's deep teal and terracotta, and
+   the clouds' cream. Scoped to .zorzal so nothing else on the site picks it
+   up. */
+.zorzal {
+  --z-cream: #fffdf6;
+  --z-sand: #f6efe2;
+  --z-forest: #0f4a40;
+  --z-ink: #2a211d;
+  --z-muted: #74675e;
+  --z-rule: rgba(42, 33, 29, 0.18);
+  --z-wine: #983c44;
+  --z-terracotta: #c17132;
+  --z-apricot: #fac9b8;
+  background: var(--z-cream);
+  color: var(--z-ink);
+}
+
+.zorzal ::selection {
+  background: var(--z-apricot);
+  color: var(--z-ink);
+}

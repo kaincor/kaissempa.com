@@ -82,7 +82,7 @@ export default function ProjectsAndProducts({ detailed = false }: { detailed?: b
         <FortunaThumb href="/fortuna" label="Fortuna" />
       </Thumb>
 
-      <Thumb label="Zorzal" background="#ffffff" shadow={ZORZAL_WINE} info={info("Zorzal")}>
+      <Thumb label="Zorzal" href="/zorzal" background="#ffffff" shadow={ZORZAL_WINE} info={info("Zorzal")}>
         <CloudDrift
           layers={[
             { src: "/case-studies/cloud-1.svg", heightPct: 94.6, aspect: 2.452, duration: 26 },
