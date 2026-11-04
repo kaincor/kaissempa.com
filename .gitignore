@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# case study source material: private docs, chats and drafts, never published
+assets/Case Studies/*/References/
+assets/Case Studies/*/*-draft.md
