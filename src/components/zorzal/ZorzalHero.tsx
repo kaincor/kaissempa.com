@@ -9,9 +9,8 @@ import TapestryLandscape from "./TapestryLandscape";
  * so on scroll it sinks out of sight behind the houses). ?sky=clouds swaps the
  * sky for the original drifting clouds.
  *
- * HeroMotion adds the depth: scroll parallax between sky, wordmark and hill,
- * and a slight tilt of the scene toward the cursor. The transforms live in
- * src/app/zorzal/theme.css (.z-sky, .z-title, .z-land, .zl).
+ * HeroMotion adds the depth: scroll parallax between sky, wordmark and hill.
+ * The transforms live in src/app/zorzal/theme.css (.z-sky, .z-title, .z-land).
  *
  * The landscape is about three times as wide as it is tall, so on a phone it
  * is a strip along the bottom of a lot of sky. Kai is designing phone, iPad

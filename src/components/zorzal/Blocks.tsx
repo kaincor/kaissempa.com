@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { CSSProperties, ReactNode } from "react";
 import FadeIn from "@/components/fortuna/FadeIn";
+import Parallax from "@/components/fortuna/Parallax";
 import type { Block, Figure, Section, Tone } from "@/content/zorzal";
 import { SIZES } from "@/content/zorzal-images";
 import { Chart } from "./Charts";
@@ -49,6 +50,23 @@ const body: CSSProperties = {
   margin: "0 0 1.15em",
 };
 
+/**
+ * Scroll depth for the page below the hero, in pixels each way (see
+ * fortuna/Parallax). Running text stays put so it reads steadily; the
+ * pictures and pull quotes float a little against it, quotes most. Each
+ * drift stays under the block's own top and bottom margin (28px at the
+ * least) so nothing slides into its neighbour. Galleries drift per item
+ * instead (GALLERY_DRIFT), which staggers phones and photos in depth.
+ */
+const DRIFT: Partial<Record<Block["t"], number>> = {
+  img: 22,
+  quote: 26,
+  motion: 14,
+  placeholder: 18,
+  chart: 10,
+};
+const GALLERY_DRIFT = [14, 30, 20];
+
 export function SectionBand({ section }: { section: Section }) {
   const tone = TONE[section.tone];
   return (
@@ -68,11 +86,11 @@ export function SectionBand({ section }: { section: Section }) {
           {section.title}
         </ChapterTitle>
       </FadeIn>
-      {section.blocks.map((b, i) => (
-        <FadeIn key={i}>
-          <BlockView block={b} dark={section.tone === "forest"} />
-        </FadeIn>
-      ))}
+      {section.blocks.map((b, i) => {
+        const view = <BlockView block={b} dark={section.tone === "forest"} />;
+        const drift = DRIFT[b.t];
+        return <FadeIn key={i}>{drift ? <Parallax drift={drift}>{view}</Parallax> : view}</FadeIn>;
+      })}
     </section>
   );
 }
@@ -114,7 +132,9 @@ function ChapterTitle({ icon, dark, children }: { icon: string; dark: boolean; c
         gap: "clamp(14px, 2vw, 20px)",
       }}
     >
-      <IconStandIn label={icon} dark={dark} />
+      <Parallax drift={9}>
+        <IconStandIn label={icon} dark={dark} />
+      </Parallax>
       <h2
         style={{
           margin: 0,
@@ -245,15 +265,17 @@ function BlockView({ block: b, dark }: { block: Block; dark: boolean }) {
             style={{
               display: "grid",
               gridTemplateColumns: `repeat(auto-fit, minmax(min(${b.items.some((i) => i.phone) ? 200 : 260}px, 100%), 1fr))`,
-              gap: "clamp(14px, 2vw, 24px)",
+              // Rows sit further apart than columns: when the grid stacks on a
+              // phone, neighbours drift by different amounts and need the room.
+              gap: "48px clamp(14px, 2vw, 24px)",
               alignItems: "center",
             }}
           >
-            {b.items.map((f) => (
-              <div key={f.src}>
+            {b.items.map((f, i) => (
+              <Parallax key={f.src} drift={GALLERY_DRIFT[i % GALLERY_DRIFT.length]}>
                 <Shot fig={f} sizes="(max-width: 700px) 100vw, 520px" />
                 {f.caption ? <Caption>{f.caption}</Caption> : null}
-              </div>
+              </Parallax>
             ))}
           </div>
           {b.caption ? <Caption>{b.caption}</Caption> : null}
