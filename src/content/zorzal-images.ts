@@ -1,5 +1,8 @@
 /** Pixel sizes of the images in public/zorzal, so each one reserves its space before it loads. */
 export const SIZES: Record<string, [number, number]> = {
+  "/zorzal/checkpoint-actions.webp": [1600, 491],
+  "/zorzal/proposed-changes.webp": [1598, 880],
+  "/zorzal/supply-chain-display-sketch.webp": [1600, 737],
   "/zorzal/belt-desktop.webp": [1600, 906],
   "/zorzal/belt-phone.webp": [739, 1600],
   "/zorzal/chuck-dashboard.webp": [1079, 1399],

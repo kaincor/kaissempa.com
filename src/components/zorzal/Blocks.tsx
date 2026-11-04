@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import FadeIn from "@/components/fortuna/FadeIn";
 import type { Block, Figure, Section, Tone } from "@/content/zorzal";
 import { SIZES } from "@/content/zorzal-images";
+import { Chart } from "./Charts";
 
 /**
  * The Zorzal case study's kit: section bands, chapter titles, and the blocks
@@ -291,6 +292,8 @@ function BlockView({ block: b, dark }: { block: Block; dark: boolean }) {
           </span>
         </div>
       );
+    case "chart":
+      return <Chart kind={b.kind} caption={b.caption} dark={dark} />;
     case "placeholder":
       // A photo still to come: a plain white card with black text.
       return (

@@ -1,3 +1,5 @@
+import type { ChartKind } from "@/components/zorzal/Charts";
+
 /**
  * The Zorzal case study, as data.
  *
@@ -30,7 +32,8 @@ export type Block =
   | ({ t: "img"; wide?: boolean } & Figure)
   | { t: "gallery"; items: Figure[]; caption?: string }
   | { t: "motion"; text: string; label?: string }
-  | { t: "placeholder"; text: string; aspect?: string };
+  | { t: "placeholder"; text: string; aspect?: string }
+  | { t: "chart"; kind: ChartKind; caption?: string };
 
 export type Tone = "cream" | "sand" | "forest";
 
@@ -107,6 +110,7 @@ export const SECTIONS: Section[] = [
       { t: "p", text: "That last point became the rule for everything after it: *the tool has to cost the worker almost nothing, or it doesn't get used at all.*" },
       { t: "motion", text: "A single bag of beans with a barcode riding along the supply chain (farm → fermentation → drying → warehouse, where bags merge into a lot → container), drawn in as you scroll." },
       { t: "img", wide: true, src: "/zorzal/supply-chain.webp", alt: "Swimlane diagram of the checkpoints: fermentation, drying, containers and warehouse", caption: "The supply chain the app was built around, one swimlane per checkpoint." },
+      { t: "img", wide: true, src: "/zorzal/checkpoint-actions.webp", alt: "A map of every action at each checkpoint, each marked quick scan, form, create or aggregate", caption: "From the previous team's operations manual: every action at every checkpoint, in order. Most are a single quick scan." },
     ],
   },
   {
@@ -140,6 +144,7 @@ export const SECTIONS: Section[] = [
       { t: "p", text: "Here's the part nobody warns you about with client work: sometimes the client goes quiet." },
       { t: "p", text: "We emailed Chuck. We emailed him again. For most of winter quarter we couldn't get him on a call, so we had no feedback on anything we were making. Our winter slides said it plainly: \"Haven't talked to Chuck at all this quarter.\" I made a missing-person poster for him and put it in our presentation, misery-loves-company style. Simi, wisely, asked me to tone it down, so the poster went and I \"changed my tone.\" When Lyna finally sent what she called a \"passive aggressive email\" in week nine, he replied in five minutes. Then he cancelled the meeting he'd proposed. (\"Chuck tricked us, I fear,\" I told the group.) Lyna's email chain and Simi's texts were our only lines to Zorzal, and they did a lot of heroic chasing." },
       { t: "motion", label: "✱ Motion / image", text: "The missing-person poster, recreated with no face: a silhouette with a question mark, \"HAVE YOU SEEN THIS MAN?\", \"Last seen: Week 1\", \"Reward: one reply email\". Maybe a phone ringing on loop beside it, never picked up." },
+      { t: "chart", kind: "timeline", caption: "Client feedback was planned for week 5. It came in week 12." },
       { t: "p", text: "Honestly, at first the silence was kind of fun. No strict guidelines, no rubric, just the creative reins and room to go any direction. It was like being told to plant a garden: no specifics, just plant a garden. So you do. You pick the plants, arrange them, style them, make it look good. Then weeks later, while everything's flowering, someone walks by and says: oh wait, these are the wrong plants, I should've told you. That's rain on a parade. And after the first round of pushback, every round after it is harder to start. Our excitement tapered off and eventually leveled out into frustration." },
       { t: "p", text: COVID },
     ],
@@ -179,6 +184,7 @@ export const SECTIONS: Section[] = [
       { t: "p", text: "**Pages needed to announce themselves.** Testers landed on screens and paused: \"kind of confused on what I was supposed to do — not too many words, but maybe a heading.\" My minimalism had tipped over into ambiguity." },
       { t: "p", text: "**The forms button was invisible.** On the FCCI task, people went to Settings first. Forms belonged *inside* each checkpoint, not in a separate bucket." },
       { t: "p", text: "**People wanted more life.** Nearly everyone, unprompted, asked for more color, pictures, maybe animation. (Hold that thought too.)" },
+      { t: "chart", kind: "tests", caption: "Every failure was about labels and wayfinding, not the flow itself." },
       { t: "placeholder", text: "The prototype's Aggregate screen, with \"Add to Lot\" and \"Create Lot\" circled — screenshot to come", aspect: "16 / 9" },
     ],
   },
@@ -194,6 +200,8 @@ export const SECTIONS: Section[] = [
       { t: "p", text: "She also gave us the sharpest rule of the whole project: **Record is where the money is.** Logging boxes at each checkpoint is the entire job of this tool, so count the taps to get there. Our beautiful redesign took **four screens to get from Home to Create Box**, the most common action in the whole system. \"You want as few clicks as possible.\"" },
       { t: "quote", text: "Our beautiful redesign took four screens to reach the most common action in the app. That's not a style problem. That's the whole problem." },
       { t: "motion", text: "A tap counter. A thumb taps through the redesign, screen after screen, and the counter ticks to four. Then the slimmed-down version gets there in fewer." },
+      { t: "chart", kind: "taps" },
+      { t: "chart", kind: "risks", caption: "The risk register we inherited and extended. The three biggest risks were about disrupting how workers already work, not about the technology." },
     ],
   },
   {
@@ -205,7 +213,9 @@ export const SECTIONS: Section[] = [
       { t: "p", text: "The critique forced the real question. We had three paths, and we ran them as an actual evaluation instead of a vibe:" },
       { t: "p", text: "**Rebuild from scratch, with our redesign.** Best-looking and the riskiest. It was untested with real users, it was the wrong kind of app, and it took longer to reach the main actions. It would also run well past our two quarters." },
       { t: "p", text: "**Move to a no-code platform.** We gave Retool a serious look. It had a built-in barcode scanner and some Firebase support. But every checkpoint would have been its own separate app, stitched together, it's built for internal tools (which kills any future customer-facing version), it's drag-and-drop in name and JavaScript-heavy in practice, and it would have cost a monthly fee. We also wrote down one question that stuck: *does this do justice to the work previous teams already put in?*" },
+      { t: "chart", kind: "retool" },
       { t: "p", text: "**Modify the existing codebase.** The least glamorous option. It keeps the layout workers already know, keeps the clean architecture, keeps the customer-facing future open, fits the timeline, and does no harm to a workflow we couldn't test directly." },
+      { t: "chart", kind: "budget", caption: "Modifying was also the cheap option. Our whole year cost $67." },
       { t: "p", text: "Modify won on paper. Then, at the start of spring, we finally got Chuck on a call and showed him both prototypes. He reacted just like our testers: he found the redesign clearer and more user-friendly than the existing app. He also said he'd take an app if we could deliver it by the end of the quarter. We couldn't promise that, so he went with the modified version. The person who had to live with the decision ended up where we had." },
       { t: "p", text: COVID },
       { t: "motion", text: "The team's traffic-light decision matrix, with Kristy's scribbled objections drawing themselves on top, stroke by stroke." },
@@ -249,6 +259,7 @@ export const SECTIONS: Section[] = [
       { t: "p", text: "For a while, implementation went sideways. We'd assumed the whole app was broken on phones and were trying to fix everything at once. Our interim fix was even to tell the browser to render the site at 75% zoom, which worked, but it's not a mobile product. It's a desktop product held at arm's length." },
       { t: "p", text: "Then Alice and Kristy audited the app page by page and wrote up what they found. Their memo opens, in all caps: **\"WE OVERCOMPLICATED THE WHOLE CONVERTING-TO-MOBILE PROCESS!\"** Most pages were fine. The breakage was concentrated in a few places: the checkpoint components (Create Box and drying especially), sub-checkpoints that didn't load, and text fields with **fixed pixel widths** that ignored the screen they were on. Some forms even showed the same fields in a *different order* on mobile and desktop, which meant someone, somewhere, had built two different versions." },
       { t: "p", text: "That memo turned a vague goal (\"make it responsive\") into a checklist." },
+      { t: "chart", kind: "memo" },
       { t: "placeholder", text: "The \"WE OVERCOMPLICATED…\" memo, mess and all — screenshot to come", aspect: "16 / 10" },
       { t: "motion", text: "A long tangled to-do list that untangles itself into four checkboxes." },
     ],
@@ -278,6 +289,7 @@ export const SECTIONS: Section[] = [
     tone: "cream",
     blocks: [
       { t: "p", text: "The forms were laid out sideways (*Farm · Quantity · Submit* across one row), which is fine at 1280px and chaos at 375px. Alice rebuilt them as a single column, every label above its field. On the Aggregate page, \"Complete Lot\" moved *below* the list of scanned boxes, matching the order of the task (scan, scan, scan, complete) and ending the misclicks." },
+      { t: "img", wide: true, src: "/zorzal/proposed-changes.webp", alt: "The old Record page with pen marks: the sidebar crossed out and collapsed, the fields stacked, Submit moved underneath", caption: "Our proposal, drawn over the old Record page: collapse the sidebar, stack the fields, put Submit underneath." },
       { t: "p", text: "I worked on the responsive CSS with Kristy and Alice. Alice and Kristy owned the breakpoints that replaced the 75% zoom, and we swapped fixed pixel widths for relative ones so every field fits the screen it's on. Unsexy work, and the difference between genuinely mobile and a desktop site zoomed out." },
       { t: "motion", text: "A form whose fields slide from a single row into a column as the screen narrows." },
     ],
@@ -319,7 +331,9 @@ export const SECTIONS: Section[] = [
     tone: "cream",
     blocks: [
       { t: "p", text: "Chuck is the one who actually analyzes the data, and midway through the build we found out he's very good with spreadsheets. The \"proper\" answer would have been dashboards and charts inside the app, but that would have taken longer than we had and been maintained by no one. So we **wired the database to a Google Sheet** and added a Report page with a one-click \"Export to Google Sheets.\" He gets live production data in the tool he already lives in, and future teams can automate whichever of his charts turn out to matter. We built *less*, on purpose." },
+      { t: "chart", kind: "priorities" },
       { t: "motion", text: "A busy dashboard mockup (charts, filters, tabs) that collapses into one button: \"Export to Google Sheets.\"" },
+      { t: "img", wide: true, src: "/zorzal/supply-chain-display-sketch.webp", alt: "A sketch of a Report page counting units at each checkpoint today", caption: "An earlier idea: a Report page counting units at each checkpoint. A spreadsheet export did the job with less." },
       { t: "img", src: "/zorzal/chuck-dashboard.webp", alt: "Phone sketches of a dashboard for Chuck, with an update-database button and a checkpoint timeline", caption: "Simi's and my dashboard sketches for Chuck." },
     ],
   },

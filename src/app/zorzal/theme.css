@@ -37,6 +37,36 @@
   .zorzal .z-star, .zorzal .z-wordmark { animation: none; }
 }
 
+/* Charts: the plan-vs-actual timeline is three columns on a wide screen and
+   stacks on a phone, where each line gets a small Plan / Actual tag. */
+.zorzal .z-tl-row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 6px 24px;
+  padding: 14px 0;
+}
+.zorzal .z-tl-head { padding-top: 0; }
+.zorzal .z-tl-tag { display: none; }
+.zorzal .z-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 28px;
+}
+.zorzal .z-pri {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4px 16px;
+  align-items: baseline;
+}
+@media (max-width: 640px) {
+  .zorzal .z-tl-row { grid-template-columns: 1fr; }
+  .zorzal .z-tl-head { display: none; }
+  .zorzal .z-tl-tag { display: inline; }
+  .zorzal .z-split { grid-template-columns: 1fr; gap: 12px; }
+  .zorzal .z-pri { grid-template-columns: 28px minmax(0, 1fr); }
+  .zorzal .z-pri > :last-child { grid-column: 2; }
+}
+
 .zorzal ::selection {
   background: var(--z-apricot);
   color: var(--z-ink);
