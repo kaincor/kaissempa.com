@@ -37,6 +37,47 @@
   .zorzal .z-star, .zorzal .z-wordmark { animation: none; }
 }
 
+/* Hero depth, driven by HeroMotion's --p (scroll), --mx and --my (cursor).
+   Scrolling: the sky lags furthest behind, the wordmark sinks and fades, and
+   the hill sinks more slowly than the page while tipping back from its
+   bottom edge. Cursor: the hill turns a few degrees toward it, and the
+   trees, houses and front bushes shift a touch more than the ground, so the
+   scene reads in depth. */
+.zorzal .z-hero {
+  --p: 0;
+  --mx: 0;
+  --my: 0;
+}
+.zorzal .z-sky {
+  transform: translate3d(calc(var(--mx) * -5px), calc(var(--p) * 55svh + var(--my) * -3px), 0);
+  will-change: transform;
+}
+.zorzal .z-title {
+  transform: translate3d(calc(var(--mx) * -14px), calc(var(--p) * 38svh + var(--my) * -8px), 0);
+  opacity: calc(1 - var(--p) * 1.7);
+  will-change: transform, opacity;
+}
+.zorzal .z-land-stage {
+  perspective: 1300px;
+  perspective-origin: 50% 40%;
+}
+.zorzal .z-land {
+  transform-origin: 50% 100%;
+  transform:
+    translate3d(calc(var(--mx) * 10px), calc(var(--p) * 16svh), 0)
+    rotateX(calc(var(--p) * 16deg + var(--my) * -3deg))
+    rotateY(calc(var(--mx) * 4deg))
+    scale(calc(1 + var(--p) * 0.08));
+  will-change: transform;
+}
+.zorzal .zl[data-g="trees"],
+.zorzal .zl[data-g="houses"] {
+  transform: translate(calc(var(--mx) * 3px), calc(var(--my) * 1.5px));
+}
+.zorzal .zl[data-g="front"] {
+  transform: translate(calc(var(--mx) * 8px), calc(var(--my) * 3px));
+}
+
 /* Charts: the plan-vs-actual timeline is three columns on a wide screen and
    stacks on a phone, where each line gets a small Plan / Actual tag. */
 .zorzal .z-tl-row {

@@ -118,11 +118,11 @@ function ChapterTitle({ icon, dark, children }: { icon: string; dark: boolean; c
       <h2
         style={{
           margin: 0,
-          fontFamily: "var(--font-serif)",
-          fontWeight: 600,
-          fontSize: "clamp(26px, 3.4vw, 38px)",
+          fontFamily: "var(--font-captain), var(--font-serif)",
+          fontWeight: 400,
+          fontSize: "clamp(25px, 3.1vw, 36px)",
           lineHeight: 1.12,
-          letterSpacing: "-0.02em",
+          letterSpacing: "0.01em",
           textWrap: "balance",
         }}
       >

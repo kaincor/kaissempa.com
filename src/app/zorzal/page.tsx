@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import "./theme.css";
 import { FACTS, OUTCOME, SECTIONS } from "@/content/zorzal";
 import ZorzalHero from "@/components/zorzal/ZorzalHero";
 import { SectionBand } from "@/components/zorzal/Blocks";
 import FadeIn from "@/components/fortuna/FadeIn";
+
+// Captain Kai: Kai's hand-traced capitals, numbers and punctuation, built from
+// his Figma glyphs (node 3641:31). Capitals only, so lowercase types as
+// capitals too. Missing characters fall back to the serif.
+const captainKai = localFont({
+  src: "../../fonts/CaptainKai-Regular.woff2",
+  variable: "--font-captain",
+  weight: "400",
+  style: "normal",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Zorzal Cacao — Cacao Tracker",
@@ -13,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function ZorzalPage() {
   return (
-    <main className="zorzal flex-1">
+    <main className={`zorzal flex-1 ${captainKai.variable}`}>
       <ZorzalHero />
 
       {/* The facts, Phylissa Li style: a labelled block under the title,
