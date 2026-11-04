@@ -6,14 +6,15 @@ import ZorzalHero from "@/components/zorzal/ZorzalHero";
 import { SectionBand } from "@/components/zorzal/Blocks";
 import FadeIn from "@/components/fortuna/FadeIn";
 
-// Captain Kai: Kai's hand-traced capitals, numbers and punctuation, built from
-// his Figma glyphs (node 3641:31). Capitals only, so lowercase types as
+// Captain Kai, regular and bold: Kai's hand-traced capitals, numbers and punctuation, built from
+// his Figma glyphs (regular 3641:31, bold 3647:1489). Capitals only, so lowercase types as
 // capitals too. Missing characters fall back to the serif.
 const captainKai = localFont({
-  src: "../../fonts/CaptainKai-Regular.woff2",
+  src: [
+    { path: "../../fonts/CaptainKai-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../../fonts/CaptainKai-Bold.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-captain",
-  weight: "400",
-  style: "normal",
   display: "swap",
 });
 

@@ -119,7 +119,7 @@ function ChapterTitle({ icon, dark, children }: { icon: string; dark: boolean; c
         style={{
           margin: 0,
           fontFamily: "var(--font-captain), var(--font-serif)",
-          fontWeight: 400,
+          fontWeight: 700,
           fontSize: "clamp(25px, 3.1vw, 36px)",
           lineHeight: 1.12,
           letterSpacing: "0.01em",
