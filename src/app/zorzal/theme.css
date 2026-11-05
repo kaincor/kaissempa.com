@@ -26,6 +26,13 @@
   --z-captain-stack: "Captain Kai", var(--font-serif), serif;
 }
 
+/* Body text in Charter. It ships with macOS and iOS, so Apple devices have it
+   without the site serving a file; elsewhere it falls back to Bitstream
+   Charter if installed, then the Source Serif already loaded for headings. */
+.zorzal {
+  --font-body: Charter, "Bitstream Charter", var(--font-serif), serif;
+}
+
 .zorzal {
   --font-captain: "Captain Kai";
   --z-cream: #fffdf6;
