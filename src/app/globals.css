@@ -42,6 +42,48 @@ html {
   overscroll-behavior-y: none;
 }
 
+/* On a phone, Safari shows the html background behind the status bar and
+   past the ends of the page, so it matches the top of each page rather than
+   falling back to grey. ThemeColor keeps it in step on scroll. Desktop keeps
+   the transparent html it always had. */
+@media (max-width: 639px), (pointer: coarse) {
+  html {
+    background: var(--background);
+  }
+  html:has(main.zorzal) {
+    background: #cdd9e7;
+  }
+  html:has(main.fortuna) {
+    background: #f7f5f0;
+  }
+}
+
+/* ThemeColor's edge strips: a solid 5px at the very top and bottom of the
+   screen for Safari to take its toolbar colours from, fading into the page
+   so they don't read as a line. Phones only. */
+.edge-strip {
+  display: none;
+}
+@media (max-width: 639px), (pointer: coarse) {
+  .edge-strip {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    height: 20px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .edge-top {
+    top: 0;
+    background: linear-gradient(to bottom, var(--edge-top, var(--background)) 5px, transparent);
+  }
+  .edge-bottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--edge-bottom, var(--background)) 5px, transparent);
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

@@ -26,6 +26,16 @@ export const PHOTOS: FanDeckCard[] = [
   { src: "/photos/irving-raghad-cyprien-kai.jpg", alt: "Irving, Raghad, Cyprien and Kai" },
 ];
 
+/**
+ * The phone's swipe pile leads with the field portrait, then the helmet, then
+ * the rest in fan order. The desktop fan keeps PHOTOS as it is.
+ */
+const LEAD = ["/photos/kai-in-lake-lagunita.jpg", "/photos/helmet.jpg"];
+const PHONE_PHOTOS: FanDeckCard[] = [
+  ...LEAD.map((src) => PHOTOS.find((p) => p.src === src)!),
+  ...PHOTOS.filter((p) => !LEAD.includes(p.src)),
+];
+
 const BODY = "#6E6E6E";
 /** Stanford cardinal. */
 const CARDINAL = "#8C1515";
@@ -91,7 +101,7 @@ export default function About() {
       </div>
       <div className="sm:hidden" style={{ padding: "28px 0 8px" }}>
         <SwipeDeck
-          cards={PHOTOS}
+          cards={PHONE_PHOTOS}
           sizes="70vw"
           radius={10}
           shadow="0 15px 35px rgba(0, 0, 0, 0.5)"

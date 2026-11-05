@@ -44,6 +44,11 @@ export default function HeroMotion({ children }: { children: ReactNode }) {
     <header
       ref={ref}
       className="z-hero"
+      // The sky is a gradient and an SVG, so ThemeColor can't read a flat
+      // colour off it: this is its top edge, for the phone's status bar.
+      // The bottom of the screen is the hill, mostly its teal ground.
+      data-theme-color="#cdd9e7"
+      data-theme-color-bottom="#517f71"
       style={{
         position: "relative",
         // Its own stacking context, so the landscape's z-index can't rise

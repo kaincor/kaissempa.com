@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { mobileThemeColor } from "@/lib/theme-color";
 import "./theme.css";
 import { HERO, SECTIONS } from "@/content/fortuna";
 import {
@@ -9,6 +10,9 @@ import {
   toneIsDark,
 } from "@/components/fortuna/Prose";
 import FadeIn from "@/components/fortuna/FadeIn";
+
+/** The page's cream. Phones only; see lib/theme-color. */
+export const viewport: Viewport = { themeColor: mobileThemeColor("#f7f5f0") };
 
 export const metadata: Metadata = {
   title: "Fortuna — A Tale of Two Users",

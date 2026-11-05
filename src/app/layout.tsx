@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Geist, Hanken_Grotesk, Source_Serif_4 } from "next/font/google";
 import Navbar from "@/components/Navbar";
+import ThemeColor from "@/components/ThemeColor";
+import { SITE_TOP, mobileThemeColor } from "@/lib/theme-color";
 import "./globals.css";
 
 // Display face. Limited glyph set (no @ # % [ ] * + = _, no en/em dash or
@@ -61,6 +63,19 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * viewport-fit=cover lets the page run under the notch, and theme-color gives
+ * Safari the colour for the strip behind the status bar, which it otherwise
+ * paints grey. The colour is phones only (see lib/theme-color) and pages that
+ * open on something other than the site grey set their own.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: mobileThemeColor(SITE_TOP),
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -68,6 +83,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${kaicords.variable} ${geist.variable} ${sourceSerif.variable} ${hanken.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ThemeColor />
         <Navbar />
         {children}
       </body>

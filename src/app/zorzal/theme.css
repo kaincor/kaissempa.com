@@ -95,11 +95,19 @@
    rather than sinking (sinking would push it down over the text). It still
    tips back and swells a touch from its bottom edge, which stays put. */
 .zorzal .z-land {
+  bottom: -8%;
   transform-origin: 50% 100%;
   transform:
     rotateX(calc(var(--p) * 16deg))
     scale(calc(1 + var(--p) * 0.08));
   will-change: transform;
+}
+
+/* On a phone the landscape is a thin strip, and at -8% most of it sat below
+   the fold. Raised so the whole hill is in view, still hanging a little over
+   the next section so there is no hard seam. */
+@media (max-width: 639px) {
+  .zorzal .z-land { bottom: -2%; }
 }
 
 /* Charts: the plan-vs-actual timeline is three columns on a wide screen and

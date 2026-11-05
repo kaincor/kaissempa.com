@@ -275,10 +275,15 @@ export default function SocialLinks() {
           t.y.set(0);
         });
       }}
+      // Top padding is a class so a phone can take less of it: there the
+      // ridge's lowest point would otherwise leave a wide band of grey above
+      // the row.
+      className="pt-[72px] max-sm:pt-7"
       style={{
         maxWidth: "var(--content-max)",
         margin: "0 auto",
-        padding: "72px clamp(16px, 4vw, 30px) 96px",
+        paddingInline: "clamp(16px, 4vw, 30px)",
+        paddingBottom: 96,
         display: "flex",
         // Never two rows. Six is a set; split across lines it reads as an
         // overflow rather than a choice. The chip and gap widths are sized in

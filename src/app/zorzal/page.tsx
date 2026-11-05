@@ -1,10 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { mobileThemeColor } from "@/lib/theme-color";
 import { preload } from "react-dom";
 import "./theme.css";
 import { FACTS, OUTCOME, SECTIONS } from "@/content/zorzal";
 import ZorzalHero from "@/components/zorzal/ZorzalHero";
 import { SectionBand } from "@/components/zorzal/Blocks";
 import FadeIn from "@/components/fortuna/FadeIn";
+
+/** The top of the hero sky, behind the starry band. Phones only; see lib/theme-color. */
+export const viewport: Viewport = { themeColor: mobileThemeColor("#cdd9e7") };
 
 export const metadata: Metadata = {
   title: "Zorzal Cacao — Cacao Tracker",

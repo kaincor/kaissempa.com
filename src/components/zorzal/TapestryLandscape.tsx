@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type CSSProperties } from "react";
+import { MOBILE_MQ } from "@/lib/theme-color";
 
 /**
  * Kai's layered landscape (Figma 3417:9), pieced together on load.
@@ -47,6 +48,14 @@ export default function TapestryLandscape({ style }: { style?: CSSProperties }) 
           let seed = 7;
           const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
           const margin = 40;
+          // On a phone the header's bottom is not always the screen's: with
+          // the toolbar collapsed, or where svh isn't supported, the screen
+          // runs on past it and pieces from below started in view. There they
+          // start below whichever is lower, clear of it by their own tilt.
+          const phone = window.matchMedia(MOBILE_MQ).matches;
+          const floor = phone
+            ? Math.max(frame.bottom, window.innerHeight, document.documentElement.clientHeight)
+            : frame.bottom;
 
           svg.querySelectorAll<SVGGElement>(".zp").forEach((p) => {
             const b = p.getBoundingClientRect();
@@ -65,18 +74,23 @@ export default function TapestryLandscape({ style }: { style?: CSSProperties }) 
             // Far enough that the whole piece starts off-screen, plus a little
             // sideways drift so the pieces don't travel in straight rails.
             const drift = (rand() - 0.5) * 160;
+            const layer = Number(p.dataset.l ?? 0);
+            const turn = (rand() - 0.5) * 18;
+            // How far a corner of the piece swings past its box at that tilt.
+            const swing = phone
+              ? Math.abs(Math.sin((turn * Math.PI) / 180)) * Math.max(b.width, b.height) * 0.5
+              : 0;
             let dx = 0;
             let dy = 0;
+            const clear = margin + swing;
             if (edge === "left" || edge === "right") {
-              dx = edge === "left" ? -(b.right - frame.left + margin) : frame.right - b.left + margin;
+              dx = edge === "left" ? -(b.right - frame.left + clear) : frame.right - b.left + clear;
               dy = drift;
             } else {
-              dy = edge === "top" ? -(b.bottom - frame.top + margin) : frame.bottom - b.top + margin;
+              dy = edge === "top" ? -(b.bottom - frame.top + clear) : floor - b.top + clear;
               dx = drift;
             }
 
-            const layer = Number(p.dataset.l ?? 0);
-            const turn = (rand() - 0.5) * 18;
             p.style.transformBox = "fill-box";
             p.style.transformOrigin = "center";
             anims.push(

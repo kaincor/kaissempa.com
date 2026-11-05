@@ -49,7 +49,7 @@ export default function ZorzalHero() {
       <div className="z-land-stage" style={{ position: "absolute", inset: 0, zIndex: 10 }}>
         <div
           className="z-land"
-          style={{ position: "absolute", left: "-5%", bottom: "-8%", width: "110%" }}
+          style={{ position: "absolute", left: "-5%", width: "110%" }}
         >
           <TapestryLandscape />
         </div>
