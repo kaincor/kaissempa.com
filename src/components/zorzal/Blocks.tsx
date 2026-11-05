@@ -5,6 +5,7 @@ import Parallax from "@/components/fortuna/Parallax";
 import type { Block, Figure, Section, Tone } from "@/content/zorzal";
 import { SIZES } from "@/content/zorzal-images";
 import { Chart } from "./Charts";
+import OneLineTitle from "./OneLineTitle";
 
 /**
  * The Zorzal case study's kit: section bands, chapter titles, and the blocks
@@ -135,21 +136,20 @@ function ChapterTitle({ icon, dark, children }: { icon: string; dark: boolean; c
       <Parallax drift={9}>
         <IconStandIn label={icon} dark={dark} />
       </Parallax>
-      <h2
+      {/* Always one line: a title too long for the space is scaled down to
+          fit rather than wrapped (OneLineTitle). */}
+      <OneLineTitle
         style={{
           margin: 0,
           fontFamily: "var(--font-captain), var(--font-serif)",
           fontWeight: 700,
-          // One line at every width: titles are kept under ~560px at 36px, and
-          // the size follows the screen on phones so they still fit there.
-          fontSize: "clamp(15px, 4.6vw, 36px)",
+          fontSize: "clamp(25px, 3.1vw, 36px)",
           lineHeight: 1.12,
           letterSpacing: "0.01em",
-          textWrap: "balance",
         }}
       >
         {children}
-      </h2>
+      </OneLineTitle>
     </div>
   );
 }
