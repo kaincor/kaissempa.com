@@ -64,7 +64,7 @@ const COVID =
 export const SECTIONS: Section[] = [
   {
     id: "why",
-    title: "Why tracking cacao is worth doing well",
+    title: "Why track cacao well",
     icon: "thrush on a branch",
     tone: "cream",
     blocks: [
@@ -78,7 +78,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "team",
-    title: "Five friends and a bird sanctuary",
+    title: "Five friends, one sanctuary",
     icon: "rabbit (Rupert)",
     tone: "sand",
     blocks: [
@@ -98,7 +98,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "inherited",
-    title: "Inheriting someone else's system",
+    title: "Someone else's system",
     icon: "box with a barcode",
     tone: "cream",
     blocks: [
@@ -115,7 +115,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "problem",
-    title: "The problem, held up to reality",
+    title: "The problem, up close",
     icon: "phone with a crack",
     tone: "cream",
     blocks: [
@@ -190,7 +190,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "critique",
-    title: "The critique that killed our favorite design",
+    title: "The critique that killed it",
     icon: "crow",
     tone: "cream",
     blocks: [
@@ -231,7 +231,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "grief",
-    title: "The five stages of shelving a redesign",
+    title: "Five stages of shelving it",
     icon: "bull",
     tone: "forest",
     blocks: [
@@ -251,7 +251,7 @@ export const SECTIONS: Section[] = [
   {
     id: "overcomplicated",
     part: "Phase two: the build, decision by decision",
-    title: "“We overcomplicated the whole converting-to-mobile process!”",
+    title: "We overcomplicated it",
     icon: "snake, or a knot",
     tone: "cream",
     blocks: [
@@ -284,7 +284,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "stack",
-    title: "Stack everything, and size it to the screen",
+    title: "Stack it, size it to fit",
     icon: "giraffe",
     tone: "cream",
     blocks: [
@@ -317,7 +317,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "create-box",
-    title: "Fix Create Box before adding anything",
+    title: "Fix Create Box first",
     icon: "ram",
     tone: "cream",
     blocks: [
@@ -326,7 +326,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "chuck",
-    title: "Meet Chuck where he already is",
+    title: "Meet Chuck where he is",
     icon: "sheep",
     tone: "cream",
     blocks: [

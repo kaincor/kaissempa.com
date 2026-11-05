@@ -140,7 +140,9 @@ function ChapterTitle({ icon, dark, children }: { icon: string; dark: boolean; c
           margin: 0,
           fontFamily: "var(--font-captain), var(--font-serif)",
           fontWeight: 700,
-          fontSize: "clamp(25px, 3.1vw, 36px)",
+          // One line at every width: titles are kept under ~560px at 36px, and
+          // the size follows the screen on phones so they still fit there.
+          fontSize: "clamp(15px, 4.6vw, 36px)",
           lineHeight: 1.12,
           letterSpacing: "0.01em",
           textWrap: "balance",
