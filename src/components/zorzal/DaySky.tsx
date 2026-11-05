@@ -14,7 +14,7 @@
 const EDGE_CENTRE = 0.05;
 const EDGE_SIDES = 0.21;
 const WIDTH = 0.24; // how broad the crest is
-function edge(x: number) {
+export function edge(x: number) {
   const g = Math.exp(-(((x - 0.5) / WIDTH) ** 2));
   return EDGE_SIDES - (EDGE_SIDES - EDGE_CENTRE) * g;
 }
@@ -31,15 +31,15 @@ const BAND_PATH = (() => {
 const STARS = (() => {
   let seed = 11;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  return Array.from({ length: 90 }, () => {
+  return Array.from({ length: 170 }, () => {
     const x = rand();
-    const depth = Math.pow(rand(), 1.4); // crowd toward the top
-    const y = depth * edge(x) * 0.88;
+    const depth = Math.pow(rand(), 1.1); // through the whole band, a little denser up top
+    const y = depth * edge(x) * 0.97;
     return {
       x: x * 100,
       y: y * 100,
       size: 1.2 + rand() * 1.9,
-      alpha: (1 - depth * 0.85) * (0.7 + rand() * 0.3),
+      alpha: (1 - depth * 0.6) * (0.7 + rand() * 0.3),
       dur: 2.4 + rand() * 3.2,
       delay: -rand() * 6,
     };
@@ -54,7 +54,7 @@ export default function DaySky() {
         position: "absolute",
         inset: 0,
         background:
-          "linear-gradient(180deg, #dfe8f1 0%, #e9f0f6 20%, #f4f8fb 42%, #ffffff 68%)",
+          "linear-gradient(180deg, #dfe8f1 0%, #e9f0f6 20%, #f4f8fb 42%, var(--z-cream) 68%)",
       }}
     >
       {/* The band and its stars share a box sized off the width, capped at

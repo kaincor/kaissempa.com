@@ -49,10 +49,15 @@ export default function HeroMotion({ children }: { children: ReactNode }) {
         // Its own stacking context, so the landscape's z-index can't rise
         // above the fixed navbar and swallow its hover and clicks.
         isolation: "isolate",
+        // Above the next section, and clipped only at the sides, so the
+        // bottom of the hill hangs over the top of "Making a supply-chain
+        // tool work…" instead of ending in a straight cut.
+        zIndex: 1,
         height: "100svh",
         minHeight: 520,
-        overflow: "hidden",
-        background: "#ffffff",
+        overflowX: "clip",
+        overflowY: "visible",
+        background: "var(--z-cream)",
       }}
     >
       {children}

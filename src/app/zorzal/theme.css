@@ -73,22 +73,25 @@
   transform: translate3d(0, calc(var(--p) * 55svh), 0);
   will-change: transform;
 }
-/* The wordmark blends a little into the sky, then holds at 65% and sinks
-   behind the hill the rest of the way. It sits under the landscape in the
-   stacking order, so the hill is what hides it. */
+/* The wordmark blends a little into the sky, then holds at 80%. It travels
+   almost as fast as the scroll, so it all but stays put on screen while the
+   hill rises over it. It sits under the landscape in the stacking order, so
+   the hill is what hides it. */
 .zorzal .z-title {
-  transform: translate3d(0, calc(var(--p) * 62svh), 0);
-  opacity: max(0.65, calc(1 - var(--p) * 1.2));
+  transform: translate3d(0, calc(var(--p) * 92svh), 0);
+  opacity: max(0.8, calc(1 - var(--p) * 0.8));
   will-change: transform, opacity;
 }
 .zorzal .z-land-stage {
   perspective: 1300px;
   perspective-origin: 50% 40%;
 }
+/* The hill hangs over the top of the next section, so it moves with the page
+   rather than sinking (sinking would push it down over the text). It still
+   tips back and swells a touch from its bottom edge, which stays put. */
 .zorzal .z-land {
   transform-origin: 50% 100%;
   transform:
-    translate3d(0, calc(var(--p) * 16svh), 0)
     rotateX(calc(var(--p) * 16deg))
     scale(calc(1 + var(--p) * 0.08));
   will-change: transform;
