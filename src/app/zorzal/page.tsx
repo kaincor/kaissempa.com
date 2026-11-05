@@ -21,7 +21,8 @@ export default function ZorzalPage() {
 
       {/* The facts, Phylissa Li style: a labelled block under the title,
           then the outcome in a line. */}
-      <section style={{ background: "#ffe2ce", padding: "clamp(64px, 11vh, 130px) 0 clamp(56px, 8vh, 96px)" }}>
+      {/* Extra room on top: the bottom of the hill hangs over this section. */}
+      <section style={{ background: "#ffe2ce", padding: "clamp(112px, 19vh, 210px) 0 clamp(56px, 8vh, 96px)" }}>
         <div style={{ width: "min(680px, 100% - 40px)", margin: "0 auto" }}>
           <FadeIn>
             <p

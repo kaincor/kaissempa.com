@@ -12,7 +12,8 @@ import ShootingStars from "./ShootingStars";
  * ?sky=clouds swaps the sky for the original clouds.
  *
  * HeroMotion adds the depth: the sky lags behind the scroll and the hill tips back.
- * The transforms live in src/app/zorzal/theme.css (.z-sky, .z-land; .z-title only fades).
+ * The styles live in src/app/zorzal/theme.css: .z-sky and .z-title are fixed
+ * to the screen, .z-land tips back, and .z-title fades a little.
  *
  * The landscape is about three times as wide as it is tall, so on a phone it
  * is a strip along the bottom of a lot of sky. Kai is designing phone, iPad
@@ -25,7 +26,7 @@ export default function ZorzalHero() {
           bottom edge can hang over the next section. The clip has no z-index
           of its own, so the wordmark still sorts under the hill. */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", clipPath: "inset(0)" }}>
-        <div className="z-sky" style={{ position: "absolute", inset: 0 }}>
+        <div className="z-sky">
           <SkySwitch />
           <ShootingStars />
         </div>

@@ -69,9 +69,14 @@
 .zorzal .z-hero {
   --p: 0;
 }
+/* The sky is fixed to the screen like the wordmark, so the hill scrolls up
+   over both. Clipped to the hero by the same wrapper. */
 .zorzal .z-sky {
-  transform: translate3d(0, calc(var(--p) * 55svh), 0);
-  will-change: transform;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100svh;
 }
 /* The wordmark is fixed to the screen, so the hill scrolls up over it.
    position: fixed rather than a scroll-driven transform, which lagged a

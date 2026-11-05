@@ -13,8 +13,8 @@
 /** Height of the band's edge at x (0–1), as a fraction of the hero. Traced
  *  off Kai's "New curve guideline": one broad, even arch, highest behind the
  *  navbar and dropping to about a fifth of the way down at both sides. */
-const EDGE_CENTRE = 0.03;
-const EDGE_SIDES = 0.19;
+const EDGE_CENTRE = 0.06;
+const EDGE_SIDES = 0.25;
 const BEND = 1.85; // 2 is a parabola; a touch less keeps the shoulders round
 export function edge(x: number) {
   return EDGE_CENTRE + (EDGE_SIDES - EDGE_CENTRE) * (Math.abs(x - 0.5) / 0.5) ** BEND;
@@ -55,7 +55,7 @@ export default function DaySky() {
         position: "absolute",
         inset: 0,
         background:
-          "linear-gradient(180deg, #dfe8f1 0%, #e9f0f6 20%, #f4f8fb 42%, var(--z-cream) 68%)",
+          "linear-gradient(180deg, #dfe8f1 0%, #e6eef5 18%, #edf3f8 32%, #f4f7fa 48%, #f9faf9 60%, var(--z-cream) 74%)",
       }}
     >
       {/* The band and its stars share a box sized off the width, capped at
@@ -84,16 +84,17 @@ export default function DaySky() {
           <defs>
             <linearGradient id="z-band" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0" stopColor="#b6cadf" />
-              <stop offset="1" stopColor="#d4e0ec" />
+              <stop offset="0.6" stopColor="#c8d7e6" />
+              <stop offset="1" stopColor="#dce6f0" />
             </linearGradient>
             <filter
               id="z-band-soft"
               x="-5%"
-              y="-20%"
+              y="-60%"
               width="110%"
-              height="140%"
+              height="220%"
             >
-              <feGaussianBlur stdDeviation="0 14" />
+              <feGaussianBlur stdDeviation="0 38" />
             </filter>
           </defs>
           <path d={BAND_PATH} fill="url(#z-band)" filter="url(#z-band-soft)" />
