@@ -351,6 +351,9 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
   );
 }
 
+/** Height of one menu row, px: the home menu's 20px type at line-height 1.1. */
+const ROW_HEIGHT = 22;
+
 function MenuLink({
   href,
   children,
@@ -388,7 +391,9 @@ function MenuLink({
         // and a case study set in mixed case should not have a shouting menu.
         textTransform: font ? "none" : undefined,
         fontSize: size ?? 20,
-        lineHeight: 1.1,
+        // A fixed row, the home menu's 20px at 1.1, so a theme's smaller type
+        // keeps the same menu height instead of shrinking the panel with it.
+        lineHeight: `${ROW_HEIGHT}px`,
         color: hot ? "#ccc" : "#fff",
         textDecoration: "none",
         transition: "color 0.2s ease",
