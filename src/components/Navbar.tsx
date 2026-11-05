@@ -111,10 +111,10 @@ const CASE_THEMES: {
     menu: "linear-gradient(270deg, rgba(152, 60, 68, 0.76) 0%, rgba(152, 60, 68, 0.82) 100%)",
     blur: 8,
     // Captain Kai Bold, the chapter-title face, declared in
-    // src/app/zorzal/theme.css. Its cap height (0.70em) matches Tiempos
-    // Headline's, so the same fourteen reads the same size as Fortuna's.
+    // src/app/zorzal/theme.css. Twelve: at Fortuna's fourteen the all-caps
+    // face read large against the bar.
     font: "var(--z-captain-stack)",
-    size: 14,
+    size: 12,
     weight: 700,
   },
 ];
