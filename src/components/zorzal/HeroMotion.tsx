@@ -5,9 +5,9 @@ import { useEffect, useRef, type ReactNode } from "react";
 /**
  * Drives the Zorzal hero's scroll parallax. It writes one CSS variable on the
  * header, --p, the scroll progress through the hero (0 at the top, 1 once it
- * has scrolled away), and theme.css turns it into transforms: the sky, the
- * wordmark and the hill move at different speeds, and the hill tips back as
- * you leave. Reduced motion leaves --p at 0.
+ * has scrolled away), and theme.css turns it into the sky lagging behind,
+ * the hill tipping back and the wordmark's slight fade. Reduced motion leaves
+ * --p at 0.
  */
 export default function HeroMotion({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);

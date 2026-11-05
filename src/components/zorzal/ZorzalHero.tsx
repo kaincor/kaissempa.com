@@ -6,13 +6,13 @@ import ShootingStars from "./ShootingStars";
 /**
  * The Zorzal hero: a pale daytime sky with faint stars along the top edge,
  * Kai's layered landscape pieced together from the screen edges on load, and
- * the wordmark settling in once the ground is down. On scroll the wordmark all
- * but stays put while the hill rises over it, and the bottom of the hill hangs
- * over the next section. A shooting star crosses the starry band now and then.
+ * the wordmark settling in once the ground is down. The wordmark scrolls with
+ * the page (parallax made it wobble), and the bottom of the hill hangs over
+ * the next section. A shooting star crosses the starry band now and then.
  * ?sky=clouds swaps the sky for the original clouds.
  *
- * HeroMotion adds the depth: scroll parallax between sky, wordmark and hill.
- * The transforms live in src/app/zorzal/theme.css (.z-sky, .z-title, .z-land).
+ * HeroMotion adds the depth: the sky lags behind the scroll and the hill tips back.
+ * The transforms live in src/app/zorzal/theme.css (.z-sky, .z-land; .z-title only fades).
  *
  * The landscape is about three times as wide as it is tall, so on a phone it
  * is a strip along the bottom of a lot of sky. Kai is designing phone, iPad
