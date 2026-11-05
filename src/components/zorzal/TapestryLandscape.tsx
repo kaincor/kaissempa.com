@@ -48,14 +48,11 @@ export default function TapestryLandscape({ style }: { style?: CSSProperties }) 
           let seed = 7;
           const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
           const margin = 40;
-          // On a phone the header's bottom is not always the screen's: with
-          // the toolbar collapsed, or where svh isn't supported, the screen
-          // runs on past it and pieces from below started in view. There they
-          // start below whichever is lower, clear of it by their own tilt.
+          // On a phone every piece comes in from the side, never from below:
+          // a piece waiting under the fold was in plain view to anyone who
+          // scrolled while the picture was still coming together. Off the
+          // side it is out of sight however far the page has moved.
           const phone = window.matchMedia(MOBILE_MQ).matches;
-          const floor = phone
-            ? Math.max(frame.bottom, window.innerHeight, document.documentElement.clientHeight)
-            : frame.bottom;
 
           svg.querySelectorAll<SVGGElement>(".zp").forEach((p) => {
             const b = p.getBoundingClientRect();
@@ -67,9 +64,13 @@ export default function TapestryLandscape({ style }: { style?: CSSProperties }) 
               top: cy - frame.top,
               bottom: frame.bottom - cy,
             };
-            const edge = (Object.keys(gaps) as (keyof typeof gaps)[]).reduce((a, k) =>
-              gaps[k] < gaps[a] ? k : a,
-            );
+            const edge = phone
+              ? gaps.left <= gaps.right
+                ? "left"
+                : "right"
+              : (Object.keys(gaps) as (keyof typeof gaps)[]).reduce((a, k) =>
+                  gaps[k] < gaps[a] ? k : a,
+                );
 
             // Far enough that the whole piece starts off-screen, plus a little
             // sideways drift so the pieces don't travel in straight rails.
@@ -87,7 +88,7 @@ export default function TapestryLandscape({ style }: { style?: CSSProperties }) 
               dx = edge === "left" ? -(b.right - frame.left + clear) : frame.right - b.left + clear;
               dy = drift;
             } else {
-              dy = edge === "top" ? -(b.bottom - frame.top + clear) : floor - b.top + clear;
+              dy = edge === "top" ? -(b.bottom - frame.top + clear) : frame.bottom - b.top + clear;
               dx = drift;
             }
 
