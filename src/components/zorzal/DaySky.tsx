@@ -10,13 +10,14 @@
  * positions come from a fixed seed so server and client agree.
  */
 
-/** Height of the band's edge at x (0–1), as a fraction of the hero. */
-const EDGE_CENTRE = 0.05;
-const EDGE_SIDES = 0.21;
-const WIDTH = 0.24; // how broad the crest is
+/** Height of the band's edge at x (0–1), as a fraction of the hero. Traced
+ *  off Kai's "New curve guideline": one broad, even arch, highest behind the
+ *  navbar and dropping to about a fifth of the way down at both sides. */
+const EDGE_CENTRE = 0.03;
+const EDGE_SIDES = 0.19;
+const BEND = 1.85; // 2 is a parabola; a touch less keeps the shoulders round
 export function edge(x: number) {
-  const g = Math.exp(-(((x - 0.5) / WIDTH) ** 2));
-  return EDGE_SIDES - (EDGE_SIDES - EDGE_CENTRE) * g;
+  return EDGE_CENTRE + (EDGE_SIDES - EDGE_CENTRE) * (Math.abs(x - 0.5) / 0.5) ** BEND;
 }
 
 // The band's outline in a 1000 × 1000 box, stretched to the hero.

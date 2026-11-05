@@ -73,10 +73,13 @@
   transform: translate3d(0, calc(var(--p) * 55svh), 0);
   will-change: transform;
 }
-/* The wordmark scrolls with the page, with no parallax: moving it off the
-   scroll position made it wobble. It only blends a little into the sky,
-   holding at 80%. It sits under the landscape in the stacking order. */
+/* The wordmark is fixed to the screen, so the hill scrolls up over it.
+   position: fixed rather than a scroll-driven transform, which lagged a
+   frame behind the scroll and wobbled. Its wrapper's clip-path keeps it to
+   the hero once the hero has gone. It blends a little into the sky, holding
+   at 80%, and sits under the landscape in the stacking order. */
 .zorzal .z-title {
+  position: fixed;
   opacity: max(0.8, calc(1 - var(--p) * 0.8));
 }
 .zorzal .z-land-stage {

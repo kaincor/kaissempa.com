@@ -6,9 +6,9 @@ import ShootingStars from "./ShootingStars";
 /**
  * The Zorzal hero: a pale daytime sky with faint stars along the top edge,
  * Kai's layered landscape pieced together from the screen edges on load, and
- * the wordmark settling in once the ground is down. The wordmark scrolls with
- * the page (parallax made it wobble), and the bottom of the hill hangs over
- * the next section. A shooting star crosses the starry band now and then.
+ * the wordmark settling in once the ground is down. The wordmark is fixed to
+ * the screen, so the hill scrolls up over it, and the bottom of the hill
+ * hangs over the next section. A shooting star crosses the starry band now and then.
  * ?sky=clouds swaps the sky for the original clouds.
  *
  * HeroMotion adds the depth: the sky lags behind the scroll and the hill tips back.
@@ -24,14 +24,20 @@ export default function ZorzalHero() {
       {/* Sky and wordmark are clipped to the hero; the hill is not, so its
           bottom edge can hang over the next section. The clip has no z-index
           of its own, so the wordmark still sorts under the hill. */}
-      <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", clipPath: "inset(0)" }}>
         <div className="z-sky" style={{ position: "absolute", inset: 0 }}>
           <SkySwitch />
           <ShootingStars />
         </div>
+        {/* The hill's ragged bottom corners show what's behind them, so the
+            last few vw of the hero warm to the next section's peach. */}
+        <div
+          aria-hidden="true"
+          style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "8vw", background: "linear-gradient(180deg, rgba(255, 226, 206, 0), #ffe2ce)" }}
+        />
         <div
           className="z-title"
-          style={{ position: "absolute", top: "24%", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 5 }}
+          style={{ top: "24svh", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 5 }}
         >
           <h1 style={{ margin: 0, width: "clamp(200px, 34vw, 520px)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}

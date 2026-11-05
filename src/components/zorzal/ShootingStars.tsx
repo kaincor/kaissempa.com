@@ -4,14 +4,14 @@ import { useEffect, useRef } from "react";
 import { edge } from "./DaySky";
 
 /**
- * A shooting star across the Zorzal day sky every now and then, the same
+ * A shooting star across the Zorzal day sky every few seconds, the same
  * glint as Fortuna's night sky (fortuna/NightSky.tsx): a shallow dive, in
  * fast and out slow, its tail growing out of nothing. It starts somewhere
  * random inside the starry band and only runs while the hero is on screen
  * and the tab is visible. Reduced motion gets none.
  */
-const EVERY = 7500;
-const FIRST = 3500;
+const EVERY = 3750;
+const FIRST = 1750;
 const MS = 950;
 const TAIL = 130;
 const REACH = 360;
