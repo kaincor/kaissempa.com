@@ -46,6 +46,9 @@ export default function HeroMotion({ children }: { children: ReactNode }) {
       className="z-hero"
       style={{
         position: "relative",
+        // Its own stacking context, so the landscape's z-index can't rise
+        // above the fixed navbar and swallow its hover and clicks.
+        isolation: "isolate",
         height: "100svh",
         minHeight: 520,
         overflow: "hidden",

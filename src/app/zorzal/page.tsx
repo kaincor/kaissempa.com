@@ -1,22 +1,10 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { preload } from "react-dom";
 import "./theme.css";
 import { FACTS, OUTCOME, SECTIONS } from "@/content/zorzal";
 import ZorzalHero from "@/components/zorzal/ZorzalHero";
 import { SectionBand } from "@/components/zorzal/Blocks";
 import FadeIn from "@/components/fortuna/FadeIn";
-
-// Captain Kai, regular and bold: Kai's hand-traced capitals, numbers and punctuation, built from
-// his Figma glyphs (regular 3641:31, bold 3647:1489). Capitals only, so lowercase types as
-// capitals too. Missing characters fall back to the serif.
-const captainKai = localFont({
-  src: [
-    { path: "../../fonts/CaptainKai-Regular.woff2", weight: "400", style: "normal" },
-    { path: "../../fonts/CaptainKai-Bold.woff2", weight: "700", style: "normal" },
-  ],
-  variable: "--font-captain",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Zorzal Cacao — Cacao Tracker",
@@ -25,8 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default function ZorzalPage() {
+  // The chapter titles and the navbar are set in Captain Kai Bold (theme.css).
+  preload("/zorzal/fonts/CaptainKai-Bold.woff2", { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
-    <main className={`zorzal flex-1 ${captainKai.variable}`}>
+    <main className="zorzal flex-1">
       <ZorzalHero />
 
       {/* The facts, Phylissa Li style: a labelled block under the title,

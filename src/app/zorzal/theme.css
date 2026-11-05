@@ -2,7 +2,32 @@
    wordmark's wine (#983c44), the landscape's deep teal and terracotta, and
    the clouds' cream. Scoped to .zorzal so nothing else on the site picks it
    up. */
+/* Captain Kai: Kai's hand-traced capitals, numbers and punctuation, built from
+   his Figma glyphs (regular 3641:31, bold 3647:1489) with
+   assets/fonts/Captain Kai/build_font.py. Capitals only, so lowercase types as
+   capitals too; anything he didn't draw falls back to the serif. Declared on
+   :root rather than .zorzal because the navbar sits outside the page's
+   wrapper and wears it too. */
+@font-face {
+  font-family: "Captain Kai";
+  src: url("/zorzal/fonts/CaptainKai-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Captain Kai";
+  src: url("/zorzal/fonts/CaptainKai-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+:root {
+  --z-captain-stack: "Captain Kai", var(--font-serif), serif;
+}
+
 .zorzal {
+  --font-captain: "Captain Kai";
   --z-cream: #fffdf6;
   --z-sand: #f6efe2;
   --z-forest: #0f4a40;

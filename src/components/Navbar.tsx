@@ -102,6 +102,21 @@ const CASE_THEMES: {
     // Semibold, the same weight the headings are set in.
     weight: 600,
   },
+  {
+    prefix: "/zorzal",
+    // Fortuna's glass recipe in the Zorzal wordmark's wine, #983c44. Wine is
+    // a dark colour, so at Fortuna's 0.42 it thins to dusty pink over the pale
+    // sky; it needs more body than the green to read as the wordmark's red.
+    bar: "rgba(152, 60, 68, 0.74)",
+    menu: "linear-gradient(270deg, rgba(152, 60, 68, 0.76) 0%, rgba(152, 60, 68, 0.82) 100%)",
+    blur: 8,
+    // Captain Kai Bold, the chapter-title face, declared in
+    // src/app/zorzal/theme.css. Its cap height (0.70em) matches Tiempos
+    // Headline's, so the same fourteen reads the same size as Fortuna's.
+    font: "var(--z-captain-stack)",
+    size: 14,
+    weight: 700,
+  },
 ];
 
 /** How long the colour takes to run across the bar, and its head start. */
