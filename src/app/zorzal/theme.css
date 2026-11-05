@@ -73,9 +73,12 @@
   transform: translate3d(0, calc(var(--p) * 55svh), 0);
   will-change: transform;
 }
+/* The wordmark blends a little into the sky, then holds at 65% and sinks
+   behind the hill the rest of the way. It sits under the landscape in the
+   stacking order, so the hill is what hides it. */
 .zorzal .z-title {
-  transform: translate3d(0, calc(var(--p) * 38svh), 0);
-  opacity: calc(1 - var(--p) * 1.7);
+  transform: translate3d(0, calc(var(--p) * 62svh), 0);
+  opacity: max(0.65, calc(1 - var(--p) * 1.2));
   will-change: transform, opacity;
 }
 .zorzal .z-land-stage {
