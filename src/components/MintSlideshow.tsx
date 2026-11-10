@@ -5,7 +5,7 @@ import { useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Kai's Mint Magazine covers, one at a time, crossfading every 1.7s. Ordered
+ * Kai's Mint Magazine covers, one at a time, crossfading every 1.5s. Ordered
  * so the two takes of one person never play back to back, the last included
  * (it wraps round to the first).
  *
@@ -29,7 +29,7 @@ const SLIDES = [
   { name: "tom-4", pinned: true, at: [60.71, 5.45, 37.14] },
 ] as const;
 
-const HOLD_MS = 1700;
+const HOLD_MS = 1500;
 const FADE_MS = 800;
 /** How far right of its resting place a photo starts, as % of the frame. */
 const DRIFT_PCT = 1.5;

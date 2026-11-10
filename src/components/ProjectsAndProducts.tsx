@@ -142,7 +142,7 @@ export default function ProjectsAndProducts({ detailed = false }: { detailed?: b
         />
       </Thumb>
 
-      <Thumb label="Mint Magazine" shadow={MINT_RED} info={info("Mint Magazine")}>
+      <Thumb label="Mint Magazine" href="/mint" shadow={MINT_RED} info={info("Mint Magazine")}>
         <MintSlideshow sizes={`(max-width: ${MAX_WIDTH}px) 100vw, ${MAX_WIDTH}px`} />
       </Thumb>
 
