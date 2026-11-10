@@ -10,7 +10,8 @@ const nextConfig: NextConfig = {
     // Next 16 requires an allowlist; the default is [75] and anything else is
     // rejected outright rather than clamped. 85 is here for photography, where
     // AVIF holds detail cheaply enough that the extra quality is nearly free.
-    qualities: [75, 85],
+    // 90 is the Mint Magazine covers, whose film grain smears at 85.
+    qualities: [75, 85, 90],
   },
 };
 
