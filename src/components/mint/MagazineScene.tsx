@@ -3,8 +3,9 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
-import { ContactShadows, useTexture } from "@react-three/drei";
+import { useTexture } from "@react-three/drei";
 import type { CoverRect } from "./MintIntro";
+import { LAST_RIGHT, LEAVES } from "./pages";
 
 /**
  * The Mint Magazine case study: Kai's issue floating in mid-air at a slight
@@ -33,17 +34,25 @@ const LEAF_T = 0.0014;
 /** The back cover board under the right-hand stack. */
 const BASE_T = 0.0022;
 const SEGMENTS = 48;
+/**
+ * Uncoated paper: rough enough that the key light never shows as a sheen
+ * across the photos at the book's resting angle.
+ */
+const PAPER_ROUGH = 0.96;
+/**
+ * How high an open page arches up off the gutter before settling towards its
+ * edge, in metres: enough that the spread isn't ironed flat.
+ */
+const ARCH = 0.0075;
+/** The arch across a page, 0 at the spine and at the edge, highest a little short of the middle. */
+const archAt = (s: number) => Math.sin(Math.PI * Math.pow(THREE.MathUtils.clamp(s, 0, 1), 0.8));
 
-const P = "/mint/pages/";
-/** [front, back] of each leaf, top of the closed stack first. */
-const LEAVES: [string, string][] = [
-  ["cover", "108l"],
-  ["108r", "109l"],
-  ["109r", "110l"],
-  ["110r", "111l"],
-  ["111r", "112l"],
-];
-const LAST_RIGHT = "112r";
+/**
+ * Page images: full size on a desktop, about half on a phone, where a page is
+ * never more than a few hundred pixels tall and the graphics memory is tight.
+ */
+const PAGES = "/mint/pages/";
+const PAGES_SM = "/mint/pages-sm/";
 
 const FOV = 35;
 
@@ -69,39 +78,76 @@ type SceneProps = {
   scrollTurn: boolean;
   /** The closed cover's size on screen, square on, once the pages are loaded. */
   onCover: (r: CoverRect) => void;
+  /** Four squares to keep at the magazine's corners, shown while it is hovered. */
+  corners?: RefObject<HTMLDivElement | null>;
 };
 
-export default function MagazineScene({ play, scrollTurn, onCover }: SceneProps) {
+export default function MagazineScene({ play, scrollTurn, onCover, corners }: SceneProps) {
   return (
     <Canvas
-      shadows={{ type: THREE.PCFSoftShadowMap }}
-      dpr={[1, 2]}
+      // PCF: three.js has dropped the soft variant and warned about it on
+      // every frame; the shadow radius below does the softening.
+      shadows={{ type: THREE.PCFShadowMap }}
+      // Capped at 1.5: on a retina screen 2x would be nearly twice the pixels
+      // to light and shade for no difference anyone can see at this size.
+      dpr={[1, 1.5]}
       gl={{ antialias: true, alpha: true }}
       camera={{ fov: FOV, near: 0.02, far: 20 }}
       // Vertical drags still scroll the page; sideways ones turn it.
       style={{ touchAction: "pan-y", cursor: play ? "grab" : "default" }}
       onCreated={({ gl }) => {
-        gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.toneMappingExposure = 1.1;
+        // Neutral rather than ACES, which desaturated the photos and left the
+        // pages looking glazed.
+        gl.toneMapping = THREE.NeutralToneMapping;
+        gl.toneMappingExposure = 1.0;
         gl.setClearColor(0x000000, 0);
       }}
     >
       <CameraRig />
       <Lights />
       <Suspense fallback={null}>
-        <Magazine play={play} scrollTurn={scrollTurn} onCover={onCover} />
+        <Magazine play={play} scrollTurn={scrollTurn} onCover={onCover} corners={corners} />
       </Suspense>
       {/* A soft shadow on the floor far below, so it reads as floating. */}
-      <ContactShadows position={[0, -0.26, 0]} scale={0.9} blur={2.8} far={0.5} opacity={0.32} resolution={512} />
+      <FloorShadow />
     </Canvas>
+  );
+}
+
+/**
+ * A soft shadow far below the book, so it reads as floating: one blurred
+ * ellipse painted once, in place of a contact shadow that re-renders the
+ * whole book from below every frame. The book only bobs a few millimetres,
+ * so a shadow that holds still is indistinguishable.
+ */
+function FloorShadow() {
+  const tex = useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = 256;
+    c.height = 128;
+    const g = c.getContext("2d")!;
+    const grad = g.createRadialGradient(128, 64, 0, 128, 64, 128);
+    grad.addColorStop(0, "rgba(0,0,0,0.34)");
+    grad.addColorStop(0.45, "rgba(0,0,0,0.16)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    g.setTransform(1, 0, 0, 0.5, 0, 32);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+  }, []);
+  return (
+    <mesh position={[0, -0.26, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={-1}>
+      <planeGeometry args={[0.75, 0.3]} />
+      <meshBasicMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
+    </mesh>
   );
 }
 
 /** How far back the camera sits so the open spread fits with room round it. */
 function fitDistance(aspect: number) {
   const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
-  const wide = 2 * PAGE_W * (aspect < 0.8 ? 1.12 : 1.55);
-  const tall = PAGE_H * (aspect < 0.8 ? 1.5 : 1.6);
+  const wide = 2 * PAGE_W * (aspect < 0.8 ? 1.05 : 1.4);
+  const tall = PAGE_H * (aspect < 0.8 ? 1.4 : 1.42);
   return Math.max(wide / (2 * tan * aspect), tall / (2 * tan));
 }
 
@@ -134,21 +180,21 @@ function Lights() {
   }, []);
   return (
     <>
-      <hemisphereLight args={["#ffffff", "#9a9893", 0.9]} />
+      <hemisphereLight args={["#ffffff", "#9d9d9d", 0.9]} />
       {/* The key, above and to the left, in front: the only shadow caster. */}
       <directionalLight
         ref={sun}
         position={[-0.55, 0.75, 0.95]}
         intensity={2.2}
-        color="#fff3e4"
+        color="#ffffff"
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0002}
         shadow-normalBias={0.002}
         shadow-radius={5}
       />
       {/* A soft fill from the right, so the far page isn't lost. */}
-      <directionalLight position={[0.7, 0.1, 1]} intensity={0.55} color="#f2f4ff" />
+      <directionalLight position={[0.7, 0.1, 1]} intensity={0.55} color="#ffffff" />
     </>
   );
 }
@@ -170,18 +216,21 @@ type Leaf = {
 
 function loadPage(t: THREE.Texture) {
   t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
+  t.anisotropy = 4;
   return t;
 }
 
-function Magazine({ play, scrollTurn, onCover }: SceneProps) {
-  const urls = useMemo(
-    () => [...LEAVES.flat(), LAST_RIGHT].map((n) => `${P}${n}.jpg`),
-    [],
-  );
+function Magazine({ play, scrollTurn, onCover, corners }: SceneProps) {
+  const P = scrollTurn ? PAGES_SM : PAGES;
+  const urls = useMemo(() => [...LEAVES.flat(), LAST_RIGHT].map((n) => `${P}${n}.jpg`), [P]);
   const tex = useTexture(urls, (ts) => (Array.isArray(ts) ? ts : [ts]).forEach(loadPage));
   const byName = (n: string) => tex[urls.indexOf(`${P}${n}.jpg`)];
 
+  /**
+   * The shape each page was last solved for. A page lying still keeps its
+   * shape, so it is only re-solved (and its normals recomputed) when it moves.
+   */
+  const solved = useRef<string[]>([]);
   const leaves = useRef<Leaf[]>(
     LEAVES.map(() => ({ theta: 0, grab: 0, dir: 1, vel: 0, target: 0, bend: 0, held: false })),
   );
@@ -193,6 +242,8 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
   const pos = useRef(0);
   const book = useRef<THREE.Group>(null);
   const float = useRef<THREE.Group>(null);
+  const backCover = useRef<THREE.Group>(null);
+  const spine = useRef<THREE.Group>(null);
   const playing = useRef({ on: play, since: -1 });
   useEffect(() => {
     playing.current.on = play;
@@ -222,16 +273,26 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
     [],
   );
 
+  // The glued-down last page, a strip like the leaves so it can arch too.
+  const lastGeo = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(PAGE_W, PAGE_H, SEGMENTS, 1);
+    const uv = geo.getAttribute("uv");
+    const rest = new Float32Array(uv.count);
+    for (let i = 0; i < uv.count; i++) rest[i] = uv.getX(i);
+    solveLast(geo, rest, 0);
+    return { geo, rest };
+  }, []);
+
   const mats = useMemo(
     () =>
       LEAVES.map(([f, b]) => ({
         front: new THREE.MeshStandardMaterial({
           map: byName(f),
-          roughness: 0.62,
+          roughness: PAPER_ROUGH,
           side: THREE.FrontSide,
           shadowSide: THREE.DoubleSide,
         }),
-        back: new THREE.MeshStandardMaterial({ map: byName(b), roughness: 0.62, side: THREE.BackSide }),
+        back: new THREE.MeshStandardMaterial({ map: byName(b), roughness: PAPER_ROUGH, side: THREE.BackSide }),
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tex],
@@ -239,6 +300,8 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
 
   // Pointer handling: grab the top leaf of either stack and drag it across.
   const { camera, gl } = useThree();
+  /** The mouse is over the magazine (mice only; touch has no hover). */
+  const hovered = useRef(false);
   const drag = useRef<{
     leaf: number;
     forward: boolean;
@@ -314,9 +377,17 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
       l.dir = forward ? 1 : -1;
     };
 
+    /** How far left the issue reaches, in its own frame: just the cover while closed. */
+    const leftEdge = () => -PAGE_W * THREE.MathUtils.smoothstep(leaves.current[0].theta, 0, Math.PI);
+
     const move = (e: PointerEvent) => {
       const d = drag.current;
-      if (!d) return;
+      if (!d) {
+        if (e.pointerType !== "mouse") return;
+        const p = playing.current.on ? local(e) : null;
+        hovered.current = !!p && Math.abs(p.z) <= PAGE_H / 2 && p.x <= PAGE_W && p.x >= leftEdge();
+        return;
+      }
       if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 6) d.moved = true;
       if (!d.moved) return;
       const p = local(e);
@@ -367,7 +438,12 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
     el.addEventListener("pointermove", move);
     el.addEventListener("pointerup", up);
     el.addEventListener("pointercancel", cancel);
+    const leave = () => {
+      if (!drag.current) hovered.current = false;
+    };
+    el.addEventListener("pointerleave", leave);
     return () => {
+      el.removeEventListener("pointerleave", leave);
       el.removeEventListener("pointerdown", down);
       el.removeEventListener("pointermove", move);
       el.removeEventListener("pointerup", up);
@@ -375,26 +451,35 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
     };
   }, [camera, gl]);
 
-  // Phones: the page scrolls through the issue, the turning hinged to the
-  // scroll. Each screenful-and-a-bit of scroll turns a page. When the scroll
-  // rests, a page left part way over finishes falling whichever way it was
-  // going. At the very top the issue is closed; at the bottom, at its end.
+  // Phones: once the book has come up and pinned to the screen, scrolling
+  // on turns its pages, hinged to the scroll. Each screenful-and-a-bit of
+  // scroll turns a page. When the scroll rests, a page left part way over
+  // finishes falling whichever way it was going. Scrolled back up through the
+  // whole track, the issue is closed; down to its end, it is at its end.
   useEffect(() => {
     if (!scrollTurn) return;
     const n = LEAVES.length;
-    let lastY = window.scrollY;
+    const track = gl.domElement.closest<HTMLElement>("[data-mint-track]");
+    if (!track) return;
+    /** How far into the pinned stretch the page is scrolled, in px. */
+    const pinned = () => {
+      const r = track.getBoundingClientRect();
+      const max = Math.max(0, r.height - window.innerHeight);
+      return { s: THREE.MathUtils.clamp(-r.top, 0, max), max };
+    };
+    let last = pinned().s;
     let idle = 0;
     let dir = 1;
     const onScroll = () => {
-      const y = window.scrollY;
-      const dy = y - lastY;
-      lastY = y;
-      if (!playing.current.on || drag.current || dy === 0) return;
-      dir = Math.sign(dy);
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      let p = pos.current + dy / (window.innerHeight * SCROLL_STEP);
-      if (y <= 0) p = 0;
-      else if (y >= max - 1) p = n;
+      const { s, max } = pinned();
+      const ds = s - last;
+      const was = last;
+      last = s;
+      if (!playing.current.on || drag.current || ds === 0) return;
+      dir = Math.sign(ds);
+      let p = pos.current + ds / (window.innerHeight * SCROLL_STEP);
+      if (s <= 0 && was > 0) p = 0;
+      else if (s >= max && was < max) p = n;
       pos.current = THREE.MathUtils.clamp(p, 0, n);
       clearTimeout(idle);
       idle = window.setTimeout(() => {
@@ -406,9 +491,9 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
       clearTimeout(idle);
       window.removeEventListener("scroll", onScroll);
     };
-  }, [scrollTurn]);
+  }, [scrollTurn, gl]);
 
-  useFrame(({ clock }, rawDt) => {
+  useFrame(({ clock, size: view }, rawDt) => {
     const dt = Math.min(rawDt, 1 / 30);
     // Square on until it plays, then it tilts back into its resting angle
     // and starts to float, bobbing and swaying very gently.
@@ -428,6 +513,25 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
       f.position.y = Math.sin(since * 0.9) * 0.005 * sway;
     }
     const n = leaves.current.length;
+    // How open the issue is, for the pages' arch: none while it is closed.
+    const opened = THREE.MathUtils.smoothstep(leaves.current[0].theta, 0, Math.PI);
+    // Level the spread. Turned leaves pile up on the left while the right
+    // stack runs down to the back cover, so by the end the two open pages lie
+    // more than a centimetre apart in height and a photo across them breaks
+    // at the spine. Each side is shifted by half the difference, so their top
+    // pages always meet at the spine at one height; the paper keeps its
+    // thickness. None while closed, where there is only one stack to see.
+    const turned = leaves.current.reduce((a, l) => a + l.theta / Math.PI, 0);
+    const leftTop = 0.0004 + turned * LEAF_T;
+    const rightTop = BASE_T + 0.0004 + (n - turned) * LEAF_T;
+    const level = ((leftTop - rightTop) / 2) * opened;
+    if (backCover.current) backCover.current.position.y = level;
+    if (spine.current) spine.current.position.y = (leftTop + rightTop) / 2 + 0.001;
+    const lastKey = opened.toFixed(3);
+    if (solved.current[LEAVES.length] !== lastKey) {
+      solved.current[LEAVES.length] = lastKey;
+      solveLast(lastGeo.geo, lastGeo.rest, opened);
+    }
     leaves.current.forEach((l, i) => {
       l.target = THREE.MathUtils.clamp(pos.current - i, 0, 1) * Math.PI;
       if (l.held) {
@@ -457,7 +561,11 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
         ? 0.8 * l.dir
         : -THREE.MathUtils.clamp(l.vel * 0.16, -0.95, 0.95);
       l.bend = THREE.MathUtils.lerp(l.bend, wantBend, 1 - Math.exp(-dt * 7));
-      solveLeaf(geos[i].front, geos[i].rest, l, i, n);
+      const key = `${l.theta.toFixed(4)}|${l.bend.toFixed(4)}|${opened.toFixed(3)}|${level.toFixed(5)}`;
+      if (solved.current[i] !== key) {
+        solved.current[i] = key;
+        solveLeaf(geos[i].front, geos[i].rest, l, i, n, opened, level);
+      }
     });
 
     // Closed, the cover sits in the middle of the shot; the book slides
@@ -467,6 +575,15 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
       book.current.position.x = -0.5 * PAGE_W * (1 - open);
     }
     if (shade.current) shade.current.opacity = THREE.MathUtils.smoothstep(leaves.current[0].theta, 0.5, Math.PI);
+
+    placeCorners(
+      corners?.current ?? null,
+      book.current,
+      camera,
+      view,
+      leaves.current[0].theta,
+      hovered.current || !!drag.current,
+    );
   });
 
   // Once the pages are in, say how big the closed cover is on screen, square
@@ -476,11 +593,13 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
   useEffect(() => {
     const d = camera.position.z - COVER_Y;
     const k = size.height / 2 / (d * Math.tan(THREE.MathUtils.degToRad(FOV / 2)));
-    onCover({ w: PAGE_W * k, h: PAGE_H * k });
-  }, [camera, size, onCover]);
+    // Where it is on screen: the middle of the canvas, as the page opens.
+    const r = gl.domElement.getBoundingClientRect();
+    onCover({ w: PAGE_W * k, h: PAGE_H * k, cx: r.left + r.width / 2, cy: r.top + r.height / 2 });
+  }, [camera, gl, size, onCover]);
 
   const lastMat = useMemo(
-    () => new THREE.MeshStandardMaterial({ map: byName(LAST_RIGHT), roughness: 0.62 }),
+    () => new THREE.MeshStandardMaterial({ map: byName(LAST_RIGHT), roughness: PAPER_ROUGH }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tex],
   );
@@ -490,19 +609,15 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
   return (
     <group ref={float} quaternion={SQUARE}>
     <group ref={book} position={[-PAGE_W / 2, 0, 0]}>
-      {/* Back cover, and the glued-down last page on it. */}
-      <mesh position={[PAGE_W / 2, base / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[PAGE_W, base, PAGE_H]} />
-        <meshStandardMaterial color="#efe9df" roughness={0.7} />
-      </mesh>
-      <mesh
-        position={[PAGE_W / 2, base + 0.0002, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        material={lastMat}
-        receiveShadow
-      >
-        <planeGeometry args={[PAGE_W, PAGE_H]} />
-      </mesh>
+      {/* Back cover, and the glued-down last page on it, raised with the
+          right-hand stack to level the spread. */}
+      <group ref={backCover}>
+        <mesh position={[PAGE_W / 2, base / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[PAGE_W, base, PAGE_H]} />
+          <meshStandardMaterial color="#efe9df" roughness={0.7} />
+        </mesh>
+        <mesh geometry={lastGeo.geo} material={lastMat} receiveShadow />
+      </group>
       {LEAVES.map((_, i) => (
         <group key={i}>
           <mesh
@@ -524,7 +639,9 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
           />
         </group>
       ))}
-      <SpineShade material={shade} />
+      <group ref={spine}>
+        <SpineShade material={shade} />
+      </group>
     </group>
     </group>
   );
@@ -537,16 +654,63 @@ function Magazine({ play, scrollTurn, onCover }: SceneProps) {
  * the spine. Lying flat it is just stacked at its height in the pile.
  */
 const sway_q = new THREE.Quaternion();
+const corner_v = new THREE.Vector3();
+
+/**
+ * The corner squares: each corner of the issue (the cover's while it is
+ * closed, the spread's once open) projected to the screen, with a square set
+ * just outside it, so they ride along with the bob and sway.
+ */
+function placeCorners(
+  box: HTMLDivElement | null,
+  book: THREE.Group | null,
+  camera: THREE.Camera,
+  view: { width: number; height: number },
+  coverTheta: number,
+  on: boolean,
+) {
+  if (!box || !book) return;
+  box.style.opacity = on ? "1" : "0";
+  const left = -PAGE_W * THREE.MathUtils.smoothstep(coverTheta, 0, Math.PI);
+  const pts = [
+    [left, -PAGE_H / 2],
+    [PAGE_W, -PAGE_H / 2],
+    [left, PAGE_H / 2],
+    [PAGE_W, PAGE_H / 2],
+  ].map(([x, z]) => {
+    corner_v.set(x, COVER_Y, z).applyMatrix4(book.matrixWorld).project(camera);
+    return [((corner_v.x + 1) / 2) * view.width, ((1 - corner_v.y) / 2) * view.height];
+  });
+  const cx = pts.reduce((a, p) => a + p[0], 0) / 4;
+  const cy = pts.reduce((a, p) => a + p[1], 0) / 4;
+  pts.forEach(([x, y], i) => {
+    const el = box.children[i] as HTMLElement | undefined;
+    if (!el) return;
+    const dx = x - cx;
+    const dy = y - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    el.style.transform = `translate(${x + (dx / len) * 16 - 4}px, ${y + (dy / len) * 16 - 4}px)`;
+  });
+}
 const sway_e = new THREE.Euler();
 
-function solveLeaf(geo: THREE.PlaneGeometry, rest: Float32Array, l: Leaf, i: number, n: number) {
+function solveLeaf(
+  geo: THREE.PlaneGeometry,
+  rest: Float32Array,
+  l: Leaf,
+  i: number,
+  n: number,
+  open: number,
+  /** How far the right stack is raised and the left lowered, to level the spread. */
+  level: number,
+) {
   const pos = geo.getAttribute("position") as THREE.BufferAttribute;
   const cols = SEGMENTS + 1;
   const ds = PAGE_W / SEGMENTS;
   const f = l.theta / Math.PI;
   // Height of the hinge: its place in the right pile, then in the left one.
-  const hRight = BASE_T + (n - i) * LEAF_T + 0.0004;
-  const hLeft = 0.0004 + (i + 1) * LEAF_T;
+  const hRight = BASE_T + (n - i) * LEAF_T + 0.0004 + level;
+  const hLeft = 0.0004 + (i + 1) * LEAF_T - level;
   const h = THREE.MathUtils.lerp(hRight, hLeft, f);
   const lift = Math.sin(l.theta);
 
@@ -569,7 +733,24 @@ function solveLeaf(geo: THREE.PlaneGeometry, rest: Float32Array, l: Leaf, i: num
     const c = Math.round(rest[v] * SEGMENTS);
     const row = Math.floor(v / cols);
     const z = row === 0 ? -PAGE_H / 2 : PAGE_H / 2;
-    pos.setXYZ(v, xs[c], h + ys[c], z);
+    // Lying open, the page arches gently off the gutter; while it is up in
+    // the air its own bend takes over.
+    const arch = ARCH * open * (1 - lift) * archAt(c / SEGMENTS);
+    pos.setXYZ(v, xs[c], h + ys[c] + arch, z);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+  geo.computeBoundingSphere();
+}
+
+/** The glued-down last page, arched like the others once the issue is open. */
+function solveLast(geo: THREE.PlaneGeometry, rest: Float32Array, open: number) {
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  const cols = SEGMENTS + 1;
+  for (let v = 0; v < pos.count; v++) {
+    const u = rest[v];
+    const z = Math.floor(v / cols) === 0 ? -PAGE_H / 2 : PAGE_H / 2;
+    pos.setXYZ(v, u * PAGE_W, BASE_T + 0.0002 + ARCH * open * archAt(u), z);
   }
   pos.needsUpdate = true;
   geo.computeVertexNormals();
@@ -598,7 +779,7 @@ function SpineShade({ material }: { material: RefObject<THREE.MeshBasicMaterial 
     return t;
   }, []);
   return (
-    <mesh position={[0, BASE_T + (LEAVES.length + 1) * LEAF_T + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[0.06, PAGE_H]} />
       <meshBasicMaterial ref={material} map={tex} transparent opacity={0} depthWrite={false} />
     </mesh>

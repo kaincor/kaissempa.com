@@ -1,2 +1,2 @@
-/** The Mint page's backdrop grey, shared by the page (for theme-color) and the stage. */
-export const MINT_GREY = "#c4c3be";
+/** The Mint room's grey wall: the page's theme-color and fallback. */
+export const ROOM_TOP = "#a3a3a3";

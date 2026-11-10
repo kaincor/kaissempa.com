@@ -81,6 +81,13 @@ const CASE_THEMES: {
    */
   size?: number;
   weight?: number;
+  /** Set the menu in capitals. */
+  caps?: boolean;
+  /**
+   * A route's own touch: hovering the bar, or the open menu, picks it like a
+   * frame in a design tool, with a small square at each corner in this colour.
+   */
+  corners?: string;
 }[] = [
   {
     prefix: "/fortuna",
@@ -116,6 +123,22 @@ const CASE_THEMES: {
     font: "var(--z-captain-stack)",
     size: 13,
     weight: 700,
+  },
+  {
+    prefix: "/mint",
+    // Zorzal's recipe in the MINT wordmark's red, #b7272b, over the page's
+    // studio grey. Keeps the site's own menu face.
+    bar: "rgba(183, 39, 43, 0.74)",
+    menu: "linear-gradient(270deg, rgba(183, 39, 43, 0.76) 0%, rgba(183, 39, 43, 0.82) 100%)",
+    blur: 8,
+    // Fahkwang Bold in capitals, the page's caption face, declared on :root
+    // by src/app/mint/page.tsx. Fifteen: wide capitals read large at twenty.
+    font: "var(--mint-fahkwang)",
+    size: 15,
+    weight: 700,
+    caps: true,
+    // The red squares the page uses round its photos, wordmark and magazine.
+    corners: "#b7272b",
   },
 ];
 
@@ -212,7 +235,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
       }}
     >
       <div
-        className="glass"
+        className="glass nav-bar"
         style={{
           position: "relative",
           // The wipe is a child laid over the whole bar, so it has to be
@@ -294,6 +317,12 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
         </button>
       </div>
 
+      {theme?.corners ? (
+        <div className="nav-corners nav-bar-corners" aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, top: 0, height: BAR_HEIGHT }}>
+          <CornerSquares color={theme.corners} />
+        </div>
+      ) : null}
+
       {/* Fills the gap so the pointer never lands on bare page between the two
           panels. pointer-events: none while closed, so a collapsed menu does
           not leave an invisible hover target sitting over the hero. */}
@@ -331,6 +360,11 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
           transition: `opacity 0.25s ${EASE}, transform 0.25s ${EASE}`,
         }}
       >
+        {theme?.corners ? (
+          <div className="nav-corners" aria-hidden="true" style={{ position: "absolute", inset: 0 }}>
+            <CornerSquares color={theme.corners} />
+          </div>
+        ) : null}
         {LINKS.map((l) => (
           <MenuLink
             key={l.label}
@@ -338,6 +372,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
             font={theme?.font}
             size={theme?.size}
             weight={theme?.weight}
+            caps={theme?.caps}
             onNavigate={(e) => {
               glideIfHome(e, l.href, pathname);
               setOpen(false);
@@ -351,6 +386,25 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
   );
 }
 
+/**
+ * A small square just outside each corner of its parent. Hidden until the
+ * bar or the menu under it is hovered (styles in globals.css, .nav-corners).
+ */
+function CornerSquares({ color }: { color: string }) {
+  return (
+    <>
+      {[
+        { left: -9, top: -9 },
+        { right: -9, top: -9 },
+        { left: -9, bottom: -9 },
+        { right: -9, bottom: -9 },
+      ].map((pos, i) => (
+        <span key={i} style={{ position: "absolute", width: 5, height: 5, background: color, ...pos }} />
+      ))}
+    </>
+  );
+}
+
 /** Height of one menu row, px: the home menu's 20px type at line-height 1.1. */
 const ROW_HEIGHT = 22;
 
@@ -360,6 +414,7 @@ function MenuLink({
   font,
   size,
   weight,
+  caps,
   onNavigate,
 }: {
   href: string;
@@ -368,6 +423,7 @@ function MenuLink({
   font?: string;
   size?: number;
   weight?: number;
+  caps?: boolean;
   onNavigate: (e: React.MouseEvent) => void;
 }) {
   const [hot, setHot] = useState(false);
@@ -389,7 +445,7 @@ function MenuLink({
         // .display uppercases because Kaicords' capitals are its heavy style
         // and its lowercase is the light one. No other face has that quirk,
         // and a case study set in mixed case should not have a shouting menu.
-        textTransform: font ? "none" : undefined,
+        textTransform: caps ? "uppercase" : font ? "none" : undefined,
         fontSize: size ?? 20,
         // A fixed row, the home menu's 20px at 1.1, so a theme's smaller type
         // keeps the same menu height instead of shrinking the panel with it.

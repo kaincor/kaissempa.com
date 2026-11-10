@@ -2,8 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-/** The closed cover's size on screen once the 3D book has loaded, in CSS px. */
-export type CoverRect = { w: number; h: number };
+/**
+ * The closed cover on screen once the 3D book has loaded, square on: its size
+ * and its centre, in CSS px from the top left of the screen as the page
+ * opens (scrolled to the top).
+ */
+export type CoverRect = { w: number; h: number; cx: number; cy: number };
+
+/** The size unit: about a large card's width. */
+export const unitFor = (w: number, h: number) => Math.min(w * 0.3, h * 0.25);
+/** The MINT wordmark's width, typed at the end and left standing in the hero. */
+export const markWidthFor = (w: number, h: number) => unitFor(w, h) * 1.5;
 
 /**
  * The opening of the Mint case study, a short montage of Kai's behind the
@@ -88,9 +97,11 @@ const T = {
   cursorOff: 5450,
   /** Waits here until the 3D cover's size is known. */
   open: 5650,
-  reveal: 6450,
-  fadeOut: 6800,
-  done: 7000,
+  /** The cover has opened out over the wordmark; it drops to its place below. */
+  drop: 6250,
+  reveal: 7050,
+  fadeOut: 7350,
+  done: 7550,
 };
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -107,19 +118,21 @@ const outBack = (k: number) => {
 type Props = {
   /** The 3D cover's size on screen, or null while the book is loading. */
   cover: CoverRect | null;
+  /** The cover is dropping away: bring the hero's wordmark back in. */
+  onDrop: () => void;
   /** The cover card is in place over the 3D one: show the canvas. */
   onReveal: () => void;
   /** The montage is over and can be removed. */
   onDone: () => void;
 };
 
-export default function MintIntro({ cover, onReveal, onDone }: Props) {
+export default function MintIntro({ cover, onDrop, onReveal, onDone }: Props) {
   const [vp, setVp] = useState<{ w: number; h: number } | null>(null);
   const coverRef = useRef(cover);
-  const cb = useRef({ onReveal, onDone });
+  const cb = useRef({ onDrop, onReveal, onDone });
   useEffect(() => {
     coverRef.current = cover;
-    cb.current = { onReveal, onDone };
+    cb.current = { onDrop, onReveal, onDone };
   });
 
   useEffect(() => {
@@ -129,8 +142,7 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
     return () => window.removeEventListener("resize", set);
   }, []);
 
-  /** The size unit: about a large card's width. */
-  const U = vp ? Math.min(vp.w * 0.3, vp.h * 0.25) : 0;
+  const U = vp ? unitFor(vp.w, vp.h) : 0;
 
   const cuts = useRef<(HTMLImageElement | null)[]>([]);
   const cutFrame = useRef<HTMLDivElement>(null);
@@ -171,6 +183,7 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
     let last = 0;
     let started = false;
     let revealed = false;
+    let dropped = false;
     let finished = false;
 
     // Hold on the grey until the photos are in, so no cut lands on a blank.
@@ -198,7 +211,7 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
 
     const W = vp.w;
     const H = vp.h;
-    const markW = U * 0.95;
+    const markW = markWidthFor(W, H);
     const markH = markW / WORDMARK_AR;
     const cutW = U * 0.55;
     const cutH = cutW * 1.25;
@@ -244,8 +257,16 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
         if (!el) return;
         const out = outExpo(prog(t, T.burst + order[i] * 32, 750));
         const back = inCubic(prog(t, T.collapse + (all.length - 1 - order[i]) * 14, 420));
-        const tx = (c.x * W * 0.48 * zoom - c.d * U * 0.12 * dolly) * out * (1 - back);
-        const ty = (c.y * H * 0.48 * zoom - c.d * U * 0.04 * dolly) * out * (1 - back);
+        // Each card drifts outwards as the collage dollies in, straight away
+        // from the middle towards its nearest edge or corner, further the
+        // nearer it is. The wordmark card in the middle holds its place and
+        // just grows.
+        const r = Math.hypot(c.x, c.y);
+        const ox = r ? c.x / r : 0;
+        const oy = r ? c.y / r : 0;
+        const push = c.d * U * 0.14 * dolly;
+        const tx = (c.x * W * 0.48 * zoom + ox * push) * out * (1 - back);
+        const ty = (c.y * H * 0.48 * zoom + oy * push) * out * (1 - back);
         const s = lerp(0.15, 1, out) * zoom * lerp(1, 0.12, back);
         el.style.transform = `translate(-50%, -50%) translate(${tx}px, ${ty}px) scale(${s})`;
         el.style.opacity = String(clamp01(out * 5) * (1 - clamp01((back - 0.6) / 0.4)));
@@ -259,7 +280,10 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
       const e = end.current;
       if (e) {
         const appear = prog(t, T.markIn, 300);
-        const open = inOutCubic(prog(t, T.open, T.reveal - T.open));
+        const open = inOutCubic(prog(t, T.open, T.drop - T.open));
+        // Then down from the middle to where the 3D cover waits, below the
+        // wordmark, mostly under the bottom of the screen.
+        const fall = inOutCubic(prog(t, T.drop, T.reveal - T.drop));
         const cv = coverRef.current;
         // How much of the wordmark is typed, as a share of its width. Each
         // letter lands at once; the frame slides out to take it in, staying
@@ -273,7 +297,9 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
         const h = cv ? lerp(markH, cv.h, open) : markH;
         e.style.width = `${w}px`;
         e.style.height = `${h}px`;
-        e.style.transform = `translate(-50%, -50%) scale(${lerp(0.6, 1, outBack(appear))})`;
+        const dx = cv ? (cv.cx - W / 2) * fall : 0;
+        const dy = cv ? (cv.cy - H / 2) * fall : 0;
+        e.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${lerp(0.6, 1, outBack(appear))})`;
         e.style.opacity = String(clamp01(appear * 3) * (1 - prog(t, T.fadeOut, T.done - T.fadeOut)));
         const em = endMark.current;
         if (em) {
@@ -290,7 +316,7 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
           cu.style.opacity = t < T.cursorOff ? "1" : "0";
         }
         if (endCover.current) endCover.current.style.opacity = String(prog(t, T.open + 50, 300));
-        if (t >= T.markIn) setHandles(w, h, (1 - prog(t, T.reveal - 150, 200)) * clamp01(appear * 3));
+        if (t >= T.markIn) setHandles(w, h, (1 - prog(t, T.drop - 150, 200)) * clamp01(appear * 3));
       }
       if (t >= T.cutsIn && t < T.burst) {
         setHandles(cutW * pop * grow, cutH * pop * grow, 1);
@@ -298,6 +324,10 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
         setHandles(0, 0, 0);
       }
 
+      if (!dropped && t >= T.drop) {
+        dropped = true;
+        cb.current.onDrop();
+      }
       if (!revealed && t >= T.reveal) {
         revealed = true;
         cb.current.onReveal();
@@ -410,7 +440,7 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
   ];
 
   return (
-    <div ref={root} aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 2 }}>
+    <div ref={root} aria-hidden="true" style={{ position: "fixed", inset: 0, overflow: "hidden", zIndex: 2 }}>
       {collage.map((node, i) => (
         <div
           key={i}
@@ -442,7 +472,7 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
       </div>
 
       <div ref={end} style={{ ...centred, zIndex: 20 }}>
-        <div ref={endMark} style={{ position: "absolute", width: U * 0.95, height: (U * 0.95) / WORDMARK_AR }}>
+        <div ref={endMark} style={{ position: "absolute", width: markWidthFor(vp.w, vp.h), height: (markWidthFor(vp.w, vp.h)) / WORDMARK_AR }}>
           {LETTERS.map((l, i) => (
             <div
               key={l.src}
@@ -458,8 +488,8 @@ export default function MintIntro({ cover, onReveal, onDone }: Props) {
             style={{
               position: "absolute",
               bottom: 0,
-              width: ((U * 0.95) / WORDMARK_AR) * 0.2,
-              height: ((U * 0.95) / WORDMARK_AR) * 0.2,
+              width: ((markWidthFor(vp.w, vp.h)) / WORDMARK_AR) * 0.2,
+              height: ((markWidthFor(vp.w, vp.h)) / WORDMARK_AR) * 0.2,
               background: MINT_RED,
             }}
           />

@@ -30,6 +30,12 @@ const SLIDES = [
 ] as const;
 
 const HOLD_MS = 1500;
+/**
+ * The first cover's turn is shorter, once per page load, so someone scrolling
+ * past quickly still sees it change and knows there are more.
+ */
+const FIRST_HOLD_MS = 700;
+let firstShown = false;
 const FADE_MS = 800;
 /** How far right of its resting place a photo starts, as % of the frame. */
 const DRIFT_PCT = 1.5;
@@ -38,8 +44,8 @@ const DRIFT_PCT = 1.5;
  * Every image is stacked in the frame and only the current one is opaque, so
  * the change is a crossfade with nothing empty between. All of them load
  * with the thumbnail, so each is ready before its turn. It stops while the
- * thumbnail is off-screen or the tab is hidden, and with reduced motion it
- * holds on the first image.
+ * thumbnail is off-screen (a hidden tab's timers are slowed by the browser
+ * anyway), and with reduced motion it holds on the first image.
  */
 export default function MintSlideshow({ sizes }: { sizes: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -51,13 +57,19 @@ export default function MintSlideshow({ sizes }: { sizes: string }) {
   const index = step % SLIDES.length;
   const leaving = step > 0 ? (step - 1) % SLIDES.length : -1;
 
+  // One timer per cover, so the first can be held for less than the rest.
   useEffect(() => {
     if (!inView || reduced) return;
-    const id = setInterval(() => {
-      if (document.visibilityState === "visible") setStep((n) => n + 1);
-    }, HOLD_MS);
-    return () => clearInterval(id);
-  }, [inView, reduced]);
+    const quick = step === 0 && !firstShown;
+    const id = setTimeout(
+      () => {
+        firstShown = true;
+        setStep((n) => n + 1);
+      },
+      quick ? FIRST_HOLD_MS : HOLD_MS,
+    );
+    return () => clearTimeout(id);
+  }, [inView, reduced, step]);
 
   return (
     <div

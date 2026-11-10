@@ -265,3 +265,20 @@ body {
     animation: none !important;
   }
 }
+
+/* Corner squares on the navbar, for routes whose theme asks for them (Mint):
+   the bar's when the bar is hovered, the menu's when the menu is. */
+.nav-corners {
+  pointer-events: none;
+  opacity: 0;
+  /* A slower fade out than in, so passing from the bar to the menu hands
+     the squares over rather than blinking them off. */
+  transition: opacity 450ms ease-out;
+}
+@media (hover: hover) {
+  .nav-bar:hover ~ .nav-bar-corners,
+  #main-menu:hover > .nav-corners {
+    opacity: 1;
+    transition-duration: 200ms;
+  }
+}
