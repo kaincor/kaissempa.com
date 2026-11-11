@@ -1,11 +1,12 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useRef, type RefObject } from "react";
+import { memo, Suspense, useEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import { useTexture } from "@react-three/drei";
 import type { CoverRect } from "./MintIntro";
 import { LAST_RIGHT, LEAVES } from "./pages";
+import { BASE_T, COVER_Y, FOV, LEAF_T, PAGE_H, PAGE_W, fitDistance } from "./layout";
 
 /**
  * The Mint Magazine case study: Kai's issue floating in mid-air at a slight
@@ -26,14 +27,9 @@ import { LAST_RIGHT, LEAVES } from "./pages";
  * can sit exactly over it, then tilts into its resting angle once `play`.
  */
 
-/** 8.5 x 11 in, in metres; the width follows Kai's spreads, 3036 x 4116. */
-const PAGE_H = 0.279;
-const PAGE_W = (PAGE_H * 3036) / 4116;
-/** Paper thickness, exaggerated a touch so the stacks read. */
-const LEAF_T = 0.0014;
-/** The back cover board under the right-hand stack. */
-const BASE_T = 0.0022;
 const SEGMENTS = 48;
+/** How far the cover lifts when nudged, in radians. */
+const NUDGE = 0.42;
 /**
  * Uncoated paper: rough enough that the key light never shows as a sheen
  * across the photos at the book's resting angle.
@@ -54,7 +50,6 @@ const archAt = (s: number) => Math.sin(Math.PI * Math.pow(THREE.MathUtils.clamp(
 const PAGES = "/mint/pages/";
 const PAGES_SM = "/mint/pages-sm/";
 
-const FOV = 35;
 
 /**
  * The book's poses. The pages lie in the book's own xz plane, facing +y;
@@ -68,21 +63,27 @@ const RESTING = new THREE.Quaternion()
   .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2 - 0.42, 0, 0)));
 const TILT_S = 1.5;
 
-/** Height of the closed cover above the back cover, in the book's frame. */
-const COVER_Y = BASE_T + LEAVES.length * LEAF_T + 0.0004;
 
 type SceneProps = {
   /** Start tilting into the resting pose (and take input). */
   play: boolean;
-  /** Phones: scrolling the page turns the pages too. */
-  scrollTurn: boolean;
+  /** A phone: lighter page images, and no shadow on the floor below. */
+  phone: boolean;
   /** The closed cover's size on screen, square on, once the pages are loaded. */
   onCover: (r: CoverRect) => void;
   /** Four squares to keep at the magazine's corners, shown while it is hovered. */
   corners?: RefObject<HTMLDivElement | null>;
 };
 
-export default function MagazineScene({ play, scrollTurn, onCover, corners }: SceneProps) {
+/**
+ * Memoised, so the page's own state (the hint, whether the book is up)
+ * never re-renders the canvas. Re-rendering it from inside a click froze the
+ * page outright: React re-renders the scene's own root synchronously within
+ * the event, and the two never finished.
+ */
+export default memo(MagazineScene);
+
+function MagazineScene({ play, phone, onCover, corners }: SceneProps) {
   return (
     <Canvas
       // PCF: three.js has dropped the soft variant and warned about it on
@@ -106,10 +107,10 @@ export default function MagazineScene({ play, scrollTurn, onCover, corners }: Sc
       <CameraRig />
       <Lights />
       <Suspense fallback={null}>
-        <Magazine play={play} scrollTurn={scrollTurn} onCover={onCover} corners={corners} />
+        <Magazine play={play} phone={phone} onCover={onCover} corners={corners} />
       </Suspense>
       {/* A soft shadow on the floor far below, so it reads as floating. */}
-      <FloorShadow />
+      {phone ? null : <FloorShadow />}
     </Canvas>
   );
 }
@@ -143,13 +144,6 @@ function FloorShadow() {
   );
 }
 
-/** How far back the camera sits so the open spread fits with room round it. */
-function fitDistance(aspect: number) {
-  const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
-  const wide = 2 * PAGE_W * (aspect < 0.8 ? 1.05 : 1.4);
-  const tall = PAGE_H * (aspect < 0.8 ? 1.4 : 1.42);
-  return Math.max(wide / (2 * tan * aspect), tall / (2 * tan));
-}
 
 /** Straight on, at the book's height. */
 function CameraRig() {
@@ -199,9 +193,6 @@ function Lights() {
   );
 }
 
-/** How much page scroll turns one page, as a share of the screen's height. */
-const SCROLL_STEP = 0.6;
-
 type Leaf = {
   theta: number;
   /** Where the finger has the page, while held; the page follows it with a little lag. */
@@ -220,8 +211,8 @@ function loadPage(t: THREE.Texture) {
   return t;
 }
 
-function Magazine({ play, scrollTurn, onCover, corners }: SceneProps) {
-  const P = scrollTurn ? PAGES_SM : PAGES;
+function Magazine({ play, phone, onCover, corners }: SceneProps) {
+  const P = phone ? PAGES_SM : PAGES;
   const urls = useMemo(() => [...LEAVES.flat(), LAST_RIGHT].map((n) => `${P}${n}.jpg`), [P]);
   const tex = useTexture(urls, (ts) => (Array.isArray(ts) ? ts : [ts]).forEach(loadPage));
   const byName = (n: string) => tex[urls.indexOf(`${P}${n}.jpg`)];
@@ -236,10 +227,18 @@ function Magazine({ play, scrollTurn, onCover, corners }: SceneProps) {
   );
   /**
    * Where the reader is in the issue, in pages turned: 0 closed, 1 with the
-   * cover turned, and so on. Fractions are pages part way over, which only
-   * scrolling leaves. Each leaf falls towards its share of it.
+   * cover turned, and so on. Each leaf falls towards its side of it.
    */
   const pos = useRef(0);
+
+  // The swipe hint's nudge: the closed cover lifts a little off the stack
+  // and settles back down, as if about to open, without opening.
+  const nudgeAt = useRef(-1);
+  useEffect(() => {
+    const onNudge = () => (nudgeAt.current = performance.now());
+    window.addEventListener("mint-nudge", onNudge);
+    return () => window.removeEventListener("mint-nudge", onNudge);
+  }, []);
   const book = useRef<THREE.Group>(null);
   const float = useRef<THREE.Group>(null);
   const backCover = useRef<THREE.Group>(null);
@@ -357,9 +356,12 @@ function Magazine({ play, scrollTurn, onCover, corners }: SceneProps) {
         forward = false;
       }
       if (leaf < 0) return;
-      try {
-        el.setPointerCapture(e.pointerId);
-      } catch {}
+      // The drag is followed on the window rather than by capturing the
+      // pointer to the canvas: capturing it froze the page outright in
+      // Chromium, the moment a real mouse pressed on the book.
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      window.addEventListener("pointercancel", cancel);
       drag.current = {
         leaf,
         forward,
@@ -380,14 +382,16 @@ function Magazine({ play, scrollTurn, onCover, corners }: SceneProps) {
     /** How far left the issue reaches, in its own frame: just the cover while closed. */
     const leftEdge = () => -PAGE_W * THREE.MathUtils.smoothstep(leaves.current[0].theta, 0, Math.PI);
 
+    /** Whether the mouse is over the issue, for the corner squares. */
+    const hover = (e: PointerEvent) => {
+      if (drag.current || e.pointerType !== "mouse") return;
+      const p = playing.current.on ? local(e) : null;
+      hovered.current = !!p && Math.abs(p.z) <= PAGE_H / 2 && p.x <= PAGE_W && p.x >= leftEdge();
+    };
+
     const move = (e: PointerEvent) => {
       const d = drag.current;
-      if (!d) {
-        if (e.pointerType !== "mouse") return;
-        const p = playing.current.on ? local(e) : null;
-        hovered.current = !!p && Math.abs(p.z) <= PAGE_H / 2 && p.x <= PAGE_W && p.x >= leftEdge();
-        return;
-      }
+      if (!d) return;
       if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 6) d.moved = true;
       if (!d.moved) return;
       const p = local(e);
@@ -415,7 +419,9 @@ function Magazine({ play, scrollTurn, onCover, corners }: SceneProps) {
       const d = drag.current;
       if (!d) return;
       drag.current = null;
-      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cancel);
       const l = leaves.current[d.leaf];
       l.held = false;
       // Carry the hand's speed into the fall, so a flung page keeps going.
@@ -435,9 +441,8 @@ function Magazine({ play, scrollTurn, onCover, corners }: SceneProps) {
     const cancel = (e: PointerEvent) => release(e, true);
 
     el.addEventListener("pointerdown", down);
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerup", up);
-    el.addEventListener("pointercancel", cancel);
+    // On the canvas itself only for hover; a drag is followed on the window.
+    el.addEventListener("pointermove", hover);
     const leave = () => {
       if (!drag.current) hovered.current = false;
     };
@@ -445,53 +450,12 @@ function Magazine({ play, scrollTurn, onCover, corners }: SceneProps) {
     return () => {
       el.removeEventListener("pointerleave", leave);
       el.removeEventListener("pointerdown", down);
-      el.removeEventListener("pointermove", move);
-      el.removeEventListener("pointerup", up);
-      el.removeEventListener("pointercancel", cancel);
+      el.removeEventListener("pointermove", hover);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cancel);
     };
   }, [camera, gl]);
-
-  // Phones: once the book has come up and pinned to the screen, scrolling
-  // on turns its pages, hinged to the scroll. Each screenful-and-a-bit of
-  // scroll turns a page. When the scroll rests, a page left part way over
-  // finishes falling whichever way it was going. Scrolled back up through the
-  // whole track, the issue is closed; down to its end, it is at its end.
-  useEffect(() => {
-    if (!scrollTurn) return;
-    const n = LEAVES.length;
-    const track = gl.domElement.closest<HTMLElement>("[data-mint-track]");
-    if (!track) return;
-    /** How far into the pinned stretch the page is scrolled, in px. */
-    const pinned = () => {
-      const r = track.getBoundingClientRect();
-      const max = Math.max(0, r.height - window.innerHeight);
-      return { s: THREE.MathUtils.clamp(-r.top, 0, max), max };
-    };
-    let last = pinned().s;
-    let idle = 0;
-    let dir = 1;
-    const onScroll = () => {
-      const { s, max } = pinned();
-      const ds = s - last;
-      const was = last;
-      last = s;
-      if (!playing.current.on || drag.current || ds === 0) return;
-      dir = Math.sign(ds);
-      let p = pos.current + ds / (window.innerHeight * SCROLL_STEP);
-      if (s <= 0 && was > 0) p = 0;
-      else if (s >= max && was < max) p = n;
-      pos.current = THREE.MathUtils.clamp(p, 0, n);
-      clearTimeout(idle);
-      idle = window.setTimeout(() => {
-        pos.current = THREE.MathUtils.clamp(Math.round(pos.current + 0.25 * dir), 0, n);
-      }, 220);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      clearTimeout(idle);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [scrollTurn, gl]);
 
   useFrame(({ clock, size: view }, rawDt) => {
     const dt = Math.min(rawDt, 1 / 30);
@@ -534,6 +498,10 @@ function Magazine({ play, scrollTurn, onCover, corners }: SceneProps) {
     }
     leaves.current.forEach((l, i) => {
       l.target = THREE.MathUtils.clamp(pos.current - i, 0, 1) * Math.PI;
+      // For half a second after a nudge, the cover reaches a little way open
+      // while the issue is still closed; the spring then lays it back down.
+      if (i === 0 && pos.current === 0 && nudgeAt.current >= 0 && performance.now() - nudgeAt.current < 450)
+        l.target = NUDGE;
       if (l.held) {
         // Paper has some heft: it follows the finger a moment behind.
         const prev = l.theta;

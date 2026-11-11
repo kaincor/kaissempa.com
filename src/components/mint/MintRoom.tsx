@@ -17,7 +17,17 @@ import { ROOM_TOP } from "./colors";
  * Positions are in units of the screen's height, so the light keeps its
  * place at the left on any width, and the wall just runs further on a wide
  * screen.
+ *
+ * It rises as the page scrolls, at half the page's speed, so it reads as a
+ * space behind the page rather than a backdrop pinned to the glass. It is
+ * that much taller than the screen, the extra all floor, so the floor and its
+ * leafy light carry on to the end. The rise is a CSS scroll-driven animation,
+ * run by the browser's compositor in step with the scroll itself; where that
+ * is not supported, a scroll listener moves it instead.
  */
+
+/** How fast the room rises against the page. */
+const RISE = 0.5;
 
 const WALL = "#a3a3a3";
 const LIGHT = "rgba(255, 255, 255, 0.42)";
@@ -29,47 +39,131 @@ export default function MintRoom() {
   const leavesA = useRef<HTMLCanvasElement>(null);
   const leavesB = useRef<HTMLCanvasElement>(null);
 
+  const room = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     let t = 0;
+    let lastKey = "";
     const draw = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
+      // How far it rises over the whole scroll, and so how much taller than
+      // the screen it must be.
+      const max = Math.max(0, document.documentElement.scrollHeight - h);
+      const rise = Math.round(max * RISE);
+      const key = `${w}|${h}|${rise}`;
+      if (key === lastKey) return;
+      lastKey = key;
+      const el = room.current;
+      if (el) {
+        el.style.height = `${h + rise}px`;
+        el.style.setProperty("--rise", `${rise}px`);
+      }
       // The light is all soft; drawing it at full device resolution would
       // only cost memory, so it is drawn at most at 1.25x.
       const dpr = Math.min(1.25, window.devicePixelRatio || 1);
-      if (wall.current) paintWall(wall.current, w, h, dpr);
-      if (leavesA.current) paintLeaves(leavesA.current, w, h, dpr, 7);
-      if (leavesB.current) paintLeaves(leavesB.current, w, h, dpr, 23);
+      if (wall.current) paintWall(wall.current, w, h, h + rise, dpr);
+      if (leavesA.current) paintLeaves(leavesA.current, w, h, h + rise, dpr, 7);
+      if (leavesB.current)
+        paintLeaves(leavesB.current, w, h, h + rise, dpr, 23);
     };
     draw();
-    const onResize = () => {
+    const later = () => {
       clearTimeout(t);
       t = window.setTimeout(draw, 150);
     };
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", later);
+    // The page's height settles as it loads (the 3D book, the fonts).
+    const ro = new ResizeObserver(later);
+    ro.observe(document.body);
+
+    // Without scroll-driven animations, follow the scroll by hand.
+    let raf = 0;
+    const scripted = !CSS.supports("animation-timeline: scroll()");
+    const follow = () => {
+      raf = 0;
+      if (room.current)
+        room.current.style.transform = `translate3d(0, ${-window.scrollY * RISE}px, 0)`;
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(follow);
+    };
+    if (scripted) {
+      follow();
+      window.addEventListener("scroll", onScroll, { passive: true });
+    }
     return () => {
       clearTimeout(t);
-      window.removeEventListener("resize", onResize);
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("resize", later);
+      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
-  const layer: React.CSSProperties = { position: "absolute", left: 0, top: 0, width: "100%", height: "100%" };
+  const layer: React.CSSProperties = {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: "100%",
+    height: "100%",
+  };
   return (
     <div
+      ref={room}
       aria-hidden="true"
       data-theme-color={ROOM_TOP}
-      style={{ position: "fixed", inset: 0, zIndex: 0, overflow: "hidden", background: WALL, pointerEvents: "none" }}
+      className="mint-room"
+      style={{
+        position: "fixed",
+        left: 0,
+        right: 0,
+        top: 0,
+        height: "100vh",
+        zIndex: 0,
+        overflow: "hidden",
+        background: WALL,
+        pointerEvents: "none",
+      }}
     >
       <canvas ref={wall} style={layer} />
       {/* The leaves outside, swaying: two patterns drifting out of step. */}
       {/* Only as tall as the floor, so the swaying layers are a strip, not
           the whole screen, and plain alpha rather than a blend mode, which
           would make the browser recomposite everything under them. */}
-      <div style={{ position: "absolute", left: 0, right: 0, top: `${FLOOR_Y * 100}%`, bottom: 0, overflow: "hidden" }}>
+      <div
+        className="mint-floor"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflow: "hidden",
+          // The light thins out and is gone halfway down the floor.
+          WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 34%, transparent 50%)",
+          maskImage: "linear-gradient(to bottom, #000 0%, #000 34%, transparent 50%)",
+        }}
+      >
         <canvas ref={leavesA} className="mint-leaves-a" style={layer} />
-        <canvas ref={leavesB} className="mint-leaves-b" style={{ ...layer, opacity: 0.7 }} />
+        <canvas
+          ref={leavesB}
+          className="mint-leaves-b"
+          style={{ ...layer, opacity: 0.7 }}
+        />
       </div>
       <style>{`
+        .mint-floor { top: calc(${FLOOR_Y * 100}vh); }
+        @supports (animation-timeline: scroll()) {
+          .mint-room {
+            animation: mint-rise linear both;
+            animation-timeline: scroll(root block);
+            will-change: transform;
+          }
+          @keyframes mint-rise {
+            from { transform: translate3d(0, 0, 0); }
+            to { transform: translate3d(0, calc(var(--rise, 0px) * -1), 0); }
+          }
+        }
         .mint-leaves-a { transform-origin: 30% 90%; animation: mint-sway-a 9s ease-in-out infinite alternate; will-change: transform; }
         .mint-leaves-b { transform-origin: 40% 95%; animation: mint-sway-b 13s ease-in-out infinite alternate; will-change: transform, opacity; }
         @keyframes mint-sway-a {
@@ -103,7 +197,12 @@ function setup(c: HTMLCanvasElement, w: number, h: number, dpr: number) {
  * back on, so only the blurred shadow lands. Works the same in every browser,
  * unlike the canvas filter property.
  */
-function soft(g: CanvasRenderingContext2D, path: Path2D, color: string, blur: number) {
+function soft(
+  g: CanvasRenderingContext2D,
+  path: Path2D,
+  color: string,
+  blur: number,
+) {
   g.save();
   // Shadow offsets and blur are in device pixels, untouched by the canvas
   // transform, so they are scaled by it here to match the path.
@@ -124,8 +223,15 @@ function quad(pts: [number, number][]) {
   return p;
 }
 
-function paintWall(c: HTMLCanvasElement, w: number, h: number, dpr: number) {
-  const g = setup(c, w, h, dpr);
+/** `h` is the screen's height, which sets the room's proportions; `total` the room's, taller by its rise, the extra all floor. */
+function paintWall(
+  c: HTMLCanvasElement,
+  w: number,
+  h: number,
+  total: number,
+  dpr: number,
+) {
+  const g = setup(c, w, total, dpr);
   const H = h;
   const X = (v: number) => v * H;
   const fy = FLOOR_Y * H;
@@ -161,7 +267,17 @@ function paintWall(c: HTMLCanvasElement, w: number, h: number, dpr: number) {
     for (const [y0, y1] of panes) {
       const top = (x: number) => X(y0 + (x - bars[0][0]) * slope);
       const bot = (x: number) => Math.min(fy, X(y1 + (x - bars[0][0]) * slope));
-      soft(g, quad([[X(x0), top(x0)], [X(x1), top(x1)], [X(x1), bot(x1)], [X(x0), bot(x0)]]), LIGHT, 7);
+      soft(
+        g,
+        quad([
+          [X(x0), top(x0)],
+          [X(x1), top(x1)],
+          [X(x1), bot(x1)],
+          [X(x0), bot(x0)],
+        ]),
+        LIGHT,
+        7,
+      );
     }
   }
 
@@ -171,8 +287,18 @@ function paintWall(c: HTMLCanvasElement, w: number, h: number, dpr: number) {
   grad.addColorStop(0, "#a8a8a8");
   grad.addColorStop(1, "#b1b1b1");
   g.fillStyle = grad;
-  g.fillRect(0, fy, w, h - fy);
-  soft(g, quad([[0, fy - 1], [w, fy - 1], [w, fy + 3], [0, fy + 3]]), "rgba(0, 0, 0, 0.16)", 5);
+  g.fillRect(0, fy, w, total - fy);
+  soft(
+    g,
+    quad([
+      [0, fy - 1],
+      [w, fy - 1],
+      [w, fy + 3],
+      [0, fy + 3],
+    ]),
+    "rgba(0, 0, 0, 0.16)",
+    5,
+  );
 }
 
 /** A small seeded random, so the leaves fall the same on every draw. */
@@ -185,17 +311,29 @@ function seeded(seed: number) {
 }
 
 /** Sun through leaves on the floor: clusters of stretched, soft patches. */
-function paintLeaves(c: HTMLCanvasElement, w: number, h: number, dpr: number, seed: number) {
+function paintLeaves(
+  c: HTMLCanvasElement,
+  w: number,
+  h: number,
+  total: number,
+  dpr: number,
+  seed: number,
+) {
   const H = h;
   const fy = FLOOR_Y * H;
+  const depth = total - fy;
   // The canvas covers just the floor, so it is drawn with the floor's top at 0.
-  const g = setup(c, w, h - fy, dpr);
+  const g = setup(c, w, depth, dpr);
   const rnd = seeded(seed);
-  // Mostly on the window side, thinning out to the right.
+  // Mostly on the window side, thinning out to the right. Only over the top
+  // half of the floor, where the strip's mask lets it show, at the same
+  // density however deep the floor runs.
   const reach = Math.min(w, H * 1.1);
-  for (let i = 0; i < 38; i++) {
+  const lit = depth * 0.5;
+  const n = Math.round((38 * lit) / (h - fy));
+  for (let i = 0; i < n; i++) {
     const x = Math.pow(rnd(), 1.7) * reach;
-    const y = H * 0.03 + rnd() * (h - fy);
+    const y = H * 0.03 + rnd() * lit;
     const rx = H * (0.02 + rnd() * 0.06);
     const ry = rx * (0.22 + rnd() * 0.18);
     const p = new Path2D();

@@ -5,23 +5,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import MintGallery from "./MintGallery";
 import MintHero from "./MintHero";
 import MintRoom from "./MintRoom";
-import { LEAVES } from "./pages";
+import { coverShare } from "./layout";
 import MintIntro, { type CoverRect } from "./MintIntro";
 
 /** three.js only runs in the browser, so the scene loads after the page. */
 const MagazineScene = dynamic(() => import("./MagazineScene"), { ssr: false });
 
-/** Pages to turn by scrolling on a phone: one per leaf. */
-const LEAF_COUNT = LEAVES.length;
-/** Scroll per page, as a share of the screen's height; matches the scene. */
-const SCROLL_STEP = 0.6;
 const PHONE = "(max-width: 767px)";
-/**
- * How far the magazine's screen rides up under the hero: half, so the
- * closed issue's middle sits on the bottom of the first screen and its top
- * half shows.
- */
-const OVERLAP = { desktop: 50, phone: 50 }; // svh
+/** How much of the closed cover shows at the bottom of the first screen. */
+const PEEK = 0.3;
 
 /**
  * The Mint case study page, in two parts: the hero (the MINT wordmark, with
@@ -34,14 +26,12 @@ const OVERLAP = { desktop: 50, phone: 50 }; // svh
  * hero's own wordmark comes back as it goes. Then the canvas is shown under
  * the card, the card fades, and the book tilts into its float.
  *
- * The hero holds still at the top of the screen while the magazine's part
- * scrolls up over it.
+ * The page scrolls normally: the magazine's screen overlaps the bottom of
+ * the hero so the top of the closed issue peeks over the first screen, and
+ * scrolling down brings it fully into view, the hero going up and away.
+ * Pages turn by swiping, dragging or tapping, never by scrolling.
  *
- * After it, a gallery of the behind the scenes shots.
- *
- * On a phone the magazine's part is a tall track: scrolling brings the book
- * up until it fills the screen and pins there, and from then on scrolling
- * turns its pages.
+ * Once the magazine is wholly in view, a short hint says it can be swiped.
  */
 export default function MagazineStage() {
   const [cover, setCover] = useState<CoverRect | null>(null);
@@ -73,12 +63,22 @@ export default function MagazineStage() {
     };
   }, [done]);
 
-  const overlap = phone ? OVERLAP.phone : OVERLAP.desktop;
+  // How far the magazine's screen rides up under the hero, in screen
+  // heights, so PEEK of the cover shows. The cover sits in the middle of that
+  // screen, so its top is half the cover above the middle.
+  const [aspect, setAspect] = useState(16 / 10);
+  useEffect(() => {
+    const set = () => setAspect(window.innerWidth / window.innerHeight);
+    set();
+    window.addEventListener("resize", set);
+    return () => window.removeEventListener("resize", set);
+  }, []);
+  const share = coverShare(aspect);
+  const overlap = 0.5 - share * (0.5 - PEEK);
   const corners = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
 
-  // Whether the magazine has come all the way up over the hero and is wholly
-  // in view: the hero's photos turn grey behind it then.
+  // Whether the magazine has been scrolled all the way into view.
   const [up, setUp] = useState(false);
   useEffect(() => {
     if (!done) return;
@@ -86,7 +86,7 @@ export default function MagazineStage() {
     const check = () => {
       raf = 0;
       const t = track.current;
-      if (t) setUp(t.getBoundingClientRect().top <= 6);
+      if (t) setUp(t.getBoundingClientRect().top <= 10);
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(check);
@@ -101,14 +101,32 @@ export default function MagazineStage() {
     };
   }, [done]);
 
+  // The hint that the pages turn: shown once, the first time the magazine is
+  // all the way in view, for a second, or until the reader touches the book.
+  const [hint, setHint] = useState<"waiting" | "shown" | "gone">("waiting");
+  const showHint = up && hint === "waiting";
+  useEffect(() => {
+    if (!showHint) return;
+    const t = setTimeout(() => {
+      setHint("shown");
+      // The cover lifts a little and settles back, as if about to open.
+      window.dispatchEvent(new Event("mint-nudge"));
+    }, 450);
+    return () => clearTimeout(t);
+  }, [showHint]);
+  useEffect(() => {
+    if (hint !== "shown") return;
+    const t = setTimeout(() => setHint("gone"), 1000);
+    return () => clearTimeout(t);
+  }, [hint]);
+  const dismissHint = useCallback(() => setHint("gone"), []);
+
   return (
     <>
       <div style={{ position: "relative" }}>
         <MintRoom />
-        <div
-          style={{ position: "sticky", top: 0, height: "100svh", zIndex: 1 }}
-        >
-          <MintHero show={dropped} covered={up} />
+        <div style={{ position: "relative", height: "100svh", zIndex: 1 }}>
+          <MintHero show={dropped} />
         </div>
         <div
           ref={track}
@@ -116,47 +134,46 @@ export default function MagazineStage() {
           style={{
             position: "relative",
             zIndex: 2,
-            marginTop: `-${overlap}svh`,
-            height: phone
-              ? `calc(100svh + ${LEAF_COUNT * SCROLL_STEP * 100}svh)`
-              : "100svh",
+            marginTop: `-${(overlap * 100).toFixed(2)}svh`,
+            height: "100svh",
             // Clicks on the hero's part of the screen go through to it.
             pointerEvents: "none",
           }}
         >
           <div
-            style={{
-              position: "sticky",
-              top: 0,
-              width: "100%",
-              height: "100svh",
-            }}
+            style={{ position: "relative", width: "100%", height: "100svh" }}
           >
-            {/* The caption, a set distance under the book, rising with it; low
-              enough that the book's bob never reaches it. */}
-            <p
+            {/* The caption, a set distance under the book, moving with it; low
+              enough that the book's bob never reaches it. Under it, a pointer
+              to the gallery below, the same size. Proxima Nova Extrabold,
+              read from the fonts installed on this computer: it is
+              commercial, so no file is served until it is licensed for the
+              web, and elsewhere it falls back to the site's sans. */}
+            <div
               style={{
                 position: "absolute",
                 left: 24,
                 right: 24,
-                bottom: phone ? "21svh" : "8svh",
-                margin: 0,
+                bottom: phone ? "17svh" : "4.5svh",
                 textAlign: "center",
                 color: "#b7272b",
-                // Fahkwang Bold in capitals, loaded by the page.
-                fontFamily: "var(--font-fahkwang), serif",
-                fontWeight: 700,
+                fontFamily: '"Proxima Nova", var(--font-sans), sans-serif',
+                fontWeight: 800,
                 textTransform: "uppercase",
-                fontSize: phone ? 13 : 15,
-                lineHeight: 1.5,
                 letterSpacing: "0.06em",
+                lineHeight: 1.5,
                 opacity: revealed ? 1 : 0,
                 transition: "opacity 600ms ease-out",
               }}
             >
-              Some of my work featured in Mint Magazine&rsquo;s Spring/Summer
-              2026 edition.
-            </p>
+              <p style={{ margin: 0, fontSize: phone ? 13 : 15 }}>
+                Some of my work for Mint Magazine&rsquo;s Spring/Summer 2026
+                edition.
+              </p>
+              <p style={{ margin: "6px 0 0", fontSize: phone ? 13 : 15 }}>
+                More shots below
+              </p>
+            </div>
             <div
               style={{
                 position: "absolute",
@@ -166,14 +183,72 @@ export default function MagazineStage() {
                 transition: "opacity 350ms ease-out",
                 pointerEvents: done ? "auto" : "none",
               }}
+              onPointerDown={dismissHint}
             >
               <MagazineScene
                 play={done}
-                scrollTurn={phone}
+                phone={phone}
                 onCover={onCover}
                 corners={corners}
               />
             </div>
+            {/* The hint: a small red "Swipe" by the top right corner of the
+                closed cover (which sits in the middle of the screen once it is
+                in view), up for a second, gliding left and right like a
+                finger swiping the page. */}
+            <div
+              aria-hidden={hint !== "shown"}
+              role="status"
+              style={{
+                position: "absolute",
+                ...(cover
+                  ? {
+                      left: `calc(50% + ${cover.w / 2 - 18}px)`,
+                      top: `calc(50% - ${cover.h / 2 + 22}px)`,
+                    }
+                  : { left: "62%", top: "18%" }),
+                zIndex: 3,
+                pointerEvents: "none",
+                opacity: hint === "shown" ? 1 : 0,
+                transition: `opacity ${hint === "shown" ? 180 : 260}ms ease-out`,
+              }}
+            >
+              <div
+                key={hint}
+                className={
+                  hint === "shown" ? "mint-hint mint-hint-on" : "mint-hint"
+                }
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 16px",
+                  borderRadius: 999,
+                  background: "rgba(183, 39, 43, 0.92)",
+                  color: "#fff",
+                  fontFamily: "var(--font-fahkwang), serif",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  fontSize: 12,
+                  letterSpacing: "0.08em",
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 6px 18px rgba(0, 0, 0, 0.18)",
+                }}
+              >
+                <span aria-hidden="true">&larr;</span>
+                Swipe
+              </div>
+            </div>
+            <style>{`
+              .mint-hint-on { animation: mint-sway 1s ease-in-out both; }
+              @keyframes mint-sway {
+                0% { transform: translateX(0); }
+                30% { transform: translateX(-12px); }
+                65% { transform: translateX(9px); }
+                100% { transform: translateX(-4px); }
+              }
+              @media (prefers-reduced-motion: reduce) { .mint-hint-on { animation: none; } }
+            `}</style>
             {/* Red squares at the magazine's corners while the mouse is over it;
               the scene moves each one to its corner every frame. */}
             <div
@@ -205,6 +280,7 @@ export default function MagazineStage() {
             </div>
           </div>
         </div>
+        <MintGallery />
         {done ? null : (
           <MintIntro
             cover={cover}
@@ -214,9 +290,6 @@ export default function MagazineStage() {
           />
         )}
       </div>
-      {/* After the magazine, outside the hero's wrapper, so the hero scrolls
-        away as the gallery comes up rather than staying pinned behind it. */}
-      <MintGallery />
     </>
   );
 }

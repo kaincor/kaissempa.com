@@ -63,18 +63,16 @@ const HOLD_MS = [7000, 8600];
 /** A new photo every 2.2s. */
 const EVERY_MS = 2200;
 
-
-/**
- * Once the magazine is all the way up, each photo turns to a flat grey of its
- * own, a different shade per spot, mostly dark, so they read as quiet blocks
- * behind it.
- */
-const GREYS = ["#3c3c3c", "#5a5a5a", "#2e2e2e", "#4b4b4b", "#c4c4c4", "#363636", "#646464", "#444444", "#545454", "#8a8a8a", "#292929"];
-
 type Shown = { id: number; slot: number; photo: number };
 
 /** Four small red squares just outside an element's corners. */
-export function Corners({ gap = 9, size = 5 }: { gap?: number; size?: number }) {
+export function Corners({
+  gap = 9,
+  size = 5,
+}: {
+  gap?: number;
+  size?: number;
+}) {
   const o = -gap;
   return (
     <>
@@ -86,20 +84,22 @@ export function Corners({ gap = 9, size = 5 }: { gap?: number; size?: number }) 
       ].map((pos, i) => (
         <span
           key={i}
-          style={{ position: "absolute", width: size, height: size, background: MINT_RED, pointerEvents: "none", ...pos }}
+          style={{
+            position: "absolute",
+            width: size,
+            height: size,
+            background: MINT_RED,
+            pointerEvents: "none",
+            ...pos,
+          }}
         />
       ))}
     </>
   );
 }
 
-/**
- * The hero holds still while the magazine scrolls up over it, and the photos
- * go on flicking behind. `covered` is set once the magazine is all the way
- * up and wholly in view: then, and only then, the photos turn to solid flat
- * greys (not tied to the scroll in between).
- */
-export default function MintHero({ show, covered }: { show: boolean; covered: boolean }) {
+/** The first screen: MINT, with the photos flicking round it once `show`. */
+export default function MintHero({ show }: { show: boolean }) {
   const [vp, setVp] = useState<{ w: number; h: number } | null>(null);
   const [up, setUp] = useState<Shown[]>([]);
   const next = useRef(0);
@@ -114,7 +114,9 @@ export default function MintHero({ show, covered }: { show: boolean; covered: bo
   // Once the wordmark is back, photos start to turn up, gradually at first.
   useEffect(() => {
     if (!show) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     const timers = new Set<number>();
     const later = (fn: () => void, ms: number) => {
       const id = window.setTimeout(() => {
@@ -128,11 +130,14 @@ export default function MintHero({ show, covered }: { show: boolean; covered: bo
       if (document.visibilityState === "visible") {
         setUp((cur) => {
           if (cur.length >= MAX_UP) return cur;
-          const free = SLOTS.map((_, i) => i).filter((i) => !cur.some((c) => c.slot === i));
+          const free = SLOTS.map((_, i) => i).filter(
+            (i) => !cur.some((c) => c.slot === i),
+          );
           if (!free.length) return cur;
           const slot = free[Math.floor(Math.random() * free.length)];
           let photo = Math.floor(Math.random() * PHOTOS.length);
-          while (photo === lastPhoto || cur.some((c) => c.photo === photo)) photo = (photo + 1) % PHOTOS.length;
+          while (photo === lastPhoto || cur.some((c) => c.photo === photo))
+            photo = (photo + 1) % PHOTOS.length;
           lastPhoto = photo;
           const id = next.current++;
           later(
@@ -145,7 +150,12 @@ export default function MintHero({ show, covered }: { show: boolean; covered: bo
       later(add, EVERY_MS);
     };
     // With reduced motion, three photos simply stay up.
-    if (reduced) later(() => setUp([0, 3, 7].map((slot, i) => ({ id: i, slot, photo: i * 5 }))), 0);
+    if (reduced)
+      later(
+        () =>
+          setUp([0, 3, 7].map((slot, i) => ({ id: i, slot, photo: i * 5 }))),
+        0,
+      );
     else later(add, 1200);
     return () => timers.forEach((id) => clearTimeout(id));
   }, [show]);
@@ -164,7 +174,7 @@ export default function MintHero({ show, covered }: { show: boolean; covered: bo
     >
       {vp ? (
         <>
-          {/* The photos, turning to solid flat greys once the magazine is up. */}
+          {/* The photos. */}
           <div
             style={{
               position: "absolute",
@@ -188,15 +198,21 @@ export default function MintHero({ show, covered }: { show: boolean; covered: bo
                     transform: "translate(-50%, -50%)",
                   }}
                 >
-                  <div className="mint-flick" style={{ position: "absolute", inset: 0 }}>
+                  <div
+                    className="mint-flick"
+                    style={{ position: "absolute", inset: 0 }}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`${BTS}${p.src}.jpg`}
                       alt=""
-                      style={{ width: "100%", height: "100%", maxWidth: "none", objectFit: "cover", display: "block" }}
-                    />
-                    <div
-                      style={{ position: "absolute", inset: 0, background: GREYS[slot % GREYS.length], opacity: covered ? 1 : 0, transition: "opacity 600ms ease-out" }}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        maxWidth: "none",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
                     />
                     <Corners />
                   </div>
@@ -238,7 +254,10 @@ export default function MintHero({ show, covered }: { show: boolean; covered: bo
             >
               Mint Magazine
             </h1>
-            <div className="mint-mark-corners" style={{ position: "absolute", inset: 0 }}>
+            <div
+              className="mint-mark-corners"
+              style={{ position: "absolute", inset: 0 }}
+            >
               <Corners gap={11} />
             </div>
           </div>
