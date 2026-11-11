@@ -145,10 +145,8 @@ export default function MagazineStage() {
           >
             {/* The caption, a set distance under the book, moving with it; low
               enough that the book's bob never reaches it. Under it, a pointer
-              to the gallery below, the same size. Proxima Nova Extrabold,
-              read from the fonts installed on this computer: it is
-              commercial, so no file is served until it is licensed for the
-              web, and elsewhere it falls back to the site's sans. */}
+              to the gallery below, the same size. Fahkwang Bold, the navbar's face on this page,
+              served by the site so everyone sees it. */}
             <div
               style={{
                 position: "absolute",
@@ -157,8 +155,8 @@ export default function MagazineStage() {
                 bottom: phone ? "13svh" : "1.5svh",
                 textAlign: "center",
                 color: "#b7272b",
-                fontFamily: '"Proxima Nova", var(--font-sans), sans-serif',
-                fontWeight: 800,
+                fontFamily: "var(--font-fahkwang), serif",
+                fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.06em",
                 lineHeight: 1.5,
