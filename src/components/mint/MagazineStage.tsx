@@ -154,7 +154,7 @@ export default function MagazineStage() {
                 position: "absolute",
                 left: 24,
                 right: 24,
-                bottom: phone ? "17svh" : "4.5svh",
+                bottom: phone ? "13svh" : "1.5svh",
                 textAlign: "center",
                 color: "#b7272b",
                 fontFamily: '"Proxima Nova", var(--font-sans), sans-serif',

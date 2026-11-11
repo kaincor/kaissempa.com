@@ -224,7 +224,7 @@ export default function MintGallery() {
       ref={root}
       aria-roledescription="carousel"
       aria-label="Behind the scenes"
-      style={{ position: "relative", zIndex: 3, padding: "4svh 0 14svh" }}
+      style={{ position: "relative", zIndex: 3, padding: "14svh 0 14svh" }}
     >
       <div
         onPointerDown={onDown}
