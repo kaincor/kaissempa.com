@@ -379,8 +379,10 @@ function Hint() {
       }}
     >
       <motion.div
-        animate={{ x: [-18, 18] }}
-        transition={{ duration: 0.5, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
+        // From the middle out to the left first, the way the cards go, then
+        // across to the right and back: 0.5s a side, as before.
+        animate={{ x: [0, -18, 18, 0] }}
+        transition={{ duration: 1, times: [0, 0.25, 0.75, 1], ease: "easeInOut", repeat: Infinity }}
         className="display"
         style={{
           display: "flex",

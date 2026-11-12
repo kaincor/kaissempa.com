@@ -8,6 +8,7 @@ import CloudDrift from "@/components/CloudDrift";
 import SectionHeading from "@/components/SectionHeading";
 import FortunaThumb from "@/components/FortunaThumb";
 import MintSlideshow from "@/components/MintSlideshow";
+import MotwScene from "@/components/motw/MotwScene";
 
 /** Every box is 2:1 and 1120 wide at most, matching the Framer build. */
 const MAX_WIDTH = 1120;
@@ -131,19 +132,12 @@ export default function ProjectsAndProducts({ detailed = false }: { detailed?: b
         />
       </Thumb>
 
-      <Thumb label="Mark of the Witch" info={info("Mark of the Witch")}>
-        <Image
-          src="/case-studies/mark-of-the-witch.jpg"
-          alt="Mark of the Witch"
-          fill
-          sizes={`(max-width: ${MAX_WIDTH}px) 100vw, ${MAX_WIDTH}px`}
-          quality={85}
-          style={{ objectFit: "cover" }}
-        />
-      </Thumb>
-
       <Thumb label="Mint Magazine" href="/mint" shadow={MINT_RED} info={info("Mint Magazine")}>
         <MintSlideshow sizes={`(max-width: ${MAX_WIDTH}px) 100vw, ${MAX_WIDTH}px`} />
+      </Thumb>
+
+      <Thumb label="Mark of the Witch" info={info("Mark of the Witch")}>
+        <MotwScene maxWidth={MAX_WIDTH} />
       </Thumb>
 
       <Thumb label="Pond Mage" shadow={POND_MAGE_PURPLE} info={info("Pond Mage")}>

@@ -3,7 +3,23 @@
 import Link from "next/link";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { DOTS, DOT_CLIPS, WORD, WORD_DOT } from "./fortuna-thumb/scene";
+import { DOTS as ALL_DOTS, DOT_CLIPS, WORD, WORD_DOT } from "./fortuna-thumb/scene";
+
+/**
+ * About half of Hana's dots, picked at random once (a fixed seed, so it is
+ * the same half on every load): half of each of the three groups, so the
+ * scene keeps its spread with half the motion, plus a few of the orange and
+ * green ones put back (by their index in the scene), so the colour holds.
+ */
+const RESTORED = new Set([14, 43, 17, 49]);
+const DOTS = ALL_DOTS.filter((_, i) => {
+  if (RESTORED.has(i)) return true;
+  let x = ((i + 1) * 2654435761) ^ 32;
+  x = Math.imul(x ^ (x >>> 16), 2246822507);
+  x = Math.imul(x ^ (x >>> 13), 3266489909);
+  x ^= x >>> 16;
+  return (x >>> 0) % 1000 < 500;
+});
 
 /**
  * The Fortuna thumbnail, rebuilt from the Hana scene it used to embed.
