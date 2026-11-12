@@ -264,6 +264,7 @@ export default function MintIntro({ cover, onDrop, onReveal, onDone }: Props) {
     let { dropped, revealed, finished } = c;
 
     const W = vp.w;
+    const lower = lowerBy(W);
     const H = vp.h;
     const markW = markWidthFor(W, H);
     const markH = markW / WORDMARK_AR;
@@ -363,7 +364,9 @@ export default function MintIntro({ cover, onDrop, onReveal, onDone }: Props) {
         e.style.width = `${w}px`;
         e.style.height = `${h}px`;
         const dx = cv ? (cv.cx - W / 2) * fall : 0;
-        const dy = cv ? (cv.cy - H / 2) * fall : 0;
+        // The layer is lowered on a desktop; the 3D cover is not, so the drop
+        // takes that back off to land on it.
+        const dy = cv ? (cv.cy - lower - H / 2) * fall : 0;
         e.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${lerp(0.6, 1, outBack(appear))})`;
         e.style.opacity = String(
           clamp01(appear * 3) * (1 - prog(t, T.fadeOut, T.done - T.fadeOut)),
@@ -518,7 +521,11 @@ export default function MintIntro({ cover, onDrop, onReveal, onDone }: Props) {
         key={c.text}
         style={{
           whiteSpace: "nowrap",
-          fontFamily: "var(--font-sans), system-ui, sans-serif",
+          // Fahkwang Bold in capitals, like the caption under the magazine.
+          fontFamily: "var(--font-fahkwang), serif",
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
           fontSize: Math.max(11, U * 0.06),
           color: "#2a2623",
           display: "flex",
@@ -538,7 +545,13 @@ export default function MintIntro({ cover, onDrop, onReveal, onDone }: Props) {
     <div
       ref={root}
       aria-hidden="true"
-      style={{ position: "fixed", inset: 0, overflow: "hidden", zIndex: 2 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        overflow: "hidden",
+        zIndex: 2,
+        transform: `translateY(${lowerBy(vp.w)}px)`,
+      }}
     >
       {collage.map((node, i) => (
         <div
@@ -654,4 +667,9 @@ export default function MintIntro({ cover, onDrop, onReveal, onDone }: Props) {
       </div>
     </div>
   );
+}
+
+/** The whole opening sits a little lower on a desktop (px). */
+function lowerBy(width: number) {
+  return width >= 768 ? 15 : 0;
 }

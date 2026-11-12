@@ -102,7 +102,7 @@ export default function MagazineStage() {
   }, [done]);
 
   // The hint that the pages turn: shown once, the first time the magazine is
-  // all the way in view, for a second, or until the reader touches the book.
+  // all the way in view, for two seconds, or until the reader touches the book.
   const [hint, setHint] = useState<"waiting" | "shown" | "gone">("waiting");
   const showHint = up && hint === "waiting";
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function MagazineStage() {
   }, [showHint]);
   useEffect(() => {
     if (hint !== "shown") return;
-    const t = setTimeout(() => setHint("gone"), 1000);
+    const t = setTimeout(() => setHint("gone"), 2000);
     return () => clearTimeout(t);
   }, [hint]);
   const dismissHint = useCallback(() => setHint("gone"), []);
@@ -192,7 +192,7 @@ export default function MagazineStage() {
             </div>
             {/* The hint: a small red "Swipe" by the top right corner of the
                 closed cover (which sits in the middle of the screen once it is
-                in view), up for a second, gliding left and right like a
+                in view), up for two seconds, gliding left and right like a
                 finger swiping the page. */}
             <div
               aria-hidden={hint !== "shown"}
@@ -238,12 +238,12 @@ export default function MagazineStage() {
               </div>
             </div>
             <style>{`
-              .mint-hint-on { animation: mint-sway 1s ease-in-out both; }
+              .mint-hint-on { animation: mint-sway 1s ease-in-out 2 both; }
               @keyframes mint-sway {
                 0% { transform: translateX(0); }
                 30% { transform: translateX(-12px); }
                 65% { transform: translateX(9px); }
-                100% { transform: translateX(-4px); }
+                100% { transform: translateX(0); }
               }
               @media (prefers-reduced-motion: reduce) { .mint-hint-on { animation: none; } }
             `}</style>

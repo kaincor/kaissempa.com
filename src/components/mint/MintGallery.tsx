@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * Behind the scenes, after the magazine: all sixteen shots as a sliding
+ * Behind the scenes, after the magazine: all the shots as a sliding
  * strip. The current photo sits large in the middle at its own shape, with a
  * little of the one before and the one after showing at either side; the
  * strip loops round, so the first has the last before it. It moves on by
@@ -24,18 +24,33 @@ import { useCallback, useEffect, useRef, useState } from "react";
 /** Each photo and its shape, width over height. */
 const PHOTOS: { src: string; ar: number }[] = [
   { src: "9598", ar: 2 / 3 },
-  { src: "9618", ar: 2 / 3 },
+  { src: "9618", ar: 3 / 2 },
+  { src: "9626", ar: 3 / 4 },
+  { src: "9635", ar: 3 / 2 },
   { src: "9636", ar: 3 / 2 },
-  { src: "9676", ar: 2 / 3 },
+  { src: "9654", ar: 3 / 2 },
+  { src: "9676", ar: 3 / 2 },
+  { src: "9681", ar: 2 / 3 },
   { src: "9701", ar: 3 / 2 },
   { src: "9702", ar: 2 / 3 },
+  { src: "9703", ar: 3 / 2 },
   { src: "9713", ar: 2 / 3 },
+  { src: "9715", ar: 3 / 2 },
   { src: "9726", ar: 3 / 2 },
+  { src: "9748", ar: 3 / 2 },
+  { src: "9750", ar: 3 / 2 },
+  { src: "9772", ar: 3 / 2 },
+  { src: "9778", ar: 3 / 2 },
   { src: "9782", ar: 3 / 2 },
   { src: "9790", ar: 3 / 2 },
+  { src: "9800", ar: 2 / 3 },
+  { src: "9804", ar: 3 / 2 },
   { src: "9821", ar: 2 / 3 },
+  { src: "9822", ar: 2 / 3 },
+  { src: "9824", ar: 2 / 3 },
   { src: "9830", ar: 3 / 4 },
   { src: "9851", ar: 3 / 2 },
+  { src: "9854", ar: 15 / 8 },
   { src: "9863", ar: 2 / 3 },
   { src: "9865", ar: 2 / 3 },
   { src: "9869", ar: 3 / 2 },
@@ -73,9 +88,16 @@ export default function MintGallery() {
     if (!el) return;
     const measure = () => {
       const phone = window.innerWidth < 640;
+      const w = el.clientWidth;
+      // Never taller than a landscape photo can be across most of the width,
+      // so every photo, portrait or landscape, comes out the strip's full
+      // height and the red lines sit right on their edges.
       setBox({
-        w: el.clientWidth,
-        h: window.innerHeight * (phone ? 0.58 : 0.7),
+        w,
+        h: Math.min(
+          window.innerHeight * (phone ? 0.58 : 0.7),
+          (w * 0.78) / 1.5,
+        ),
       });
     };
     measure();
@@ -174,9 +196,10 @@ export default function MintGallery() {
   const gap = box && box.w < 640 ? 10 : 20;
   const size = (i: number) => {
     if (!box) return { w: 0, h: 0 };
+    // Every photo at the strip's full height, so the red lines sit along all
+    // of them; the strip's height is already capped so a landscape fits.
     const ar = PHOTOS[wrap(i)].ar;
-    const h = Math.min(box.h, (box.w * 0.78) / ar);
-    return { w: h * ar, h };
+    return { w: box.h * ar, h: box.h };
   };
   // Every photo keeps its place in the page, in order, so a move only ever
   // changes where each one sits: reordering them would make the browser
@@ -226,59 +249,71 @@ export default function MintGallery() {
       aria-label="Behind the scenes"
       style={{ position: "relative", zIndex: 3, padding: "14svh 0 14svh" }}
     >
+      {/* A thin red line just along the top and the bottom of the photos,
+          from the leftmost photo's edge to the rightmost's. */}
       <div
-        onPointerDown={onDown}
-        onPointerUp={onUp}
-        onPointerCancel={() => (swipe.current = null)}
         style={{
-          position: "relative",
-          height: box ? box.h : "70svh",
           width: windowW || "100%",
           margin: "0 auto",
-          overflow: "hidden",
-          touchAction: "pan-y",
-          cursor: "grab",
-          userSelect: "none",
+          // A hair of space between the lines and the photos.
+          padding: "2px 0",
+          borderTop: `1px solid ${RED}`,
+          borderBottom: `1px solid ${RED}`,
         }}
       >
-        {slots.map(({ k, x, w, h }, i) => {
-          const p = PHOTOS[i];
-          const side = k !== 0;
-          const away = Math.abs(k);
-          return (
-            <div
-              key={p.src}
-              onClick={() => {
-                if (side && !swiped.current) go(i);
-              }}
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                width: w,
-                height: h,
-                transform: `translate(${x - w / 2}px, -50%)`,
-                transition: `transform ${SLIDE}, width ${SLIDE}, height ${SLIDE}, opacity ${SLIDE}`,
-                opacity: away === 0 ? 1 : away < 3 ? 0.55 : 0,
-                cursor: side ? "pointer" : "grab",
-                pointerEvents: away < 3 ? "auto" : "none",
-              }}
-            >
-              {away > 3 ? null : (
-                <Image
-                  src={`/mint/gallery/${p.src}.jpg`}
-                  alt=""
-                  fill
-                  sizes={`${Math.round(w)}px`}
-                  quality={85}
-                  draggable={false}
-                  priority={i === 0}
-                  style={{ objectFit: "cover", pointerEvents: "none" }}
-                />
-              )}
-            </div>
-          );
-        })}
+        <div
+          onPointerDown={onDown}
+          onPointerUp={onUp}
+          onPointerCancel={() => (swipe.current = null)}
+          style={{
+            position: "relative",
+            height: box ? box.h : "70svh",
+            width: "100%",
+            overflow: "hidden",
+            touchAction: "pan-y",
+            cursor: "grab",
+            userSelect: "none",
+          }}
+        >
+          {slots.map(({ k, x, w, h }, i) => {
+            const p = PHOTOS[i];
+            const side = k !== 0;
+            const away = Math.abs(k);
+            return (
+              <div
+                key={p.src}
+                onClick={() => {
+                  if (side && !swiped.current) go(i);
+                }}
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  width: w,
+                  height: h,
+                  transform: `translate(${x - w / 2}px, -50%)`,
+                  transition: `transform ${SLIDE}, width ${SLIDE}, height ${SLIDE}, opacity ${SLIDE}`,
+                  opacity: away === 0 ? 1 : away < 3 ? 0.55 : 0,
+                  cursor: side ? "pointer" : "grab",
+                  pointerEvents: away < 3 ? "auto" : "none",
+                }}
+              >
+                {away > 3 ? null : (
+                  <Image
+                    src={`/mint/gallery/${p.src}.jpg`}
+                    alt=""
+                    fill
+                    sizes={`${Math.round(w)}px`}
+                    quality={85}
+                    draggable={false}
+                    priority={i === 0}
+                    style={{ objectFit: "cover", pointerEvents: "none" }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* The timeline. */}
@@ -345,7 +380,7 @@ export default function MintGallery() {
           }}
         >
           <Image
-            src={`/mint/bts/${cur.src}.jpg`}
+            src={`/mint/gallery/${cur.src}.jpg`}
             alt=""
             fill
             sizes="48px"
