@@ -1,0 +1,12 @@
+/* Kaisteel, Kai's own blackletter, drawn in Figma and built into a font from
+   the outlines (Portfolio Website Design, "Pond Mage" page). */
+@font-face {
+  font-family: "Kaisteel";
+  src: url("/pond-mage/fonts/Kaisteel-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+:root {
+  --pm-kaisteel: "Kaisteel", var(--font-serif), serif;
+}

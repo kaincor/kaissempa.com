@@ -55,7 +55,11 @@ const INFO: Record<string, Info> = {
   Zorzal: { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
   "Mark of the Witch": { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
   "Mint Magazine": { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
-  "Pond Mage": { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
+  "Pond Mage": {
+    role: "3D modeling",
+    year: "2024",
+    blurb: "A young mage practises her magic by the pond at night. Modelled, textured and lit in Blender.",
+  },
 };
 
 /**
@@ -140,7 +144,7 @@ export default function ProjectsAndProducts({ detailed = false }: { detailed?: b
         <MotwScene maxWidth={MAX_WIDTH} />
       </Thumb>
 
-      <Thumb label="Pond Mage" shadow={POND_MAGE_PURPLE} info={info("Pond Mage")}>
+      <Thumb label="Pond Mage" href="/pond-mage" shadow={POND_MAGE_PURPLE} info={info("Pond Mage")}>
         <Image
           src="/case-studies/pond-mage.jpg"
           alt="Pond Mage"
@@ -215,9 +219,9 @@ function Thumb({
       // Springs on the movement so it overshoots and settles; a plain tween on
       // the fade, because a bouncing opacity flickers.
       transition={{
-        y: { type: "spring", stiffness: 58, damping: 11, mass: 1.1 },
-        scale: { type: "spring", stiffness: 58, damping: 11, mass: 1.1 },
-        opacity: { duration: 0.75, ease: "easeOut" },
+        y: { type: "spring", stiffness: 130, damping: 16.5, mass: 1.1 },
+        scale: { type: "spring", stiffness: 130, damping: 16.5, mass: 1.1 },
+        opacity: { duration: 0.45, ease: "easeOut" },
       }}
     >
       {href ? (

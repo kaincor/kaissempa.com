@@ -125,6 +125,17 @@ const CASE_THEMES: {
     weight: 700,
   },
   {
+    prefix: "/pond-mage",
+    // The thumbnail's purple, #9d72aa, over the night.
+    bar: "rgba(157, 114, 170, 0.5)",
+    menu: "linear-gradient(270deg, rgba(157, 114, 170, 0.6) 0%, rgba(157, 114, 170, 0.68) 100%)",
+    blur: 8,
+    // Kaisteel, Kai's blackletter, declared in src/app/pond-mage/theme.css.
+    font: "var(--pm-kaisteel)",
+    size: 17,
+    weight: 400,
+  },
+  {
     prefix: "/mint",
     // Zorzal's recipe in the MINT wordmark's red, #b7272b, over the page's
     // studio grey. Keeps the site's own menu face.
