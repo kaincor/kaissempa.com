@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ProjectThumbs } from "@/components/ProjectsAndProducts";
 
 /**
@@ -23,7 +23,7 @@ type Theme = {
   bg: string;
   /** The heading's colour on it. */
   ink: string;
-  /** The mountain: the study's brand colour. */
+  /** The mountain: the navbar's glass for the study, same colour and opacity. */
   ridge: string;
   font: string;
   weight: number;
@@ -31,10 +31,10 @@ type Theme = {
 };
 
 const THEMES: Theme[] = [
-  { prefix: "/fortuna", bg: "#32443e", ink: "#f1efe8", ridge: "#69bd45", font: "var(--f-display-stack)", weight: 600 },
-  { prefix: "/zorzal", bg: "#fffdf6", ink: "#983c44", ridge: "#983c44", font: "var(--z-captain-stack)", weight: 700 },
-  { prefix: "/mint", bg: "#a3a3a3", ink: "#111111", ridge: "#b7272b", font: "var(--mint-fahkwang)", weight: 700, caps: true },
-  { prefix: "/pond-mage", bg: "#140b17", ink: "#efd48c", ridge: "#9d72aa", font: "var(--pm-kaisteel)", weight: 400 },
+  { prefix: "/fortuna", bg: "#32443e", ink: "#f1efe8", ridge: "rgba(105, 189, 69, 0.42)", font: "var(--f-display-stack)", weight: 600 },
+  { prefix: "/zorzal", bg: "#fffdf6", ink: "#983c44", ridge: "rgba(152, 60, 68, 0.74)", font: "var(--z-captain-stack)", weight: 700 },
+  { prefix: "/mint", bg: "#a3a3a3", ink: "#111111", ridge: "rgba(183, 39, 43, 0.74)", font: "var(--mint-fahkwang)", weight: 700, caps: true },
+  { prefix: "/pond-mage", bg: "#140b17", ink: "#efd48c", ridge: "rgba(157, 114, 170, 0.5)", font: "var(--pm-kaisteel)", weight: 400 },
 ];
 
 /** Mountain Range 29, from the footer frame (4096 x 453). */
@@ -44,6 +44,12 @@ const RIDGE = {
 };
 /** The range's height: its own proportion of the width, but never too thin to carry the links. */
 const RIDGE_H = "max(11.06vw, 132px)";
+/** How much scrolling past the bottom of the page the range rises over, px. */
+const RISE = 260;
+/** The range as a mask, so the glass (colour plus blur of what is behind) takes its shape. */
+const RIDGE_MASK = `url("data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${RIDGE.viewBox}"><path d="${RIDGE.d}"/></svg>`,
+)}")`;
 
 export default function CaseStudyFooter() {
   const pathname = usePathname();
@@ -55,13 +61,53 @@ export default function CaseStudyFooter() {
 
 function Footer({ theme }: { theme: Theme }) {
   const ref = useRef<HTMLElement>(null);
+  const tail = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
-  // From the footer coming into view to the very bottom of the page. The
-  // range stays down while the thumbnails come in, then rises over the last
-  // stretch of the scroll, faster than the page moves, and comes to rest at
-  // the end.
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] });
-  const y = useTransform(scrollYProgress, [0.7, 1], ["100%", "0%"]);
+  // The range waits until the page has reached its bottom, then rises with
+  // the scrolling that follows. The footer pins once its foot meets the
+  // bottom of the screen, and RISE px of scroll are added after it: over
+  // those the thumbnails hold still and the range comes up over them.
+  const { scrollYProgress } = useScroll({ target: tail, offset: ["start end", "end end"] });
+  const y = useTransform(scrollYProgress, [0, 1], ["100%", "0%"]);
+
+  // Pinned with its foot on the bottom of the screen, however tall it is.
+  useEffect(() => {
+    const f = ref.current;
+    if (!f) return;
+    const pin = () => {
+      f.style.top = `${window.innerHeight - f.offsetHeight}px`;
+    };
+    pin();
+    const ro = new ResizeObserver(pin);
+    ro.observe(f);
+    window.addEventListener("resize", pin);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", pin);
+    };
+  }, []);
+
+  // The heading is set to the width of one thumbnail.
+  const heading = useRef<HTMLSpanElement>(null);
+  const grid = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = heading.current;
+    const g = grid.current;
+    if (!h || !g) return;
+    const fit = () => {
+      // offsetWidth, not the bounding box: the thumbnails grow in from 90%.
+      const cell = (g.firstElementChild as HTMLElement | null)?.offsetWidth;
+      if (!cell) return;
+      h.style.fontSize = "100px";
+      const w = h.getBoundingClientRect().width;
+      if (w) h.style.fontSize = `${Math.min(72, (100 * cell) / w)}px`;
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(g);
+    document.fonts?.ready.then(fit);
+    return () => ro.disconnect();
+  }, []);
 
   const face = {
     fontFamily: theme.font,
@@ -70,103 +116,122 @@ function Footer({ theme }: { theme: Theme }) {
   };
 
   return (
-    <footer
-      ref={ref}
-      style={{ position: "relative", overflow: "hidden", background: theme.bg, paddingTop: "clamp(64px, 10vh, 120px)" }}
-    >
-      <h2
+    <div style={{ position: "relative", background: theme.bg }}>
+      <footer
+        ref={ref}
         style={{
-          ...face,
-          margin: "0 0 clamp(24px, 3.5vw, 44px)",
-          textAlign: "center",
-          color: theme.ink,
-          fontSize: "clamp(26px, 3vw, 44px)",
-          lineHeight: 1.15,
-          letterSpacing: theme.caps ? "0.04em" : undefined,
+          position: reduced ? "relative" : "sticky",
+          overflow: "hidden",
+          background: theme.bg,
+          paddingTop: "clamp(64px, 10vh, 120px)",
         }}
       >
-        More stuff I&rsquo;ve done
-      </h2>
-
-      <div className="csf-grid">
-        <ProjectThumbs
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1000px) 50vw, 34vw"
-          maxWidth={700}
-        />
-      </div>
-
-      {/* Room for the part of the range that does not overlap the grid. */}
-      <div aria-hidden="true" style={{ height: `calc(${RIDGE_H} * 0.95 + clamp(16px, 2.5vw, 40px))` }} />
-
-      <motion.div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: RIDGE_H,
-          y: reduced ? 0 : y,
-          willChange: "transform",
-          zIndex: 2,
-        }}
-      >
-        <svg
-          viewBox={RIDGE.viewBox}
-          // At its own proportion on a wide screen; on a narrow one, where the
-          // range is held taller to carry the links, it is cropped at the
-          // sides rather than stretched into spikes.
-          preserveAspectRatio="xMidYMax slice"
-          width="100%"
-          height="100%"
-          aria-hidden="true"
-          focusable="false"
-          style={{ display: "block", position: "absolute", inset: 0 }}
+        <h2
+          style={{
+            ...face,
+            margin: "0 0 clamp(24px, 3.5vw, 44px)",
+            textAlign: "center",
+            color: theme.ink,
+            lineHeight: 1.15,
+            letterSpacing: theme.caps ? "0.04em" : undefined,
+          }}
         >
-          <path d={RIDGE.d} fill={theme.ridge} />
-        </svg>
-        <nav
-          aria-label="Footer"
+          <span ref={heading} style={{ display: "inline-block", whiteSpace: "nowrap", fontSize: "clamp(22px, 2.4vw, 36px)" }}>
+            More stuff I&rsquo;ve done
+          </span>
+        </h2>
+
+        <div ref={grid} className="csf-grid">
+          <ProjectThumbs
+            fill
+            sizes="(max-width: 1000px) 50vw, 34vw"
+            maxWidth={700}
+          />
+        </div>
+
+        {/* Room for the part of the range that does not overlap the grid. The
+            overlap is half the range's own proportion (5.53vw), so on a phone,
+            where the range is held taller than that to carry the links, the
+            extra height goes below the thumbnails rather than over them. */}
+        <div aria-hidden="true" style={{ height: `calc(${RIDGE_H} - 5.53vw)` }} />
+
+        <motion.div
           style={{
             position: "absolute",
             left: 0,
             right: 0,
-            top: "58%",
-            transform: "translateY(-50%)",
-            display: "flex",
-            justifyContent: "center",
-            gap: "clamp(48px, 10vw, 180px)",
+            bottom: 0,
+            height: RIDGE_H,
+            y: reduced ? 0 : y,
+            willChange: "transform",
+            zIndex: 2,
           }}
         >
-          {[
-            { label: "Home", href: "/" },
-            { label: "Work", href: "/work" },
-          ].map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="csf-link"
-              style={{ ...face, color: "#ffffff", fontSize: "clamp(20px, 2.2vw, 36px)", letterSpacing: theme.caps ? "0.05em" : undefined }}
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-      </motion.div>
+          {/* The navbar's glass in the shape of the range: its colour and
+              opacity, over a short blur of the thumbnails behind. Cropped at the
+              sides on a narrow screen (cover) rather than stretched. */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: theme.ridge,
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              maskImage: RIDGE_MASK,
+              WebkitMaskImage: RIDGE_MASK,
+              maskSize: "cover",
+              WebkitMaskSize: "cover",
+              maskPosition: "center bottom",
+              WebkitMaskPosition: "center bottom",
+              maskRepeat: "no-repeat",
+              WebkitMaskRepeat: "no-repeat",
+            }}
+          />
+          <nav
+            aria-label="Footer"
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: "58%",
+              transform: "translateY(-50%)",
+              display: "flex",
+              justifyContent: "center",
+              gap: "clamp(48px, 10vw, 180px)",
+            }}
+          >
+            {[
+              { label: "Home", href: "/" },
+              { label: "Work", href: "/work" },
+            ].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="csf-link"
+                style={{ ...face, color: "#ffffff", fontSize: "clamp(20px, 2.2vw, 36px)", letterSpacing: theme.caps ? "0.05em" : undefined }}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+        </motion.div>
 
-      <style>{`
-        .csf-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 10px;
-          padding: 0 clamp(10px, 1.4vw, 24px);
-        }
-        @media (min-width: 641px) { .csf-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 1001px) { .csf-grid { grid-template-columns: repeat(3, 1fr); } }
-        .csf-link { text-decoration: none; transition: opacity 0.2s ease; }
-        .csf-link:hover { opacity: 0.75; }
-        .csf-link:focus-visible { outline: 2px solid #fff; outline-offset: 6px; border-radius: 4px; }
-      `}</style>
-    </footer>
+        <style>{`
+          .csf-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: clamp(6px, 1.4vw, 10px);
+            padding: 0 clamp(10px, 1.4vw, 24px);
+          }
+          @media (min-width: 1001px) { .csf-grid { grid-template-columns: repeat(3, 1fr); } }
+          .csf-link { text-decoration: none; transition: opacity 0.2s ease; }
+          .csf-link:hover { opacity: 0.75; }
+          .csf-link:focus-visible { outline: 2px solid #fff; outline-offset: 6px; border-radius: 4px; }
+        `}</style>
+      </footer>
+      {/* The scroll the range rises over, once the page has reached the bottom. */}
+      {reduced ? null : <div ref={tail} aria-hidden="true" style={{ height: RISE }} />}
+    </div>
   );
 }

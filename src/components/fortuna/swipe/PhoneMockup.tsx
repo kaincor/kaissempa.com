@@ -184,7 +184,9 @@ export function DotField({ children, captioned = false }: { children: ReactNode;
         ctx.arc(x, y, r, 0, Math.PI * 2);
       }
       ctx.fill();
-      if (ctx2) {
+      // A canvas laid out at no size (hidden) has nothing to copy, and
+      // drawImage throws on it.
+      if (ctx2 && c.width && c.height) {
         ctx2.setTransform(1, 0, 0, 1, 0, 0);
         ctx2.clearRect(0, 0, c.width, c.height);
         ctx2.drawImage(c, 0, 0);

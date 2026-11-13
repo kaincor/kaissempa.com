@@ -77,6 +77,9 @@ const MAX_UP = 3;
 const HOLD_MS = [7000, 8600];
 /** A new photo every 2.2s. */
 const EVERY_MS = 2200;
+/** For the first five seconds after the opening, a little quicker: every 1.85s. */
+const EARLY_MS = 1850;
+const EARLY_FOR_MS = 5000;
 
 type Shown = { id: number; slot: number; photo: number };
 
@@ -141,6 +144,7 @@ export default function MintHero({ show }: { show: boolean }) {
       timers.add(id);
     };
     let lastPhoto = -1;
+    const started = performance.now();
     const add = () => {
       if (document.visibilityState === "visible") {
         setUp((cur) => {
@@ -162,7 +166,7 @@ export default function MintHero({ show }: { show: boolean }) {
           return [...cur, { id, slot, photo }];
         });
       }
-      later(add, EVERY_MS);
+      later(add, performance.now() - started < EARLY_FOR_MS ? EARLY_MS : EVERY_MS);
     };
     // With reduced motion, three photos simply stay up.
     if (reduced)
