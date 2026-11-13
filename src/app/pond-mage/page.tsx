@@ -6,7 +6,8 @@ import { mobileThemeColor } from "@/lib/theme-color";
 import PondScene from "@/components/pond-mage/PondScene";
 import FadeIn from "@/components/fortuna/FadeIn";
 import SwipeDeck from "@/components/SwipeDeck";
-import { CREDITS, DESK, FACTS, LEDE, SECTIONS, type Figure } from "@/content/pond-mage";
+import RoseHeading from "@/components/pond-mage/RoseHeading";
+import { CREDITS, DESK, DESK_ROSE, FACTS, LEDE, SECTIONS, type Figure } from "@/content/pond-mage";
 
 /** The night: the render's sky, taken darker so the render glows against it. */
 const NIGHT = "#140b17";
@@ -151,12 +152,12 @@ export default function PondMagePage() {
                     color: GOLD,
                   }}
                 >
-                  {s.title}
+                  {s.rose ? <RoseHeading text={s.title} rose={s.rose} /> : s.title}
                 </h2>
               </FadeIn>
               {s.body.map((p, i) => (
                 <FadeIn key={i}>
-                  <p style={{ margin: "0 0 1em", fontFamily: "var(--font-body)", fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
+                  <p className={i === 0 ? "pm-dropcap" : undefined} style={{ margin: "0 0 1em", fontFamily: "var(--font-body)", fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
                     {p}
                   </p>
                 </FadeIn>
@@ -201,7 +202,7 @@ export default function PondMagePage() {
         <div style={{ width: COLUMN, margin: "0 auto" }}>
           <FadeIn>
             <h2 style={{ margin: "0 0 18px", fontFamily: "var(--pm-kaisteel)", fontWeight: 400, fontSize: "clamp(30px, 3vw, 38px)", lineHeight: 1.2, color: GOLD }}>
-              At the desk
+              <RoseHeading text="At the desk" rose={DESK_ROSE} />
             </h2>
           </FadeIn>
         </div>

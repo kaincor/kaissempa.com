@@ -2,6 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useReducedMotion } from "motion/react";
+import RoseBloom, { LEAF_CSS, bloomBox, useRoses } from "./RoseBloom";
+import TitleScribble, { LETTER_GAP } from "./TitleScribble";
 
 /**
  * The Pond Mage, Kai's final render (1920 x 1080), brought to life the way
@@ -46,15 +49,26 @@ const TITLE = { x: 1045, y: 868, w: 800, h: 118 };
 export default function PondScene({ priority = false }: { priority?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   const [onScreen, setOnScreen] = useState(false);
-  const [seen, setSeen] = useState(false);
+  // Each time the scene comes well into view the title is drawn again: a
+  // new number starts it, 0 clears it once the scene has gone.
+  const [run, setRun] = useState(0);
+  const roses = useRoses();
+  const still = !!useReducedMotion();
 
   useEffect(() => {
     const el = root.current;
     if (!el) return;
+    let shown = false;
     const io = new IntersectionObserver(
       ([e]) => {
         setOnScreen(e.isIntersecting);
-        if (e.intersectionRatio > 0.35) setSeen(true);
+        if (e.intersectionRatio > 0.35 && !shown) {
+          shown = true;
+          setRun((r) => r + 1);
+        } else if (!e.isIntersecting && shown) {
+          shown = false;
+          setRun(0);
+        }
       },
       { threshold: [0, 0.35] },
     );
@@ -67,7 +81,7 @@ export default function PondScene({ priority = false }: { priority?: boolean }) 
   return (
     <div
       ref={root}
-      className={["pm", onScreen ? "" : "pm-paused", seen ? "pm-seen" : ""].join(" ")}
+      className={["pm", onScreen ? "" : "pm-paused"].join(" ")}
       role="img"
       aria-label="The Pond Mage: a small round mage in a pointed hat raises a wooden wand in a field of grass and red flowers at night, and a frog floats above the pond in a cloud of sparkles."
       style={{ position: "absolute", inset: 0, overflow: "hidden", containerType: "size", background: "#1e1021" }}
@@ -116,25 +130,50 @@ export default function PondScene({ priority = false }: { priority?: boolean }) 
           ))}
 
           <div className="pm-layer" style={{ transform: `translateZ(3cqw) scale(${(P - 3) / P})` }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              className="pm-title"
-              src="/pond-mage/title.svg"
-              alt=""
-              draggable={false}
+            <div
               style={{
                 position: "absolute",
                 left: pct(TITLE.x, RW),
                 top: pct(TITLE.y, RH),
                 width: pct(TITLE.w, RW),
                 height: pct(TITLE.h, RH),
-                maxWidth: "none",
               }}
-            />
+            >
+              {roses ? (
+                <>
+                  <TitleScribble data={roses} src="/pond-mage/title.svg" run={run} still={still} />
+                  {/* Kai's roses, where he drew them on the title, rippling
+                      across it left to right as the letters come in. */}
+                  {roses.title.roses.map((r, i) => {
+                    const b = bloomBox(roses, r.c);
+                    const { w: TW, h: TH } = roses.title;
+                    const w = b.w * r.k;
+                    const h = b.h * r.k;
+                    return (
+                      <RoseBloom
+                        key={r.c}
+                        data={roses}
+                        id={r.c}
+                        run={run}
+                        still={still}
+                        delay={0.55 + (r.x / TW) * 11 * LETTER_GAP + i * 0.04}
+                        style={{
+                          left: pct(r.x - w / 2, TW),
+                          top: pct(r.y - h / 2, TH),
+                          width: pct(w, TW),
+                          height: pct(h, TH),
+                        }}
+                      />
+                    );
+                  })}
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
 
+      <style>{LEAF_CSS}</style>
       <style>{`
         .pm-stage { position: absolute; inset: 0; perspective: ${P}cqw; perspective-origin: 50% 50%; }
         .pm-world, .pm-layer, .pm-bob { position: absolute; inset: 0; transform-style: preserve-3d; }
@@ -159,16 +198,9 @@ export default function PondScene({ priority = false }: { priority?: boolean }) 
         }
         .pm-parts img { animation: pm-twinkle 2.6s ease-in-out infinite alternate; }
         @keyframes pm-twinkle { from { opacity: 1; } to { opacity: 0.55; } }
-        .pm-title { opacity: 0; transform: scale(0.94); transform-origin: 50% 50%; }
-        .pm-seen .pm-title { animation: pm-title-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both; }
-        @keyframes pm-title-in {
-          from { opacity: 0; transform: scale(0.94); }
-          to { opacity: 1; transform: scale(1); }
-        }
         .pm-paused .pm-world, .pm-paused .pm-bob, .pm-paused .pm-parts img { animation-play-state: paused; }
         @media (prefers-reduced-motion: reduce) {
-          .pm-world, .pm-bob, .pm-parts img, .pm-seen .pm-title { animation: none; }
-          .pm-title { opacity: 1; transform: none; }
+          .pm-world, .pm-bob, .pm-parts img { animation: none; }
         }
       `}</style>
     </div>

@@ -4,12 +4,16 @@
  * the deck's own, at the size they were embedded.
  */
 
+import type { RosePlace } from "@/components/pond-mage/RoseHeading";
+
 export type Figure = { src: string; w: number; h: number; caption: string };
 export type Section = {
   id: string;
   title: string;
   body: string[];
   figures?: Figure[];
+  /** One of Kai's roses, growing on a letter of the heading. */
+  rose?: RosePlace;
   /** Photos to swipe through, in place of figures. */
   deck?: { src: string; alt: string }[];
 };
@@ -34,6 +38,7 @@ export const SECTIONS: Section[] = [
   {
     id: "idea",
     title: "The idea",
+    rose: { c: "D", at: 0, u: 0.15, v: 0.92, w: 1.1, mirror: true },
     body: [
       "I wanted a stylised character in a realistic world, by water, so the scene could show off what Cycles' ray tracing does with reflections, under dim area light with stronger point lights picking out the character. Early ideas went from a murky swamp to a raft on a moonlit river. One version had the mage sitting on a bed in the middle of a lake. How she got there, nobody knows.",
       "The bigger question was whether she'd be human. People in 3D fall into the uncanny valley fast, even for studios with far bigger budgets, so I stepped around it: she's a whimsical little creature instead. The last nudge was a photo in my camera roll of a frog in a witch's hat.",
@@ -43,6 +48,7 @@ export const SECTIONS: Section[] = [
   {
     id: "lagunita",
     title: "Lake Lagunita",
+    rose: { c: "E", at: 12, u: 1.3, v: 1.08, w: 1.5 },
     body: [
       "I wanted the scene to be modelled on somewhere at Stanford, and Lake Lagunita felt like the right choice, because I love it. It ebbs and flows with the seasons: the winter rain fills it, by summer it drains back to a meadow, and every time I go it's somewhere in between, blue or marshy or gold, often under one of the best sunsets on campus.",
       "I love it so much I have a whole album of it. Here's most of it.",
@@ -63,6 +69,7 @@ export const SECTIONS: Section[] = [
   {
     id: "mage",
     title: "The mage",
+    rose: { c: "C", at: 4, u: 0.55, v: -0.28, w: 1.01 },
     body: [
       "She's the main piece of geometry and where most of the hours went. I learned booleans, sculpting and the LoopTools add-on on her, partly by following a modelling time-lapse slowed to a quarter speed.",
       "When I showed people a later version, not one of them read her hat as a hat. Everyone saw a horn. A brim fixed it.",
@@ -76,6 +83,7 @@ export const SECTIONS: Section[] = [
   {
     id: "landscape",
     title: "The field",
+    rose: { c: "B", at: 8, u: 0.9, v: 0.2, w: 0.44 },
     body: [
       "The field is one grass model, scattered across the ground with geometry nodes instead of placed by hand. I gave the setup sliders for how dense the grass and the red flowers grow, with some randomness, so I could thin and thicken patches on the fly and keep it from looking planted in rows. It saved hours of nudging blades around.",
       "Under the surface, the ground dips below zero so the pond can fill the hollow.",
@@ -88,6 +96,7 @@ export const SECTIONS: Section[] = [
   {
     id: "wand",
     title: "The wand",
+    rose: { c: "D", at: 4, u: 0.3, v: 0.0, w: 0.97 },
     body: [
       "It's a sliver of the frame, but it's the whole reason the frog is floating, so it got extra attention. I started from a cylinder, stretched and subdivided it, then scraped and sanded it with the sculpt tools until it read as a slim stick. Then I UV-unwrapped it and gave it a material as stick-like as a stick can be.",
     ],
@@ -96,6 +105,7 @@ export const SECTIONS: Section[] = [
   {
     id: "magic",
     title: "The magic",
+    rose: { c: "E", at: 8, u: 1.45, v: 1.0, w: 1.41 },
     body: [
       "The spell is a particle system: a handful of icospheres with an emission layer for the glow, scattered through a field around the frog. The first version stood straight up, and people saw a peculiar pillar of fireflies, not magic. I moved it so it streams from the wand instead.",
     ],
@@ -104,6 +114,7 @@ export const SECTIONS: Section[] = [
   {
     id: "camera",
     title: "The camera",
+    rose: { c: "C", at: 9, u: 1.05, v: -0.3, w: 1.01, mirror: true },
     body: [
       "Depth of field keeps the mage and the frog sharp and lets everything else go soft, which makes the frame feel more cinematic, and a little like a toy. An alternate take used a different angle and an orthographic camera, but the blur swallowed the frog.",
     ],
@@ -119,6 +130,7 @@ export const SECTIONS: Section[] = [
   {
     id: "cut",
     title: "What didn't make it",
+    rose: { c: "D", at: 0, u: 0.1, v: 0.95, w: 1.06 },
     body: [
       "I spent a long time with the physics engine trying to give her a cloth outfit, with a fabric material to go with it. Neither made the final render, but working out the physics was half the fun. Nor did a green mage with a metaball frog, or a very cute cartoon frog, which I swapped for a realistic one when people kept not recognising it as a frog.",
     ],
@@ -131,6 +143,9 @@ export const SECTIONS: Section[] = [
 ];
 
 /** Photos of the work in progress, at home and on campus. */
+/** The rose on the "At the desk" heading. */
+export const DESK_ROSE: RosePlace = { c: "B", at: 0, u: 0.12, v: 0.2, w: 0.48 };
+
 export const DESK = [
   { src: "3067", w: 788, h: 1400 },
   { src: "3158", w: 788, h: 1400 },

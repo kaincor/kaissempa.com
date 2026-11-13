@@ -10,3 +10,16 @@
 :root {
   --pm-kaisteel: "Kaisteel", var(--font-serif), serif;
 }
+
+/* The first letter of each section, in Kaisteel and the headings' gold, at
+   the headings' size: its capital stands as tall as the T of the heading
+   above, sunk into the paragraph with the text wrapping round it. */
+.pm-dropcap::first-letter {
+  float: left;
+  font-family: var(--pm-kaisteel);
+  font-weight: 400;
+  font-size: clamp(30px, 3vw, 38px);
+  line-height: 0.78;
+  color: #efd48c;
+  margin: 0.13em 0.09em 0 0;
+}

@@ -87,11 +87,35 @@ export default function ProjectsAndProducts({ detailed = false }: { detailed?: b
         Projects &amp; Products
       </SectionHeading>
 
-      <Thumb label="Fortuna" href={null} shadow={FORTUNA_GREEN} info={info("Fortuna")}>
+      <ProjectThumbs info={info} />
+    </section>
+  );
+}
+
+/**
+ * The six thumbnails, in order. Shared by the homepage (one column, each up
+ * to MAX_WIDTH) and the footer of every case study (`fill`: a grid, each
+ * filling its cell). `sizes` and `maxWidth` tell the images how large they
+ * end up on screen.
+ */
+export function ProjectThumbs({
+  info = () => undefined,
+  fill = false,
+  sizes = `(max-width: ${MAX_WIDTH}px) 100vw, ${MAX_WIDTH}px`,
+  maxWidth = MAX_WIDTH,
+}: {
+  info?: (label: string) => Info | undefined;
+  fill?: boolean;
+  sizes?: string;
+  maxWidth?: number;
+}) {
+  return (
+    <>
+      <Thumb fill={fill} label="Fortuna" href={null} shadow={FORTUNA_GREEN} info={info("Fortuna")}>
         <FortunaThumb href="/fortuna" label="Fortuna" />
       </Thumb>
 
-      <Thumb label="Zorzal" href="/zorzal" background="#ffffff" shadow={ZORZAL_WINE} info={info("Zorzal")}>
+      <Thumb fill={fill} label="Zorzal" href="/zorzal" background="#ffffff" shadow={ZORZAL_WINE} info={info("Zorzal")}>
         <CloudDrift
           layers={[
             { src: "/case-studies/cloud-1.svg", heightPct: 94.6, aspect: 2.452, duration: 26 },
@@ -136,33 +160,34 @@ export default function ProjectsAndProducts({ detailed = false }: { detailed?: b
         />
       </Thumb>
 
-      <Thumb label="Mint Magazine" href="/mint" shadow={MINT_RED} info={info("Mint Magazine")}>
-        <MintSlideshow sizes={`(max-width: ${MAX_WIDTH}px) 100vw, ${MAX_WIDTH}px`} />
+      <Thumb fill={fill} label="Mint Magazine" href="/mint" shadow={MINT_RED} info={info("Mint Magazine")}>
+        <MintSlideshow sizes={sizes} />
       </Thumb>
 
-      <Thumb label="Mark of the Witch" info={info("Mark of the Witch")}>
-        <MotwScene maxWidth={MAX_WIDTH} />
+      <Thumb fill={fill} label="Mark of the Witch" info={info("Mark of the Witch")}>
+        <MotwScene maxWidth={maxWidth} />
       </Thumb>
 
-      <Thumb label="Pond Mage" href="/pond-mage" shadow={POND_MAGE_PURPLE} info={info("Pond Mage")}>
+      <Thumb fill={fill} label="Pond Mage" href="/pond-mage" shadow={POND_MAGE_PURPLE} info={info("Pond Mage")}>
         <Image
           src="/case-studies/pond-mage.jpg"
           alt="Pond Mage"
           fill
-          sizes={`(max-width: ${MAX_WIDTH}px) 100vw, ${MAX_WIDTH}px`}
+          sizes={sizes}
           quality={85}
           style={{ objectFit: "cover" }}
         />
       </Thumb>
 
       {/* Placeholder for work still to come. */}
-      <Thumb label="More work coming" href={null} background="#8c8c8c" />
-    </section>
+      <Thumb fill={fill} label="More work coming" href={null} background="#8c8c8c" />
+    </>
   );
 }
 
 function Thumb({
   label,
+  fill = false,
   href = WIP,
   background,
   shadow,
@@ -170,6 +195,8 @@ function Thumb({
   children,
 }: {
   label: string;
+  /** Fill the cell it is in, rather than the homepage's column. */
+  fill?: boolean;
   /** The Work page's line about the project, under the thumbnail. */
   info?: Info;
   /**
@@ -210,7 +237,7 @@ function Thumb({
 
   return (
     <motion.div
-      style={{ width: "100%", maxWidth: MAX_WIDTH }}
+      style={{ width: "100%", maxWidth: fill ? "none" : MAX_WIDTH }}
       initial={{ opacity: 0, y: 72, scale: 0.9 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       // once: the animation is a greeting, not a state. Replaying it on every

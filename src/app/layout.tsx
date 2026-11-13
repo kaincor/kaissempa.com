@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Geist, Hanken_Grotesk, Source_Serif_4 } from "next/font/google";
 import Navbar from "@/components/Navbar";
+import CaseStudyFooter from "@/components/CaseStudyFooter";
 import ThemeColor from "@/components/ThemeColor";
 import { SITE_TOP, mobileThemeColor } from "@/lib/theme-color";
 import "./globals.css";
@@ -86,6 +87,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeColor />
         <Navbar />
         {children}
+        {/* Only on the case studies; renders nothing elsewhere. */}
+        <CaseStudyFooter />
       </body>
     </html>
   );
