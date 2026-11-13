@@ -6,6 +6,7 @@ import { FACTS, OUTCOME, SECTIONS } from "@/content/zorzal";
 import ZorzalHero from "@/components/zorzal/ZorzalHero";
 import { SectionBand } from "@/components/zorzal/Blocks";
 import FadeIn from "@/components/fortuna/FadeIn";
+import OneLineTitle from "@/components/zorzal/OneLineTitle";
 
 /** The top of the hero sky, behind the starry band. Phones only; see lib/theme-color. */
 export const viewport: Viewport = { themeColor: mobileThemeColor("#cdd9e7") };
@@ -29,22 +30,28 @@ export default function ZorzalPage() {
       <section style={{ background: "#ffe2ce", padding: "clamp(112px, 19vh, 210px) 0 clamp(56px, 8vh, 96px)" }}>
         <div style={{ width: "min(680px, 100% - 40px)", margin: "0 auto" }}>
           <FadeIn>
-            <p
+            {/* In Captain Kai like the chapter titles, on one line: set at its
+                full size and scaled down only where the screen is too narrow. */}
+            <OneLineTitle
+              as="p"
               style={{
                 margin: "0 0 clamp(28px, 4vh, 40px)",
-                fontFamily: "var(--font-serif)",
-                fontStyle: "italic",
-                fontWeight: 500,
+                // Wider than the column beneath it, centred on it, so the
+                // line keeps more of its size on a wide screen.
+                width: "min(1040px, 100vw - 40px)",
+                position: "relative",
+                left: "50%",
+                transform: "translateX(-50%)",
+                fontFamily: "var(--z-captain-stack)",
+                fontWeight: 700,
                 fontSize: "clamp(22px, 2.8vw, 30px)",
                 lineHeight: 1.3,
-                letterSpacing: "-0.02em",
                 color: "var(--z-wine)",
                 textAlign: "center",
-                textWrap: "balance",
               }}
             >
               Making a supply-chain tool work where the work actually happens.
-            </p>
+            </OneLineTitle>
           </FadeIn>
           <FadeIn>
             <dl

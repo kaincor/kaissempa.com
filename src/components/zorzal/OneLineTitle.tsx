@@ -9,9 +9,18 @@ import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "rea
  * smaller, which is the cue to shorten them. Re-fits on resize and once the
  * webfont has loaded, since Captain Kai and its fallback measure differently.
  */
-export default function OneLineTitle({ style, children }: { style: CSSProperties; children: ReactNode }) {
+export default function OneLineTitle({
+  style,
+  children,
+  as: Tag = "h2",
+}: {
+  style: CSSProperties;
+  children: ReactNode;
+  /** The element to render: a chapter title by default, or a plain line. */
+  as?: "h2" | "p";
+}) {
   const baseSize = style.fontSize;
-  const box = useRef<HTMLHeadingElement>(null);
+  const box = useRef<HTMLHeadingElement & HTMLParagraphElement>(null);
   const text = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
@@ -45,10 +54,10 @@ export default function OneLineTitle({ style, children }: { style: CSSProperties
   }, [baseSize]);
 
   return (
-    <h2 ref={box} style={{ ...style, flex: "1 1 auto", minWidth: 0, whiteSpace: "nowrap" }}>
+    <Tag ref={box} style={{ ...style, flex: "1 1 auto", minWidth: 0, whiteSpace: "nowrap" }}>
       <span ref={text} style={{ display: "inline-block" }}>
         {children}
       </span>
-    </h2>
+    </Tag>
   );
 }
