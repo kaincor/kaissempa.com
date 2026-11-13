@@ -104,7 +104,7 @@ export default function Hero({
       </picture>
 
       {load ? (
-        <div style={{ position: "absolute", inset: 0, zIndex: 1 }} title={`${heading}, ${subheading}`}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
           <HeroScene onFirstFrame={onFirstFrame} />
         </div>
       ) : null}
