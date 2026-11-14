@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { scrollToSection } from "@/lib/scrollToSection";
+import NavRose, { NAV_ROSE_FADE } from "@/components/pond-mage/NavRose";
 
 /**
  * Work and About point at their sections on the home page for now. The
@@ -83,6 +84,8 @@ const CASE_THEMES: {
   weight?: number;
   /** Set the menu in capitals. */
   caps?: boolean;
+  /** Hovering a menu word grows one of Kai's roses on it (Pond Mage). */
+  roses?: boolean;
   /**
    * A route's own touch: hovering the bar, or the open menu, picks it like a
    * frame in a design tool, with a small square at each corner in this colour.
@@ -134,6 +137,7 @@ const CASE_THEMES: {
     font: "var(--pm-kaisteel)",
     size: 17,
     weight: 400,
+    roses: true,
   },
   {
     prefix: "/mint",
@@ -384,6 +388,7 @@ export default function Navbar({ logo }: { logo?: ReactNode }) {
             size={theme?.size}
             weight={theme?.weight}
             caps={theme?.caps}
+            roses={theme?.roses}
             onNavigate={(e) => {
               glideIfHome(e, l.href, pathname);
               setOpen(false);
@@ -426,6 +431,7 @@ function MenuLink({
   size,
   weight,
   caps,
+  roses,
   onNavigate,
 }: {
   href: string;
@@ -435,17 +441,34 @@ function MenuLink({
   size?: number;
   weight?: number;
   caps?: boolean;
+  roses?: boolean;
   onNavigate: (e: React.MouseEvent) => void;
 }) {
   const [hot, setHot] = useState(false);
+  // Each hover draws the rose afresh; once it has faded it is cleared.
+  const [run, setRun] = useState(0);
+  const clear = useRef(0);
+  useEffect(() => () => window.clearTimeout(clear.current), []);
+  const enter = () => {
+    setHot(true);
+    if (!roses) return;
+    window.clearTimeout(clear.current);
+    setRun((r) => r + 1);
+  };
+  const leave = () => {
+    setHot(false);
+    if (!roses) return;
+    window.clearTimeout(clear.current);
+    clear.current = window.setTimeout(() => setRun(0), NAV_ROSE_FADE * 1000 + 50);
+  };
   return (
     <Link
       href={href}
       onClick={onNavigate}
-      onPointerEnter={() => setHot(true)}
-      onPointerLeave={() => setHot(false)}
-      onFocus={() => setHot(true)}
-      onBlur={() => setHot(false)}
+      onPointerEnter={enter}
+      onPointerLeave={leave}
+      onFocus={enter}
+      onBlur={leave}
       className="display"
       style={{
         // Inline, so it wins over .display on themed routes and leaves it
@@ -466,7 +489,14 @@ function MenuLink({
         transition: "color 0.2s ease",
       }}
     >
-      {children}
+      {roses && typeof children === "string" ? (
+        <span style={{ position: "relative", display: "inline-block" }}>
+          {children}
+          <NavRose word={children} run={run} hot={hot} />
+        </span>
+      ) : (
+        children
+      )}
     </Link>
   );
 }

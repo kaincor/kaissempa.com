@@ -25,23 +25,19 @@ const pr = (name: string, w: number, h: number, caption: string): Figure => ({
   caption,
 });
 
-export const LEDE = "A young mage sneaks out to the pond at night to practise her magic, and a frog floats up off the water.";
-
-export const FACTS = [
-  { label: "Role", value: "3D modeling, texturing and lighting" },
-  { label: "Year", value: "2024" },
-  { label: "Tools", value: "Blender, rendered in Cycles" },
-  { label: "Scope", value: "Every object modelled and textured from scratch, except the grass and the frog" },
-];
+export const LEDE = "A young mage practices her magic by the pond’s edge";
 
 export const SECTIONS: Section[] = [
   {
     id: "idea",
-    title: "The idea",
+    title: "Ideation",
     rose: { c: "D", at: 0, u: 0.15, v: 0.92, w: 1.1, mirror: true },
     body: [
-      "I wanted a stylised character in a realistic world, by water, so the scene could show off what Cycles' ray tracing does with reflections, under dim area light with stronger point lights picking out the character. Early ideas went from a murky swamp to a raft on a moonlit river. One version had the mage sitting on a bed in the middle of a lake. How she got there, nobody knows.",
-      "The bigger question was whether she'd be human. People in 3D fall into the uncanny valley fast, even for studios with far bigger budgets, so I stepped around it: she's a whimsical little creature instead. The last nudge was a photo in my camera roll of a frog in a witch's hat.",
+      "I love mixed media, like 2D characters in a 3D setting, or (other example). So since this project had to be entirely in 3D, I knew from the beginning I was going for a blend of stylized + realistic.",
+      "Having a little lake or swamp there too would be one of the best ways for us to show off Cycles’ ray-tracing capabilities. I also wanted to explore dramatic lighting setups: dim area lighting coupled with stronger point lighting to illuminate our character.",
+      "I've seen a lot of Reels with Blender art so I feel like I already had plenty of stuff to pull from.",
+      "My early ideas bounced between a murky swamp, a raft on a moonlit river, or somewhere on campus—like Lake Lagunita. It just had to be by a body of water.",
+      "To be human or not to be human became the big question for my mage, who was set to star as our lead character and main piece of geometry. Uncanny valley can be pretty hard to avoid, and the last thing I wanted was an off-putting model. I forwent uncanny valley entirely by choosing to make our mage a whimsical, fantastical creature.",
     ],
     figures: [pr("bed", 1183, 599, "An early version: the mage on a bed, floating in the middle of a lake.")],
   },

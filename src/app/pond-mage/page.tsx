@@ -7,7 +7,8 @@ import PondScene from "@/components/pond-mage/PondScene";
 import FadeIn from "@/components/fortuna/FadeIn";
 import SwipeDeck from "@/components/SwipeDeck";
 import RoseHeading from "@/components/pond-mage/RoseHeading";
-import { CREDITS, DESK, DESK_ROSE, FACTS, LEDE, SECTIONS, type Figure } from "@/content/pond-mage";
+import DropCap from "@/components/pond-mage/DropCap";
+import { CREDITS, DESK, DESK_ROSE, LEDE, SECTIONS, type Figure } from "@/content/pond-mage";
 
 /** The night: the render's sky, taken darker so the render glows against it. */
 const NIGHT = "#140b17";
@@ -109,30 +110,8 @@ export default function PondMagePage() {
               {LEDE}
             </p>
           </FadeIn>
-          <FadeIn>
-            <dl
-              style={{
-                margin: 0,
-                display: "grid",
-                gridTemplateColumns: "max-content 1fr",
-                columnGap: "clamp(16px, 3vw, 32px)",
-                rowGap: 12,
-                fontFamily: "var(--font-body)",
-                fontSize: 15,
-                lineHeight: 1.5,
-                borderTop: "1px solid rgba(184, 150, 196, 0.28)",
-                borderBottom: "1px solid rgba(184, 150, 196, 0.28)",
-                padding: "22px 0",
-              }}
-            >
-              {FACTS.map((f) => (
-                <div key={f.label} style={{ display: "contents" }}>
-                  <dt style={{ ...label, paddingTop: 2 }}>{f.label}</dt>
-                  <dd style={{ margin: 0 }}>{f.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </FadeIn>
+          {/* A single rule under the line. */}
+          <div aria-hidden="true" style={{ borderTop: "1px solid rgba(184, 150, 196, 0.28)" }} />
         </div>
       </section>
 
@@ -157,8 +136,8 @@ export default function PondMagePage() {
               </FadeIn>
               {s.body.map((p, i) => (
                 <FadeIn key={i}>
-                  <p className={i === 0 ? "pm-dropcap" : undefined} style={{ margin: "0 0 1em", fontFamily: "var(--font-body)", fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
-                    {p}
+                  <p style={{ margin: i === 0 ? "calc(0.955 * 1.65em) 0 1em" : "0 0 1em", fontFamily: "var(--font-body)", fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
+                    {i === 0 ? <DropCap text={p} /> : p}
                   </p>
                 </FadeIn>
               ))}

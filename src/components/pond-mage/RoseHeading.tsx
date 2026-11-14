@@ -18,16 +18,19 @@ export type RosePlace = {
 };
 
 /**
- * A heading with one of Kai's roses growing on a letter of it, drawn each
+ * A heading with one of Kai's roses (or a few) growing on a letter of it, drawn each
  * time the heading comes into view. The letter is found by measuring the
  * text, not by wrapping it, so Kaisteel's ligatures and kerning are left
  * whole.
  */
-export default function RoseHeading({ text, rose }: { text: string; rose: RosePlace }) {
+export default function RoseHeading({ text, rose }: { text: string; rose: RosePlace | RosePlace[] }) {
+  const list = Array.isArray(rose) ? rose : [rose];
+  // A stable key for the effect, so a new array each render does not re-measure.
+  const key = JSON.stringify(list);
   const data = useRoses();
   const still = !!useReducedMotion();
   const wrap = useRef<HTMLSpanElement>(null);
-  const [spot, setSpot] = useState<{ x: number; y: number } | null>(null);
+  const [spots, setSpots] = useState<{ x: number; y: number }[] | null>(null);
   const [run, setRun] = useState(0);
 
   // The letter's box, relative to the heading.
@@ -35,25 +38,30 @@ export default function RoseHeading({ text, rose }: { text: string; rose: RosePl
     const el = wrap.current;
     const node = el?.firstChild;
     if (!el || !node || node.nodeType !== Node.TEXT_NODE) return;
+    const places: RosePlace[] = JSON.parse(key);
     const measure = () => {
-      const r = document.createRange();
-      const i = Math.min(rose.at, text.length - 1);
-      r.setStart(node, i);
-      r.setEnd(node, i + 1);
-      const b = r.getBoundingClientRect();
       const o = el.getBoundingClientRect();
       // Kaisteel's letters fill roughly the top 0.72em of the line box down
       // to the baseline; the range covers the whole line, so take that part.
       const fs = parseFloat(getComputedStyle(el).fontSize);
-      const top = b.top - o.top + (b.height - fs * 0.92) / 2 + fs * 0.12;
-      setSpot({ x: b.left - o.left + rose.u * b.width, y: top + rose.v * fs * 0.72 });
+      setSpots(
+        places.map((p) => {
+          const r = document.createRange();
+          const i = Math.min(p.at, text.length - 1);
+          r.setStart(node, i);
+          r.setEnd(node, i + 1);
+          const b = r.getBoundingClientRect();
+          const top = b.top - o.top + (b.height - fs * 0.92) / 2 + fs * 0.12;
+          return { x: b.left - o.left + p.u * b.width, y: top + p.v * fs * 0.72 };
+        }),
+      );
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     document.fonts?.ready.then(measure);
     return () => ro.disconnect();
-  }, [text, rose.at, rose.u, rose.v]);
+  }, [text, key]);
 
   // Drawn on arrival, cleared on leaving, drawn again on the way back.
   useEffect(() => {
@@ -76,33 +84,36 @@ export default function RoseHeading({ text, rose }: { text: string; rose: RosePl
     return () => io.disconnect();
   }, []);
 
-  let bloom = null;
-  if (data && spot) {
-    const b = bloomBox(data, rose.c);
-    bloom = (
-      <RoseBloom
-        data={data}
-        id={rose.c}
-        run={run}
-        still={still}
-        mirror={rose.mirror}
-        // A beat after the heading has begun to fade in.
-        delay={0.35}
-        style={{
-          left: spot.x,
-          top: spot.y,
-          width: `${rose.w}em`,
-          aspectRatio: `${b.w} / ${b.h}`,
-          transform: "translate(-50%, -50%)",
-        }}
-      />
-    );
-  }
+  const blooms =
+    data && spots
+      ? list.map((p, i) => {
+          const b = bloomBox(data, p.c);
+          return (
+            <RoseBloom
+              key={i}
+              data={data}
+              id={p.c}
+              run={run}
+              still={still}
+              mirror={p.mirror}
+              // A beat after the heading has begun to fade in, the rest after.
+              delay={0.35 + i * 0.25}
+              style={{
+                left: spots[i].x,
+                top: spots[i].y,
+                width: `${p.w}em`,
+                aspectRatio: `${b.w} / ${b.h}`,
+                transform: "translate(-50%, -50%)",
+              }}
+            />
+          );
+        })
+      : null;
 
   return (
     <span ref={wrap} style={{ position: "relative", display: "inline-block" }}>
       {text}
-      {bloom}
+      {blooms}
     </span>
   );
 }

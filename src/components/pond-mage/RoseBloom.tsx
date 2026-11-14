@@ -38,6 +38,7 @@ export default function RoseBloom({
   delay = 0,
   mirror = false,
   still = false,
+  speed = 1,
   style,
 }: {
   data: RosesData;
@@ -48,6 +49,8 @@ export default function RoseBloom({
   mirror?: boolean;
   /** Reduced motion: drawn complete at once, no sway. */
   still?: boolean;
+  /** How many times faster than Kai drew it the pen goes. */
+  speed?: number;
   style: CSSProperties;
 }) {
   const box = useRef<HTMLDivElement>(null);
@@ -73,6 +76,7 @@ export default function RoseBloom({
     // The leaves' motion is a class on their canvas, set as the drawing goes.
     const setLeafState = (s: "hidden" | "grow" | "sway") => {
       lc.className = `pm-leaf pm-leaf-${s}`;
+      lc.style.animationDuration = s === "grow" && speed !== 1 ? `${1.1 / speed}s` : "";
     };
 
     const fit = () => {
@@ -122,7 +126,7 @@ export default function RoseBloom({
       const leafAt = Math.min(...strokes.filter((s) => s.leaf).map((s) => s.start), end);
       const tick = (now: number) => {
         if (!t0) t0 = now;
-        const t = (now - t0) / 1000 - delay;
+        const t = ((now - t0) / 1000 - delay) * speed;
         if (t >= 0) draw(t);
         if (!leafShown && t >= leafAt) {
           leafShown = true;
@@ -147,7 +151,7 @@ export default function RoseBloom({
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [data, id, run, delay, mirror, still]);
+  }, [data, id, run, delay, mirror, still, speed]);
 
   const canvas: CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%" };
   return (

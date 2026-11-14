@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useEffect, useRef } from "react";
 import { ProjectThumbs } from "@/components/ProjectsAndProducts";
+import RoseHeading, { type RosePlace } from "@/components/pond-mage/RoseHeading";
 
 /**
  * The close of every case study (Figma: Footer, "Case Study Footer"): "More
@@ -28,13 +29,20 @@ type Theme = {
   font: string;
   weight: number;
   caps?: boolean;
+  /** Kai's roses growing on the heading (Pond Mage), as on the study's own headings. */
+  roses?: RosePlace[];
 };
 
 const THEMES: Theme[] = [
   { prefix: "/fortuna", bg: "#32443e", ink: "#f1efe8", ridge: "rgba(105, 189, 69, 0.42)", font: "var(--f-display-stack)", weight: 600 },
   { prefix: "/zorzal", bg: "#fffdf6", ink: "#983c44", ridge: "rgba(152, 60, 68, 0.74)", font: "var(--z-captain-stack)", weight: 700 },
   { prefix: "/mint", bg: "#a3a3a3", ink: "#111111", ridge: "rgba(183, 39, 43, 0.74)", font: "var(--mint-fahkwang)", weight: 700, caps: true },
-  { prefix: "/pond-mage", bg: "#140b17", ink: "#efd48c", ridge: "rgba(157, 114, 170, 0.5)", font: "var(--pm-kaisteel)", weight: 400 },
+  { prefix: "/pond-mage", bg: "#140b17", ink: "#efd48c", ridge: "rgba(157, 114, 170, 0.5)", font: "var(--pm-kaisteel)", weight: 400,
+    roses: [
+      { c: "C", at: 0, u: 0.25, v: -0.22, w: 0.95 },
+      { c: "E", at: 19, u: 1.15, v: 1.02, w: 1.25 },
+    ],
+  },
 ];
 
 /** Mountain Range 29, from the footer frame (4096 x 453). */
@@ -137,7 +145,7 @@ function Footer({ theme }: { theme: Theme }) {
           }}
         >
           <span ref={heading} style={{ display: "inline-block", whiteSpace: "nowrap", fontSize: "clamp(22px, 2.4vw, 36px)" }}>
-            More stuff I&rsquo;ve done
+            {theme.roses ? <RoseHeading text="More stuff I’ve done" rose={theme.roses} /> : <>More stuff I&rsquo;ve done</>}
           </span>
         </h2>
 
