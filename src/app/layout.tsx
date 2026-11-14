@@ -46,7 +46,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL("https://kaissempa.com"),
   title: {
-    default: "Kai Ssempa — Designer & Developer",
+    default: "Kai Ssempa",
     template: "%s — Kai Ssempa",
   },
   description: DESCRIPTION,
@@ -54,12 +54,12 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://kaissempa.com",
     siteName: "Kai Ssempa",
-    title: "Kai Ssempa — Designer & Developer",
+    title: "Kai Ssempa",
     description: DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kai Ssempa — Designer & Developer",
+    title: "Kai Ssempa",
     description: DESCRIPTION,
   },
 };

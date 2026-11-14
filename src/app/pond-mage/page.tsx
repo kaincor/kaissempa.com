@@ -9,6 +9,10 @@ import SwipeDeck from "@/components/SwipeDeck";
 import RoseHeading from "@/components/pond-mage/RoseHeading";
 import DropCap from "@/components/pond-mage/DropCap";
 import { CREDITS, DESK, DESK_ROSE, LEDE, SECTIONS, type Figure } from "@/content/pond-mage";
+import { Libre_Baskerville } from "next/font/google";
+
+// The body copy: a bookish serif to sit under the blackletter headings.
+const baskerville = Libre_Baskerville({ subsets: ["latin"], weight: ["400", "700"], style: ["normal", "italic"], display: "swap" });
 
 /** The night: the render's sky, taken darker so the render glows against it. */
 const NIGHT = "#140b17";
@@ -136,7 +140,7 @@ export default function PondMagePage() {
               </FadeIn>
               {s.body.map((p, i) => (
                 <FadeIn key={i}>
-                  <p style={{ margin: i === 0 ? "calc(0.955 * 1.65em) 0 1em" : "0 0 1em", fontFamily: "var(--font-body)", fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
+                  <p style={{ margin: i === 0 ? "calc(0.955 * 1.65em) 0 1em" : "0 0 1em", fontFamily: baskerville.style.fontFamily, fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
                     {i === 0 ? <DropCap text={p} /> : p}
                   </p>
                 </FadeIn>
