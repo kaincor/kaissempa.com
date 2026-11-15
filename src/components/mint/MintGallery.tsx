@@ -204,40 +204,42 @@ export default function MintGallery() {
   // Every photo keeps its place in the page, in order, so a move only ever
   // changes where each one sits: reordering them would make the browser
   // drop and re-add the ones that moved, and they would jump instead of
-  // sliding. Those more than three away wait out of sight, unloaded.
+  // sliding. The strip runs the full width of the screen, so neighbours are
+  // laid out until both sides are past its edges (one more each way, so the
+  // next to slide in is already there); the rest wait out of sight, unloaded.
   const slots: { k: number; x: number; w: number; h: number }[] = PHOTOS.map(
     () => ({ k: 99, x: 0, w: 0, h: 0 }),
   );
+  let reach = 3;
   if (box) {
     const c = size(index);
     slots[index] = { k: 0, x: 0, ...c };
     let right = c.w / 2;
     let left = -c.w / 2;
-    for (let k = 1; k <= 3; k++) {
+    const most = Math.floor((N - 1) / 2) - 1;
+    for (let k = 1; k <= most; k++) {
       const r = size(index + k);
       slots[wrap(index + k)] = { k, x: right + gap + r.w / 2, ...r };
       right += gap + r.w;
       const l = size(index - k);
       slots[wrap(index - k)] = { k: -k, x: left - gap - l.w / 2, ...l };
       left -= gap + l.w;
+      reach = k;
+      if (k >= 3 && Math.min(right, -left) > box.w / 2 + 400) break;
     }
     // Parked off to whichever side is nearer round the loop, unseen.
     slots.forEach((sl, i) => {
       if (sl.k !== 99) return;
       const d = wrap(i - index) <= N / 2 ? 1 : -1;
       const z = size(i);
-      sl.k = d * 4;
+      sl.k = d * (reach + 1);
       sl.x = d * (box.w + z.w);
       sl.w = z.w;
       sl.h = z.h;
     });
   }
-  const peek = box && box.w < 640 ? 28 : 90;
-  // Always as wide as a landscape photo with a little either side, whatever
-  // is showing, so the frame holds still; a portrait sits in the middle of
-  // it with more of its neighbours in view.
-  const landscapeW = box ? Math.min(box.h, (box.w * 0.78) / 1.5) * 1.5 : 0;
-  const windowW = box ? Math.min(box.w, landscapeW + 2 * (gap + peek)) : 0;
+  // Edge to edge: the strip, and its red lines, run the screen's full width.
+  const windowW = box ? box.w : 0;
 
   const at = index / (N - 1);
   const cur = PHOTOS[index];
@@ -293,12 +295,12 @@ export default function MintGallery() {
                   height: h,
                   transform: `translate(${x - w / 2}px, -50%)`,
                   transition: `transform ${SLIDE}, width ${SLIDE}, height ${SLIDE}, opacity ${SLIDE}`,
-                  opacity: away === 0 ? 1 : away < 3 ? 0.55 : 0,
+                  opacity: away === 0 ? 1 : away <= reach ? 0.55 : 0,
                   cursor: side ? "pointer" : "grab",
-                  pointerEvents: away < 3 ? "auto" : "none",
+                  pointerEvents: away === 0 || away <= reach ? "auto" : "none",
                 }}
               >
-                {away > 3 ? null : (
+                {away > reach ? null : (
                   <Image
                     src={`/mint/gallery/${p.src}.jpg`}
                     alt=""
