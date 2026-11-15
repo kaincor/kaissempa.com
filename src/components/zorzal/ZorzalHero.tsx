@@ -38,9 +38,9 @@ export default function ZorzalHero() {
         />
         <div
           className="z-title"
-          style={{ top: "24svh", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 5 }}
+          style={{ left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 5 }}
         >
-          <h1 style={{ margin: 0, width: "clamp(200px, 34vw, 520px)" }}>
+          <h1 style={{ margin: 0, width: "var(--wm-w)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="z-wordmark" src="/case-studies/zorzal-typography.svg" alt="Zorzal" style={{ display: "block", width: "100%" }} />
           </h1>

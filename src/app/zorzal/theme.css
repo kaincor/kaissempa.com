@@ -75,6 +75,20 @@
    bottom edge. */
 .zorzal .z-hero {
   --p: 0;
+  /* The wordmark's width, shared with ZorzalHero's h1. */
+  --wm-w: clamp(200px, 34vw, 520px);
+  /* The hill is sized by the screen's width and the wordmark by its height,
+     so on a wide, short screen (Safari full screen) the hill rose into the
+     wordmark. The hero grows taller there instead, just enough that the top
+     of the hill (1.08 of the hero's height, less the landscape's own height:
+     110% of the width at 427/1251) stays 32px below the wordmark, which holds
+     its place at 24% of the screen. The rest of the hill runs on below the
+     fold. On an ordinary screen it is simply the screen's height. */
+  height: max(
+    100svh,
+    520px,
+    calc((24svh + var(--wm-w) * 0.2167 + 32px + 37.546vw) / 1.08)
+  );
 }
 /* The sky is fixed to the screen like the wordmark, so the hill scrolls up
    over both. Clipped to the hero by the same wrapper. */
@@ -93,6 +107,7 @@
 .zorzal .z-title {
   position: fixed;
   opacity: max(0.8, calc(1 - var(--p) * 0.8));
+  top: 24svh;
 }
 .zorzal .z-land-stage {
   perspective: 1300px;

@@ -58,8 +58,8 @@ export default function HeroMotion({ children }: { children: ReactNode }) {
         // bottom of the hill hangs over the top of "Making a supply-chain
         // tool work…" instead of ending in a straight cut.
         zIndex: 1,
-        height: "100svh",
-        minHeight: 520,
+        // Its height is in theme.css (.z-hero): the screen's, or more on a
+        // wide, short screen so the hill clears the wordmark.
         overflowX: "clip",
         overflowY: "visible",
         background: "var(--z-cream)",
