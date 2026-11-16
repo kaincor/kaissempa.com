@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { paint, type RosesData } from "./roses";
 
 /** When each letter is coloured in: a beat apart, each taking a moment. */
@@ -11,8 +11,8 @@ export const LETTER_DUR = 0.42;
  * Kai's title lettering, coloured in by crayon. Each letter is scribbled
  * over, left to right, with the same brush as the roses, and the crisp
  * lettering shows through wherever the crayon has been. Once every letter is
- * in, the vector lettering itself takes over, so what stays on screen is the
- * SVG exactly.
+ * in, the same canvas shows the whole lettering, so there is no handover to
+ * jump at; the <img> is only for reduced motion.
  */
 export default function TitleScribble({
   data,
@@ -27,9 +27,6 @@ export default function TitleScribble({
 }) {
   const box = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
-  // Which drawing has finished: the lettering shows once the current one has.
-  const [doneRun, setDoneRun] = useState(0);
-  const done = still || (run !== 0 && doneRun === run);
 
   useEffect(() => {
     if (!run || still) return;
@@ -76,10 +73,30 @@ export default function TitleScribble({
       ctx.drawImage(mask, 0, 0);
       ctx.globalCompositeOperation = "source-over";
       if (t < end) raf = requestAnimationFrame(tick);
-      else setDoneRun(run);
+      else {
+        // The crayon is done: the whole lettering, drawn once more on the
+        // same canvas, which stays. Swapping to the <img> here made the
+        // letters jump in Safari, which rasterises the SVG (and its rough
+        // edge filter) differently in an <img> than when drawn to a canvas.
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+      }
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    // If the title changes size once drawn, redraw it whole at the new size.
+    let lastW = el.clientWidth;
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth === lastW || !img.complete) return;
+      lastW = el.clientWidth;
+      c.width = Math.max(1, Math.round(el.clientWidth * dpr));
+      c.height = Math.max(1, Math.round(el.clientHeight * dpr));
+      if (t0 && performance.now() - t0 >= end * 1000) ctx.drawImage(img, 0, 0, c.width, c.height);
+    });
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, [data, src, run, still]);
 
   return (
@@ -89,12 +106,12 @@ export default function TitleScribble({
         src={src}
         alt=""
         draggable={false}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", opacity: done ? 1 : 0 }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", opacity: still ? 1 : 0 }}
       />
       <canvas
         ref={cv}
         aria-hidden="true"
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: done || !run ? 0 : 1 }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: still || !run ? 0 : 1 }}
       />
     </div>
   );

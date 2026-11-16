@@ -139,9 +139,10 @@ export default function MintRoom() {
           right: 0,
           bottom: 0,
           overflow: "hidden",
-          // The light thins out and is gone halfway down the floor.
-          WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 34%, transparent 50%)",
-          maskImage: "linear-gradient(to bottom, #000 0%, #000 34%, transparent 50%)",
+          // The light runs the whole floor, down behind the thumbnails at
+          // the foot of the page, and only softens away at the very end.
+          WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 94%, transparent 100%)",
+          maskImage: "linear-gradient(to bottom, #000 0%, #000 94%, transparent 100%)",
         }}
       >
         <canvas ref={leavesA} className="mint-leaves-a" style={layer} />
@@ -325,11 +326,10 @@ function paintLeaves(
   // The canvas covers just the floor, so it is drawn with the floor's top at 0.
   const g = setup(c, w, depth, dpr);
   const rnd = seeded(seed);
-  // Mostly on the window side, thinning out to the right. Only over the top
-  // half of the floor, where the strip's mask lets it show, at the same
-  // density however deep the floor runs.
+  // Mostly on the window side, thinning out to the right. Over the whole
+  // floor, at the same density however deep it runs.
   const reach = Math.min(w, H * 1.1);
-  const lit = depth * 0.5;
+  const lit = depth * 0.97;
   const n = Math.round((38 * lit) / (h - fy));
   for (let i = 0; i < n; i++) {
     const x = Math.pow(rnd(), 1.7) * reach;
