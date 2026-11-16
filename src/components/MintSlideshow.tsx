@@ -72,10 +72,12 @@ export default function MintSlideshow({ sizes }: { sizes: string }) {
   }, [inView, reduced, step]);
 
   return (
-    <div
-      ref={ref}
-      style={{ position: "absolute", inset: 0, background: "#000" }}
-    >
+    <div ref={ref} style={{ position: "absolute", inset: 0 }}>
+      {/* Black until the first cover loads, held a pixel in from the edge.
+          Safari clips the drifting photos (their own layers) to the rounded
+          corners a hair inside where it clips a flat background, so a black
+          that ran to the edge showed as a sliver along the top. */}
+      <div aria-hidden="true" style={{ position: "absolute", inset: 1, background: "#000" }} />
       {SLIDES.map(({ name, pinned, at: [left, top, width] }, i) => {
         const wordmark = (
           // eslint-disable-next-line @next/next/no-img-element

@@ -10,6 +10,8 @@ export type Figure = { src: string; w: number; h: number; caption: string };
 export type Section = {
   id: string;
   title: string;
+  /** Kept for screen readers only: the section runs straight on from the rule above. */
+  hideTitle?: boolean;
   body: string[];
   figures?: Figure[];
   /** One of Kai's roses, growing on a letter of the heading. */
@@ -31,6 +33,7 @@ export const SECTIONS: Section[] = [
   {
     id: "idea",
     title: "Ideation",
+    hideTitle: true,
     rose: { c: "D", at: 0, u: 0.15, v: 0.92, w: 1.1, mirror: true },
     body: [
       "I love mixed media, like 2D characters in a 3D setting, or (other example). So since this project had to be entirely in 3D, I knew from the beginning I was going for a blend of stylized + realistic.",

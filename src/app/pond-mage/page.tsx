@@ -95,7 +95,9 @@ export default function PondMagePage() {
         </div>
       </section>
 
-      <section style={{ padding: "clamp(48px, 8vh, 96px) 0 clamp(40px, 6vh, 72px)" }}>
+      {/* Short at the foot: the first section has no heading, and runs on
+          close under the rule. */}
+      <section style={{ padding: "clamp(48px, 8vh, 96px) 0 clamp(20px, 3vh, 32px)" }}>
         <div style={{ width: COLUMN, margin: "0 auto" }}>
           <FadeIn>
             <h1 className="sr-only">The Pond Mage</h1>
@@ -122,25 +124,33 @@ export default function PondMagePage() {
       {SECTIONS.map((s) => {
         const many = (s.figures?.length ?? 0) > 1;
         return (
-          <section key={s.id} id={s.id} style={{ padding: "clamp(36px, 6vh, 64px) 0" }}>
+          <section
+            key={s.id}
+            id={s.id}
+            style={{ padding: s.hideTitle ? "0 0 clamp(36px, 6vh, 64px)" : "clamp(36px, 6vh, 64px) 0" }}
+          >
             <div style={{ width: COLUMN, margin: "0 auto" }}>
-              <FadeIn>
-                <h2
-                  style={{
-                    margin: "0 0 18px",
-                    fontFamily: "var(--pm-kaisteel)",
-                    fontWeight: 400,
-                    fontSize: "clamp(30px, 3vw, 38px)",
-                    lineHeight: 1.2,
-                    color: GOLD,
-                  }}
-                >
-                  {s.rose ? <RoseHeading text={s.title} rose={s.rose} /> : s.title}
-                </h2>
-              </FadeIn>
+              {s.hideTitle ? (
+                <h2 className="sr-only">{s.title}</h2>
+              ) : (
+                <FadeIn>
+                  <h2
+                    style={{
+                      margin: "0 0 18px",
+                      fontFamily: "var(--pm-kaisteel)",
+                      fontWeight: 400,
+                      fontSize: "clamp(30px, 3vw, 38px)",
+                      lineHeight: 1.2,
+                      color: GOLD,
+                    }}
+                  >
+                    {s.rose ? <RoseHeading text={s.title} rose={s.rose} /> : s.title}
+                  </h2>
+                </FadeIn>
+              )}
               {s.body.map((p, i) => (
                 <FadeIn key={i}>
-                  <p style={{ margin: i === 0 ? "calc(0.955 * 1.65em) 0 1em" : "0 0 1em", fontFamily: baskerville.style.fontFamily, fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
+                  <p style={{ margin: i > 0 ? "0 0 1em" : s.hideTitle ? "calc(0.455 * 1.65em) 0 1em" : "calc(0.955 * 1.65em) 0 1em", fontFamily: baskerville.style.fontFamily, fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
                     {i === 0 ? <DropCap text={p} /> : p}
                   </p>
                 </FadeIn>
