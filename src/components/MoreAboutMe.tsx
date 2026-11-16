@@ -166,7 +166,8 @@ export default function MoreAboutMe({
                   margin: 0,
                   opacity: play ? 1 : 0,
                   transform: play ? "none" : "translateY(10px)",
-                  color: "#6E6E6E",
+                  // The same faded grey as About, readable on the black (6.3:1).
+                  color: "#8C8C8C",
                   transition: reduced
                     ? undefined
                     : `opacity 0.6s ease-out ${i * 0.12}s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.12}s`,

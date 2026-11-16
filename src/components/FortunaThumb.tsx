@@ -140,14 +140,31 @@ export default function FortunaThumb({ href, label }: { href: string; label: str
         </div>
       ))}
 
-      {/* The wordmark. */}
+      {/* The wordmark. It fades up into place the first time the box comes
+          into view, just behind the box's own arrival, and its orange dot
+          lands a beat after the word. */}
       <svg
         viewBox="0 0 1021 204"
         aria-hidden="true"
         style={{ ...abs(1146, 477.5, 1021, 204), overflow: "visible" }}
       >
-        <path d={WORD} fill="#69bd45" />
-        <path d={WORD_DOT} fill="#ff8100" />
+        <motion.path
+          d={WORD}
+          fill="#69bd45"
+          initial={reduced ? false : { opacity: 0, y: 26 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ delay: 0.35, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        />
+        <motion.path
+          d={WORD_DOT}
+          fill="#ff8100"
+          initial={reduced ? false : { opacity: 0, scale: 0.4 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, amount: 0.6 }}
+          style={{ transformBox: "fill-box", transformOrigin: "center" }}
+          transition={{ delay: 0.85, type: "spring", stiffness: 380, damping: 16 }}
+        />
       </svg>
 
       {/* The phones, the app in front of the splash. */}

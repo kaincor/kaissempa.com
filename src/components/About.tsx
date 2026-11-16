@@ -36,9 +36,10 @@ const PHONE_PHOTOS: FanDeckCard[] = [
   ...PHOTOS.filter((p) => !LEAD.includes(p.src)),
 ];
 
-const BODY = "#6E6E6E";
-/** Stanford cardinal. */
-const CARDINAL = "#8C1515";
+/** Faded on the black, but readable: 6.3:1 (it was #6E6E6E, 4.1:1, under AA). */
+const BODY = "#8C8C8C";
+/** Stanford's cardinal, brightened to read on the black: 4.8:1 (the true #8C1515 is about 2:1). */
+const CARDINAL = "#E0393E";
 const HIGHLIGHT = "#D9D9D9";
 
 type Segment = { text: string; color?: string };

@@ -351,7 +351,10 @@ function Footer({ theme }: { theme: Theme }) {
              touch above the middle of the line, hence the nudge down). */
           .csf-copy span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.753em; transform: translateY(0.04em); }
           .csf-row { font-family: var(--font-display); font-weight: 400; text-transform: uppercase; }
-          .csf-socials { right: 1.4286vw; }
+          /* The links spread across the black range rather than bunching at
+             the right: from a little in from where LinkedIn starts in the
+             frame (2545 of 7000) to the right margin. */
+          .csf-socials { left: 39vw; right: 1.4286vw; justify-content: space-between; }
           .csf-socials a { pointer-events: auto; }
           /* The Dribbble wordmark is the frame's DRIBBBLE text box at 170
              (597 x 117), so it is set at that size in em, and dropped so its

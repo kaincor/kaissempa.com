@@ -16,12 +16,10 @@ const RADIUS = 20;
 /**
  * Space between the boxes, and between the heading and the first of them.
  *
- * Responsive rather than fixed: 75px is right beside a 560px-tall box and far
- * too much beside the 160px one a phone renders, where it left the column
- * reading as five unrelated items rather than a set. The ceiling keeps the
- * desktop spacing exactly where it was.
+ * Responsive rather than fixed, and tight: Kai found 75px loose even beside a
+ * 560px-tall box, so desktop tops out at 40px. A phone keeps its 30px.
  */
-const GAP = "clamp(30px, 6.7vw, 75px)";
+const GAP = "clamp(30px, 3vw, 40px)";
 
 /** Where the case studies point until the real pages exist. */
 const WIP = "/wip";
