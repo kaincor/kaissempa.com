@@ -104,7 +104,7 @@ const PAGES = [
 
 /** The links on the black range, in the Figma's order and colours. */
 /** On a phone the row runs LinkedIn, Instagram, GitHub, Letterboxd, Dribbble, Behance (the Mobile Footer's order). */
-const SOCIALS: { label: string; href: string; color?: string; style?: React.CSSProperties; seams?: boolean }[] = [
+const SOCIALS: { label: string; href: string; color?: string; style?: React.CSSProperties; art?: string }[] = [
   { label: "LinkedIn", href: "https://www.linkedin.com/in/kaissempa", color: "#006699" },
   { label: "GitHub", href: "https://github.com/kaincor", color: "#f5f5f5" },
   { label: "Instagram", href: "https://www.instagram.com/kaincor/", color: "#ff039a" },
@@ -119,9 +119,9 @@ const SOCIALS: { label: string; href: string; color?: string; style?: React.CSSP
       color: "transparent",
     },
   },
-  // Pink, with the ball's two seams running through the letters (Kai's
-  // Intersect layer, cut to the glyphs).
-  { label: "Dribbble", href: "https://dribbble.com/kitalala", color: "#e74d89", seams: true },
+  // Kai's own wordmark: the pink word with the ball's two pale seams
+  // running through the letters.
+  { label: "Dribbble", href: "https://dribbble.com/kitalala", art: "/footer/dribbble-wordmark.svg" },
   { label: "Behance", href: "https://www.behance.net/kaissempa", color: "#005be3" },
 ];
 
@@ -283,12 +283,9 @@ function Footer({ theme }: { theme: Theme }) {
                   className="csf-link"
                   style={{ color: l.color, ...l.style }}
                 >
-                  {l.seams ? (
-                    <span style={{ position: "relative", display: "inline-block" }}>
-                      {l.label}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/footer/dribbble-seams.svg" alt="" aria-hidden="true" className="csf-seams" />
-                    </span>
+                  {l.art ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.art} alt={l.label} className="csf-art" />
                   ) : (
                     l.label
                   )}
@@ -356,12 +353,13 @@ function Footer({ theme }: { theme: Theme }) {
           .csf-row { font-family: var(--font-display); font-weight: 400; text-transform: uppercase; }
           .csf-socials { right: 1.4286vw; }
           .csf-socials a { pointer-events: auto; }
-          /* The seams, cut to DRIBBBLE's glyphs in the frame (565 x 82 at 170),
-             so they start where the ink does: 8.5 in, and, in this line-height-1
-             row, 0.211em down (Kaicords' cap top). */
-          .csf-seams {
-            position: absolute; pointer-events: none;
-            left: 0.05em; top: 0.2112em; width: 3.3238em; height: 0.48em; max-width: none;
+          /* The Dribbble wordmark is the frame's DRIBBBLE text box at 170
+             (597 x 117), so it is set at that size in em, and dropped so its
+             letters sit where Kaicords' do in this line-height-1 row: their
+             tops are 19 into the box there and 0.211em down here. */
+          .csf-art {
+            display: block; width: 3.512em; height: 0.688em; max-width: none;
+            margin: 0.0987em 0 0.2133em;
           }
 
           /* Arrivals (data-stage on the footer): the name and year, or Home,
