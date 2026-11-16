@@ -33,8 +33,6 @@ const BACK = rangeById(12);
 const FRONT = OPENING;
 /** Flipped, so its peaks hang down out of the black section. */
 const CLOSING = rangeById(13);
-/** Flipped, closing More About Me back out into the page grey. */
-const FOOTER_RIDGE = rangeById(4);
 
 /**
  * How far the intro's mountain range lifts, and therefore how much every block
@@ -63,14 +61,6 @@ const INTRO_LIFT_TOTAL = 180;
  * the end, which is the part that was too big.
  */
 const INTRO_LIFT = 36;
-
-/**
- * Travel of the footer ridge. Kept short because trimBottom shortens the
- * document by the inherited lift, which puts the "end end" scroll position a
- * little out of reach — whatever travel has not run by the true bottom of the
- * page simply never runs. A small throw keeps that remainder small.
- */
-const FOOTER_RISE = 45;
 
 export default function Home() {
   return (
@@ -130,19 +120,6 @@ export default function Home() {
           lift rather than passing it on, so the chain down to the footer is
           unchanged. */}
       <MoreAboutMe range={OPENING} />
-
-      {/* The ridge out of More About Me into the page grey, where the footer's
-          two ranges rise. */}
-      <RidgeDivider
-        range={FOOTER_RIDGE}
-        rise={FOOTER_RISE}
-        sectionColor="#d4d4d4"
-        scrollOffset={["start end", "end end"]}
-      >
-        {/* The footer (CaseStudyFooter, from the layout) carries the links now; this
-            is just the grey the ridge opens onto above it. */}
-        <div aria-hidden="true" style={{ height: "clamp(24px, 5vw, 72px)" }} />
-      </RidgeDivider>
     </main>
   );
 }

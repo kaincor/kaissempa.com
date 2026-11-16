@@ -32,6 +32,8 @@ type Theme = {
   exact?: boolean;
   /** The site's pages: no thumbnails, and the name and year in place of the page links. */
   site?: boolean;
+  /** The name, copyright mark and year, where not the default off-white. */
+  ink?: string;
   /** The colour the page ends on, which the footer continues. */
   bg: string;
   /** The mountain: the navbar's glass for the study, same colour and opacity. */
@@ -51,9 +53,13 @@ const THEMES: Theme[] = [
     prefix,
     exact: true,
     site: true,
-    // The page grey they end on, and the frame's grey range, solid.
-    bg: "#d4d4d4",
-    ridge: "#525157",
+    // The colour each ends on: home runs straight on from More About Me's
+    // black; About and Work end in the page grey, under the frame's dark
+    // grey range. On home's black the two greys swap (Figma 3794:1931): the
+    // page grey for the range, the dark grey for the name and year.
+    bg: prefix === "/" ? "#000000" : "#d4d4d4",
+    ridge: prefix === "/" ? "#d4d4d4" : "#525157",
+    ink: prefix === "/" ? "#525157" : undefined,
     k: { src: "/footer/k-home.svg", ar: 140 / 176.235 },
   })),
 ];
@@ -150,12 +156,24 @@ function Footer({ theme }: { theme: Theme }) {
   // can't see the black range itself, which lets clicks through to the row
   // under it, so the range in front of it says so while the black is up.
   const front = useRef<HTMLDivElement>(null);
-  useMotionValueEvent(progress, "change", (v) => {
+  // What has arrived: the name and year once the first range is up, and the
+  // links, one after another, once the black one is. Scrolling back up
+  // takes them away again, so they come in afresh each time.
+  // Written straight onto the footer (data-stage), as the scroll moves.
+  const settle = (v: number) => {
+    if (ref.current) ref.current.dataset.stage = String(reduced ? 2 : v >= 0.97 ? 2 : v >= 0.47 ? 1 : 0);
     const el = front.current;
     if (!el) return;
     if (reduced || v > 0.8) el.dataset.themeColorBottom = "#000000";
     else delete el.dataset.themeColorBottom;
-  });
+  };
+  useMotionValueEvent(progress, "change", settle);
+  // Opened at the foot of the page, there is no scroll to report it.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => settle(progress.get()));
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress, reduced]);
 
   // Pinned with its foot on the bottom of the screen, however tall it is.
   useEffect(() => {
@@ -178,6 +196,7 @@ function Footer({ theme }: { theme: Theme }) {
     <div style={{ position: "relative", background: theme.bg }}>
       <footer
         ref={ref}
+        data-stage="0"
         style={{
           position: reduced || theme.site ? "relative" : "sticky",
           overflow: "hidden",
@@ -224,19 +243,18 @@ function Footer({ theme }: { theme: Theme }) {
               <img src={theme.k.src} alt="" style={{ display: "block", height: "100%", width: "auto", aspectRatio: theme.k.ar }} />
             </Link>
             {theme.site ? (
-              <p className="csf-name">
+              <p className="csf-name" style={theme.ink ? { color: theme.ink } : undefined}>
                 <span>Kai Ssempa</span>
                 {/* Kai's copyright mark: a Kaicords C in a hand-drawn ring. */}
                 <span className="csf-copy" role="img" aria-label="copyright">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/footer/copyright-ring.svg" alt="" />
+                  <i aria-hidden="true" />
                   <span aria-hidden="true">C</span>
                 </span>
                 <span suppressHydrationWarning>{new Date().getFullYear()}</span>
               </p>
             ) : (
-              PAGES.map((l) => (
-                <Link key={l.href} href={l.href} className="csf-link" style={{ color: "#f5f5f5" }}>
+              PAGES.map((l, i) => (
+                <Link key={l.href} href={l.href} className="csf-link csf-page" style={{ color: "#f5f5f5", ["--i" as string]: i }}>
                   {l.label}
                 </Link>
               ))
@@ -256,8 +274,8 @@ function Footer({ theme }: { theme: Theme }) {
             }}
           />
           <ul aria-label="Elsewhere" className="csf-row csf-socials">
-            {SOCIALS.map((l) => (
-              <li key={l.href}>
+            {SOCIALS.map((l, i) => (
+              <li key={l.href} style={{ ["--i" as string]: i }}>
                 <a
                   href={l.href}
                   target="_blank"
@@ -324,8 +342,14 @@ function Footer({ theme }: { theme: Theme }) {
              (3793:1893): the ring 130 x 133 at 170, about 62 either side. */
           .csf-name { display: flex; align-items: center; gap: 0.37em; margin: 0; color: #f5f5f5; }
           .csf-copy { position: relative; display: block; width: 0.762em; height: 0.784em; flex: none; }
-          /* The ring's stroke runs 7% past its box, as drawn. */
-          .csf-copy img { position: absolute; left: -7.33%; top: -7.13%; width: 114.67%; height: 114.26%; max-width: none; }
+          /* The ring's stroke runs 7% past its box, as drawn. It is a mask in
+             the text's colour, so it follows the name's ink. */
+          .csf-copy i {
+            position: absolute; left: -7.33%; top: -7.13%; width: 114.67%; height: 114.26%;
+            background: currentColor;
+            mask: url(/footer/copyright-ring.svg) center / 100% 100% no-repeat;
+            -webkit-mask: url(/footer/copyright-ring.svg) center / 100% 100% no-repeat;
+          }
           /* The C at 128 of 170, centred in the ring (Kaicords' caps sit a
              touch above the middle of the line, hence the nudge down). */
           .csf-copy span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.753em; transform: translateY(0.04em); }
@@ -338,6 +362,27 @@ function Footer({ theme }: { theme: Theme }) {
           .csf-seams {
             position: absolute; pointer-events: none;
             left: 0.05em; top: 0.2112em; width: 3.3238em; height: 0.48em; max-width: none;
+          }
+
+          /* Arrivals (data-stage on the footer): the name and year, or Home,
+             Work and About one by one, rise in as the first range lands, then
+             the links one by one, left to right, as the black one does.
+             Leaving, they go at once. */
+          .csf-name, .csf-page, .csf-socials li {
+            opacity: 0; transform: translateY(0.7em);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+          }
+          footer[data-stage="1"] .csf-name, footer[data-stage="2"] .csf-name,
+          footer[data-stage="1"] .csf-page, footer[data-stage="2"] .csf-page,
+          footer[data-stage="2"] .csf-socials li {
+            opacity: 1; transform: none;
+            transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+          }
+          footer[data-stage="1"] .csf-page, footer[data-stage="2"] .csf-socials li { transition-delay: calc(var(--i) * 70ms); }
+          /* Home, Work and About still dim on hover, at once. */
+          footer[data-stage] .csf-page:hover { opacity: 0.75; transition-delay: 0s; }
+          @media (prefers-reduced-motion: reduce) {
+            .csf-name, .csf-page, .csf-socials li { opacity: 1; transform: none; transition: none; }
           }
 
           .csf-link { display: block; text-decoration: none; transition: opacity 0.2s ease; }
