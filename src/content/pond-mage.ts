@@ -6,7 +6,14 @@
 
 import type { RosePlace } from "@/components/pond-mage/RoseHeading";
 
-export type Figure = { src: string; w: number; h: number; caption: string };
+export type Figure = {
+  src: string;
+  w: number;
+  h: number;
+  caption: string;
+  /** Shown printed on handmade paper instead (scripts/pond-mage-paper.py). */
+  paper?: { src: string; w: number; h: number };
+};
 export type Section = {
   id: string;
   title: string;
@@ -18,6 +25,8 @@ export type Section = {
   rose?: RosePlace;
   /** Photos to swipe through, in place of figures. */
   deck?: { src: string; alt: string }[];
+  /** Photos printed on handmade paper, dealt out like cards. */
+  paper?: { src: string; alt: string; w: number; h: number }[];
 };
 
 const pr = (name: string, w: number, h: number, caption: string): Figure => ({
@@ -42,7 +51,12 @@ export const SECTIONS: Section[] = [
       "My early ideas bounced between a murky swamp, a raft on a moonlit river, or somewhere on campus—like Lake Lagunita. It just had to be by a body of water.",
       "To be human or not to be human became the big question for my mage, who was set to star as our lead character and main piece of geometry. Uncanny valley can be pretty hard to avoid, and the last thing I wanted was an off-putting model. I forwent uncanny valley entirely by choosing to make our mage a whimsical, fantastical creature.",
     ],
-    figures: [pr("bed", 1183, 599, "An early version: the mage on a bed, floating in the middle of a lake.")],
+    figures: [
+      {
+        ...pr("bed", 1183, 599, "An early version: the mage on a bed, floating in the middle of a lake."),
+        paper: { src: "/pond-mage/process/bed-paper.webp", w: 1800, h: 1035 },
+      },
+    ],
   },
   {
     id: "lagunita",
@@ -52,17 +66,11 @@ export const SECTIONS: Section[] = [
       "I wanted the scene to be modelled on somewhere at Stanford, and Lake Lagunita felt like the right choice, because I love it. It ebbs and flows with the seasons: the winter rain fills it, by summer it drains back to a meadow, and every time I go it's somewhere in between, blue or marshy or gold, often under one of the best sunsets on campus.",
       "I love it so much I have a whole album of it. Here's most of it.",
     ],
-    deck: [
-      { src: "6383", alt: "Lake Lagunita full and blue, with green grass on its banks" },
-      { src: "5887", alt: "Sunset over Lake Lagunita, the sky pink and orange in the water" },
-      { src: "0456", alt: "Lake Lagunita as a marsh, pools of water in tall green grass" },
-      { src: "4387", alt: "A bike leaning on a lamp post by the path along Lake Lagunita" },
-      { src: "5888", alt: "Dusk at Lake Lagunita, reeds dark against the lit water" },
-      { src: "4385", alt: "Lake Lagunita drying out, a thin sheet of water on the grass" },
-      { src: "0459", alt: "Tall grass where Lake Lagunita has drained, under a clear sky" },
-      { src: "2861", alt: "A plate of lunch held up over the marshy lake" },
-      { src: "1780", alt: "A takeout box on the grass by the lake at sunset" },
-      { src: "9736", alt: "The sun going down behind the trees across Lake Lagunita" },
+    paper: [
+      { src: "/pond-mage/lagunita/paper-2861.webp", w: 710, h: 1200, alt: "A plate of lunch held up over the marshy lake" },
+      { src: "/pond-mage/lagunita/paper-5888.webp", w: 900, h: 1200, alt: "Dusk at Lake Lagunita, reeds dark against the lit water" },
+      { src: "/pond-mage/lagunita/paper-6383.webp", w: 900, h: 1200, alt: "Lake Lagunita full and blue, with green grass on its banks" },
+      { src: "/pond-mage/lagunita/paper-0456.webp", w: 1200, h: 942, alt: "Lake Lagunita as a marsh, pools of water in tall green grass" },
     ],
   },
   {

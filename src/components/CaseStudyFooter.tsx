@@ -48,7 +48,9 @@ const THEMES: Theme[] = [
   // Clear, so Mint's room (fixed behind the page, clouds of light and all)
   // carries on behind the thumbnails rather than stopping at a flat grey.
   { prefix: "/mint", bg: "transparent", ridge: "rgba(183, 39, 43, 0.74)", k: { src: "/footer/k-mint.png", ar: 289 / 363 } },
-  { prefix: "/pond-mage", bg: "#140b17", ridge: "rgba(157, 114, 170, 0.5)", k: { src: "/footer/k-pond-mage.svg", ar: 347 / 363 } },
+  // Clear, so the fireflies (PondNight) carry on behind the thumbnails; the
+  // page sets the dusk under it.
+  { prefix: "/pond-mage", bg: "transparent", ridge: "rgba(157, 114, 170, 0.5)", k: { src: "/footer/k-pond-mage.svg", ar: 347 / 363 } },
   ...["/", "/about", "/work"].map((prefix) => ({
     prefix,
     exact: true,

@@ -36,7 +36,7 @@ export default function RoseHeading({ text, rose }: { text: string; rose: RosePl
   // The letter's box, relative to the heading.
   useEffect(() => {
     const el = wrap.current;
-    const node = el?.firstChild;
+    const node = el?.firstChild?.firstChild;
     if (!el || !node || node.nodeType !== Node.TEXT_NODE) return;
     const places: RosePlace[] = JSON.parse(key);
     const measure = () => {
@@ -112,7 +112,8 @@ export default function RoseHeading({ text, rose }: { text: string; rose: RosePl
 
   return (
     <span ref={wrap} style={{ position: "relative", display: "inline-block" }}>
-      {text}
+      {/* The lettering alone carries the gold and the rough edge, so the roses stay crisp. */}
+      <span className="pm-gold pm-rough">{text}</span>
       {blooms}
     </span>
   );

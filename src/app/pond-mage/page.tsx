@@ -8,6 +8,8 @@ import FadeIn from "@/components/fortuna/FadeIn";
 import SwipeDeck from "@/components/SwipeDeck";
 import RoseHeading from "@/components/pond-mage/RoseHeading";
 import DropCap from "@/components/pond-mage/DropCap";
+import PondNight from "@/components/pond-mage/PondNight";
+import PaperDeal from "@/components/pond-mage/PaperDeal";
 import { CREDITS, DESK, DESK_ROSE, LEDE, SECTIONS, type Figure } from "@/content/pond-mage";
 import { Libre_Baskerville } from "next/font/google";
 
@@ -16,6 +18,8 @@ const baskerville = Libre_Baskerville({ subsets: ["latin"], weight: ["400", "700
 
 /** The night: the render's sky, taken darker so the render glows against it. */
 const NIGHT = "#140b17";
+/** Where the page has faded to by its foot: dusk. The footer carries it on (CaseStudyFooter). */
+const DUSK = "#3a2747";
 /** Kai's lettering colour, for the headings. */
 const GOLD = "#efd48c";
 /** The thumbnail's purple, for the small labels. */
@@ -45,17 +49,37 @@ const label = {
 function Fig({ f, sizes }: { f: Figure; sizes: string }) {
   return (
     <figure style={{ margin: 0 }}>
-      <Image
-        src={f.src}
-        alt={f.caption}
-        width={f.w}
-        height={f.h}
-        sizes={sizes}
-        quality={85}
-        style={{ width: "100%", height: "auto", display: "block", borderRadius: 6 }}
-      />
+      {f.paper ? (
+        // Printed on a sheet of handmade paper, set down a touch askew; the
+        // shadow follows the sheet's torn edges.
+        <Image
+          src={f.paper.src}
+          alt={f.caption}
+          width={f.paper.w}
+          height={f.paper.h}
+          sizes={sizes}
+          quality={85}
+          style={{
+            width: "100%",
+            height: "auto",
+            display: "block",
+            transform: "rotate(-0.8deg)",
+            filter: "drop-shadow(4px 12px 14px rgba(8, 2, 14, 0.5)) drop-shadow(0 2px 3px rgba(8, 2, 14, 0.35))",
+          }}
+        />
+      ) : (
+        <Image
+          src={f.src}
+          alt={f.caption}
+          width={f.w}
+          height={f.h}
+          sizes={sizes}
+          quality={85}
+          style={{ width: "100%", height: "auto", display: "block", borderRadius: 6 }}
+        />
+      )}
       <figcaption
-        style={{ marginTop: 10, fontFamily: "var(--font-body)", fontSize: 13.5, lineHeight: 1.5, color: "rgba(240, 232, 244, 0.58)" }}
+        style={{ marginTop: f.paper ? 18 : 10, fontFamily: baskerville.style.fontFamily, fontSize: 13.5, lineHeight: 1.55, color: "rgba(240, 232, 244, 0.62)" }}
       >
         {f.caption}
       </figcaption>
@@ -67,32 +91,60 @@ export default function PondMagePage() {
   // The headings and the navbar are set in Kaisteel (theme.css).
   preload("/pond-mage/fonts/Kaisteel-Regular.woff2", { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
-    <main className="flex-1" style={{ background: NIGHT, color: TEXT }}>
-      {/* The render, as large as the screen allows at its own 16:9. */}
-      <section style={{ position: "relative" }}>
+    <main
+      className="flex-1"
+      style={{
+        // Night under the render, fading the whole way down to dusk.
+        backgroundColor: NIGHT,
+        backgroundImage: `linear-gradient(to bottom, ${NIGHT} 0%, ${NIGHT} 10%, ${DUSK} 100%)`,
+        color: TEXT,
+        // Its own stacking context, so the fireflies (z-index -1) sit above
+        // this background and under everything on it.
+        isolation: "isolate",
+      }}
+    >
+      {/* The footer is clear on this page so the fireflies carry on behind
+          the thumbnails; the page's foot is dusk under it. */}
+      <style>{`body { background-color: ${DUSK}; }`}</style>
+      <PondNight />
+      {/* Kai's rough edge for the Kaisteel lettering (Figma: texture, size
+          2.5, radius 4 at the title's 157px), scaled to the headings' size. */}
+      <svg aria-hidden="true" width="0" height="0" style={{ position: "absolute" }}>
+        <filter id="pm-rough-text" x="-5%" y="-20%" width="110%" height="140%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="7" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
+      {/* The render, edge to edge. At its own 16:9 across the full width,
+          and no taller than the screen: on a screen wider than 16:9 it is
+          cropped a little top and bottom, centred, rather than shrunk to
+          leave bands at the sides. */}
+      <section style={{ position: "relative", height: "min(56.25vw, 100svh)", overflow: "hidden" }}>
         <div
           style={{
-            position: "relative",
-            width: "min(100%, calc(100svh * 16 / 9))",
+            position: "absolute",
+            left: 0,
+            width: "100%",
+            top: "50%",
+            transform: "translateY(-50%)",
             aspectRatio: "16 / 9",
-            margin: "0 auto",
           }}
         >
           <PondScene priority />
-          {/* Lets the render's foot settle into the page. */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: "14%",
-              background: `linear-gradient(to bottom, transparent, ${NIGHT})`,
-              pointerEvents: "none",
-            }}
-          />
         </div>
+        {/* Lets the render's foot settle into the page. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "14%",
+            background: `linear-gradient(to bottom, transparent, ${NIGHT})`,
+            pointerEvents: "none",
+          }}
+        />
       </section>
 
       {/* Short at the foot: the first section has no heading, and runs on
@@ -113,7 +165,7 @@ export default function PondMagePage() {
                 textWrap: "balance",
               }}
             >
-              {LEDE}
+              <span className="pm-gold pm-rough">{LEDE}</span>
             </p>
           </FadeIn>
           {/* A single rule under the line. */}
@@ -144,7 +196,7 @@ export default function PondMagePage() {
                       color: GOLD,
                     }}
                   >
-                    {s.rose ? <RoseHeading text={s.title} rose={s.rose} /> : s.title}
+                    {s.rose ? <RoseHeading text={s.title} rose={s.rose} /> : <span className="pm-gold pm-rough">{s.title}</span>}
                   </h2>
                 </FadeIn>
               )}
@@ -156,6 +208,12 @@ export default function PondMagePage() {
                 </FadeIn>
               ))}
             </div>
+            {s.paper ? (
+              // Clipped at the sides: the deck waits off the right of the screen.
+              <div style={{ padding: "clamp(28px, 5vh, 56px) 0 16px", overflowX: "clip" }}>
+                <PaperDeal photos={s.paper} />
+              </div>
+            ) : null}
             {s.deck ? (
               <div style={{ display: "flex", justifyContent: "center", padding: "clamp(24px, 4vh, 40px) 0 8px" }}>
                 <SwipeDeck

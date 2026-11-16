@@ -16,9 +16,9 @@
    under the heading), so two lines run beside the cap and the third sits
    right beneath it. Their colours, all in one place. */
 .pm-cap {
-  --pm-cap-ground: #000000;
+  --pm-cap-ground: transparent; /* was #000000; trying the caps on the dusk */
   --pm-cap-letter: #d1c9d4;
-  --pm-cap-leaf: #554a01;
+  --pm-cap-leaf: #7d6d01;
   --pm-cap-red: #c44311;
   --pm-cap-dark: #a32001;
   float: left;
@@ -27,3 +27,19 @@
   aspect-ratio: 195 / 203;
   margin: calc(-0.455 * 1.65em) 2.5px 0 -0.15em;
 }
+
+/* Kai's gold for the Kaisteel lettering (Figma: Pond Mage, "Font"): olive
+   gold at the top of each line, deep olive at the foot. Put on an inline
+   span, so a heading that wraps shades each line on its own. */
+.pm-gold {
+  background-image: linear-gradient(to bottom, #b49c1a, #7d6d01);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* The rough, crayon-pressed edge from Kai's Figma texture (filter in page.tsx;
+   the title SVG carries its own). */
+.pm-rough { filter: url(#pm-rough-text); }
