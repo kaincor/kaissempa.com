@@ -46,7 +46,7 @@ const label = {
   color: LILAC,
 } as const;
 
-function Fig({ f, sizes }: { f: Figure; sizes: string }) {
+function Fig({ f, sizes, bare }: { f: Figure; sizes: string; bare?: boolean }) {
   return (
     <figure style={{ margin: 0 }}>
       {f.paper ? (
@@ -78,11 +78,13 @@ function Fig({ f, sizes }: { f: Figure; sizes: string }) {
           style={{ width: "100%", height: "auto", display: "block", borderRadius: 6 }}
         />
       )}
+      {bare ? null : (
       <figcaption
         style={{ marginTop: f.paper ? 18 : 10, fontFamily: baskerville.style.fontFamily, fontSize: 13.5, lineHeight: 1.55, color: "rgba(240, 232, 244, 0.62)" }}
       >
         {f.caption}
       </figcaption>
+      )}
     </figure>
   );
 }
@@ -179,10 +181,10 @@ export default function PondMagePage() {
           <section
             key={s.id}
             id={s.id}
-            style={{ padding: s.hideTitle ? "0 0 clamp(36px, 6vh, 64px)" : "clamp(36px, 6vh, 64px) 0" }}
+            style={{ padding: s.hideTitle || s.cont ? "0 0 clamp(36px, 6vh, 64px)" : "clamp(36px, 6vh, 64px) 0" }}
           >
             <div style={{ width: COLUMN, margin: "0 auto" }}>
-              {s.hideTitle ? (
+              {s.cont ? null : s.hideTitle ? (
                 <h2 className="sr-only">{s.title}</h2>
               ) : (
                 <FadeIn>
@@ -202,8 +204,8 @@ export default function PondMagePage() {
               )}
               {s.body.map((p, i) => (
                 <FadeIn key={i}>
-                  <p style={{ margin: i > 0 ? "0 0 1em" : s.hideTitle ? "calc(0.455 * 1.65em) 0 1em" : "calc(0.955 * 1.65em) 0 1em", fontFamily: baskerville.style.fontFamily, fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
-                    {i === 0 ? <DropCap text={p} /> : p}
+                  <p style={{ margin: i > 0 || s.cont ? "0 0 1em" : s.hideTitle ? "calc(0.455 * 1.65em) 0 1em" : "calc(0.955 * 1.65em) 0 1em", fontFamily: baskerville.style.fontFamily, fontSize: "clamp(16px, 1.25vw, 18px)", lineHeight: 1.65 }}>
+                    {i === 0 && !s.cont ? <DropCap text={p} /> : p}
                   </p>
                 </FadeIn>
               ))}
@@ -239,10 +241,17 @@ export default function PondMagePage() {
               >
                 {s.figures.map((f) => (
                   <FadeIn key={f.src}>
-                    <Fig f={f} sizes={many ? "(max-width: 700px) 100vw, 520px" : "(max-width: 1080px) 100vw, 1040px"} />
+                    <Fig f={f} bare={!!s.caption} sizes={many ? "(max-width: 700px) 100vw, 520px" : "(max-width: 1080px) 100vw, 1040px"} />
                   </FadeIn>
                 ))}
               </div>
+            ) : null}
+            {s.caption ? (
+              <FadeIn>
+                <p style={{ width: WIDE, margin: "10px auto 0", fontFamily: baskerville.style.fontFamily, fontSize: 13.5, lineHeight: 1.55, color: "rgba(240, 232, 244, 0.62)" }}>
+                  {s.caption}
+                </p>
+              </FadeIn>
             ) : null}
           </section>
         );

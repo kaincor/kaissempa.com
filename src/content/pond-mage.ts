@@ -25,6 +25,10 @@ export type Section = {
   rose?: RosePlace;
   /** Photos to swipe through, in place of figures. */
   deck?: { src: string; alt: string }[];
+  /** Carries on from the section before: no heading, and no drop cap. */
+  cont?: boolean;
+  /** One caption under all the figures, in place of their own. */
+  caption?: string;
   /** Photos printed on handmade paper, dealt out like cards. */
   paper?: { src: string; alt: string; w: number; h: number }[];
 };
@@ -45,15 +49,13 @@ export const SECTIONS: Section[] = [
     hideTitle: true,
     rose: { c: "D", at: 0, u: 0.15, v: 0.92, w: 1.1, mirror: true },
     body: [
-      "I love mixed media, like 2D characters in a 3D setting, or (other example). So since this project had to be entirely in 3D, I knew from the beginning I was going for a blend of stylized + realistic.",
-      "Having a little lake or swamp there too would be one of the best ways for us to show off Cycles’ ray-tracing capabilities. I also wanted to explore dramatic lighting setups: dim area lighting coupled with stronger point lighting to illuminate our character.",
-      "I've seen a lot of Reels with Blender art so I feel like I already had plenty of stuff to pull from.",
-      "My early ideas bounced between a murky swamp, a raft on a moonlit river, or somewhere on campus—like Lake Lagunita. It just had to be by a body of water.",
-      "To be human or not to be human became the big question for my mage, who was set to star as our lead character and main piece of geometry. Uncanny valley can be pretty hard to avoid, and the last thing I wanted was an off-putting model. I forwent uncanny valley entirely by choosing to make our mage a whimsical, fantastical creature.",
+      "I love mixed media, like 2D characters in a 3D setting, or a blend of stylized and realistic aesthetics. So I knew from the beginning I was going for a blend of both for the scene.",
+      "Having a little lake or swamp there would be a great way to show off Cycles’ ray-tracing capabilities. I was thinking dim area lighting coupled with stronger point lighting to illuminate the character.",
+      "To be human or not to be human became the big question for my mage, who was set to star as the main piece of geometry. Uncanny valley can be pretty hard to avoid and the last thing I wanted was an off-putting model. I forwent uncanny valley entirely by choosing to make our mage a whimsical creature.",
     ],
     figures: [
       {
-        ...pr("bed", 1183, 599, "An early version: the mage on a bed, floating in the middle of a lake."),
+        ...pr("bed", 1183, 599, "An early version of our scene had the mage sitting atop a bed floating in the middle of a lake. As for how she got there? We’ll never know."),
         paper: { src: "/pond-mage/process/bed-paper.webp", w: 1800, h: 1035 },
       },
     ],
@@ -61,10 +63,10 @@ export const SECTIONS: Section[] = [
   {
     id: "lagunita",
     title: "Lake Lagunita",
-    rose: { c: "E", at: 12, u: 1.3, v: 1.08, w: 1.5 },
+    cont: true,
     body: [
-      "I wanted the scene to be modelled on somewhere at Stanford, and Lake Lagunita felt like the right choice, because I love it. It ebbs and flows with the seasons: the winter rain fills it, by summer it drains back to a meadow, and every time I go it's somewhere in between, blue or marshy or gold, often under one of the best sunsets on campus.",
-      "I love it so much I have a whole album of it. Here's most of it.",
+      "Lake Lagunita is one of my favorite spots on campus. It’s seen my sunset bike rides, my Valentine’s day dinner dates, my heavy bench side conversations, my Bible study bonfires.",
+      "I have a truck ton of pictures of the lake 🛻 I based the scene’s setting off of it.",
     ],
     paper: [
       { src: "/pond-mage/lagunita/paper-2861.webp", w: 710, h: 1200, alt: "A plate of lunch held up over the marshy lake" },
@@ -75,46 +77,45 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "mage",
-    title: "The mage",
-    rose: { c: "C", at: 4, u: 0.55, v: -0.28, w: 1.01 },
+    title: "The Field, the Mage, and the Magic.",
+    rose: { c: "B", at: 8, u: 0.9, v: 0.2, w: 0.44 },
     body: [
-      "She's the main piece of geometry and where most of the hours went. I learned booleans, sculpting and the LoopTools add-on on her, partly by following a modelling time-lapse slowed to a quarter speed.",
-      "When I showed people a later version, not one of them read her hat as a hat. Everyone saw a horn. A brim fixed it.",
+      "The mage was the main piece of geometry, so most of the time went into booleans, slight sculpting, and LoopTools. I slowed down a timelapse tutorial to 0.25x for reference.",
+      "When I showed some friends an early version, not one of them read her hat as a hat. Everyone saw a horn. Adding a little brim fixed it.",
     ],
     figures: [
-      pr("base", 1531, 1600, "The base of the mage, where the scene began."),
-      pr("horn", 1344, 689, "A later version, with the hat everyone read as a horn."),
-      pr("skin-nodes", 1022, 509, "The shader nodes behind her skin."),
+      pr("base", 1531, 1600, "A tadpole: the base of the mage."),
+      pr("horn", 1344, 689, "A later version of the mage, with the hat everyone read as a horn."),
     ],
+    caption:
+      "A tadpole, a later version of the mage. Viewers felt like the mage’s hat looked like a horn—not a single person thought it was a hat. I reworked it to have a hat-like brim.",
   },
   {
     id: "landscape",
     title: "The field",
-    rose: { c: "B", at: 8, u: 0.9, v: 0.2, w: 0.44 },
+    cont: true,
     body: [
-      "The field is one grass model, scattered across the ground with geometry nodes instead of placed by hand. I gave the setup sliders for how dense the grass and the red flowers grow, with some randomness, so I could thin and thicken patches on the fly and keep it from looking planted in rows. It saved hours of nudging blades around.",
-      "Under the surface, the ground dips below zero so the pond can fill the hollow.",
+      "For the landscape, I placed a singular grass model into a geometry node system so we could spread it around the plane.",
     ],
     figures: [
-      pr("geometry-nodes", 1277, 655, "The geometry nodes, with the density sliders on the right."),
-      pr("ground", 1344, 691, "Below ground, the plane dips so the pond can fill it."),
+      pr("geometry-nodes", 1277, 655, "A peek into the handy geometry nodes we arranged to spread the greenery across the landscape. On the right of the screen sits the sliders I created to allow myself to adjust the density of the grass and red flowers on the fly. Working with geometry nodes saved me tons of time."),
     ],
   },
   {
     id: "wand",
     title: "The wand",
-    rose: { c: "D", at: 4, u: 0.3, v: 0.0, w: 0.97 },
+    cont: true,
     body: [
-      "It's a sliver of the frame, but it's the whole reason the frog is floating, so it got extra attention. I started from a cylinder, stretched and subdivided it, then scraped and sanded it with the sculpt tools until it read as a slim stick. Then I UV-unwrapped it and gave it a material as stick-like as a stick can be.",
+      "The wand makes up a small part of the final scene, but it’s still pretty instrumental. I started off with a cylinder, stretched and subdivided it, then scraped and sanded it down. Then I UV-unwrapped it and gave it a material as stick-like as a stick could be.",
     ],
     figures: [pr("wand", 974, 588, "Sculpting the wand.")],
   },
   {
     id: "magic",
     title: "The magic",
-    rose: { c: "E", at: 8, u: 1.45, v: 1.0, w: 1.41 },
+    cont: true,
     body: [
-      "The spell is a particle system: a handful of icospheres with an emission layer for the glow, scattered through a field around the frog. The first version stood straight up, and people saw a peculiar pillar of fireflies, not magic. I moved it so it streams from the wand instead.",
+      "The spell is a particle system of a handful of icospheres with an emission layer to give it that glowy effect. Viewers felt that this version looked more like a peculiar pillar of fireflies than a magical aura. I reworked it so it looks like it’s emanating from the wand itself.",
     ],
     figures: [pr("fireflies", 997, 488, "The first particle system: the pillar of fireflies.")],
   },
