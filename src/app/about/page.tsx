@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import AboutMore from "@/components/AboutMore";
 import MoreAboutMe from "@/components/MoreAboutMe";
 import RidgeDivider from "@/components/RidgeDivider";
-import SocialLinks from "@/components/SocialLinks";
 import { rangeById } from "@/data/mountainRanges";
 
 export const metadata: Metadata = {
@@ -20,7 +19,9 @@ export default function AboutPage() {
       <MoreAboutMe range={rangeById(1)} heading="About" headingAs="h1" topPad="clamp(110px, 18svh, 170px)" />
       <AboutMore />
       <RidgeDivider range={rangeById(4)} rise={45} sectionColor="#d4d4d4" scrollOffset={["start end", "end end"]}>
-        <SocialLinks />
+        {/* The footer (CaseStudyFooter, from the layout) carries the links now; this
+            is just the grey the ridge opens onto above it. */}
+        <div aria-hidden="true" style={{ height: "clamp(24px, 5vw, 72px)" }} />
       </RidgeDivider>
     </main>
   );

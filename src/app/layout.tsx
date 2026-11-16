@@ -87,7 +87,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeColor />
         <Navbar />
         {children}
-        {/* Only on the case studies; renders nothing elsewhere. */}
+        {/* On the case studies, home, About and Work; nothing elsewhere. */}
         <CaseStudyFooter />
       </body>
     </html>

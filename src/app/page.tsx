@@ -1,7 +1,6 @@
 import About from "@/components/About";
 import Hero from "@/components/Hero";
 import MoreAboutMe from "@/components/MoreAboutMe";
-import SocialLinks from "@/components/SocialLinks";
 import ProjectsAndProducts from "@/components/ProjectsAndProducts";
 import MountainRange from "@/components/MountainRange";
 import RidgeDivider from "@/components/RidgeDivider";
@@ -132,16 +131,17 @@ export default function Home() {
           unchanged. */}
       <MoreAboutMe range={OPENING} />
 
-      {/* The chips inside carry a drift of their own, on a shorter throw than
-          this block's, so the ridge and the row arrive at different rates
-          rather than sliding in as one piece. */}
+      {/* The ridge out of More About Me into the page grey, where the footer's
+          two ranges rise. */}
       <RidgeDivider
         range={FOOTER_RIDGE}
         rise={FOOTER_RISE}
         sectionColor="#d4d4d4"
         scrollOffset={["start end", "end end"]}
       >
-        <SocialLinks />
+        {/* The footer (CaseStudyFooter, from the layout) carries the links now; this
+            is just the grey the ridge opens onto above it. */}
+        <div aria-hidden="true" style={{ height: "clamp(24px, 5vw, 72px)" }} />
       </RidgeDivider>
     </main>
   );
