@@ -51,6 +51,8 @@ const THEMES: Theme[] = [
   // Clear, so the fireflies (PondNight) carry on behind the thumbnails; the
   // page sets the dusk under it.
   { prefix: "/pond-mage", bg: "transparent", ridge: "rgba(157, 114, 170, 0.5)", k: { src: "/footer/k-pond-mage.svg", ar: 347 / 363 } },
+  // The page's old paper, deepened at its foot, with the box's red range.
+  { prefix: "/mark-of-the-witch", bg: "#e0d2b2", ridge: "rgba(157, 44, 40, 0.7)", k: { src: "/footer/k-motw.png", ar: 289 / 363 } },
   ...["/", "/about", "/work"].map((prefix) => ({
     prefix,
     exact: true,

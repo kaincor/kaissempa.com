@@ -140,6 +140,17 @@ const CASE_THEMES: {
     roses: true,
   },
   {
+    prefix: "/mark-of-the-witch",
+    // The box's red title, #9d2c28, over the old paper.
+    bar: "rgba(157, 44, 40, 0.72)",
+    menu: "linear-gradient(270deg, rgba(157, 44, 40, 0.76) 0%, rgba(157, 44, 40, 0.82) 100%)",
+    blur: 8,
+    // IM Fell English SC, the cards' face, declared on :root by the page.
+    font: "var(--motw-fell-sc)",
+    size: 18,
+    weight: 400,
+  },
+  {
     prefix: "/mint",
     // Zorzal's recipe in the MINT wordmark's red, #b7272b, over the page's
     // studio grey. Keeps the site's own menu face.

@@ -37,6 +37,8 @@ const FORTUNA_GREEN = { rgb: "105 189 69", alpha: 0.62 };
 const POND_MAGE_PURPLE = { rgb: "157 114 170", alpha: 0.62 };
 /** The red of the MINT wordmark on the kitchen covers. */
 const MINT_RED = { rgb: "182 38 42", alpha: 0.6 };
+/** The red of the Mark of the Witch box's title. */
+const MOTW_RED = { rgb: "157 44 40", alpha: 0.55 };
 
 /**
  * A line or two about each project, shown under its thumbnail on the Work
@@ -51,7 +53,11 @@ const INFO: Record<string, Info> = {
     blurb: "A swipe-to-work app that launched in Miami. I worked on the brand, the app, and everything in between.",
   },
   Zorzal: { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
-  "Mark of the Witch": { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
+  "Mark of the Witch": {
+    role: "Packaging and renders",
+    year: "2025",
+    blurb: "A social deduction card game set in a witch hunt. I made the box and the renders.",
+  },
   "Mint Magazine": { role: "Role", year: "Year", blurb: "A line about the project, and what you did on it.", filler: true },
   "Pond Mage": {
     role: "3D modeling",
@@ -162,7 +168,7 @@ export function ProjectThumbs({
         <MintSlideshow sizes={sizes} />
       </Thumb>
 
-      <Thumb fill={fill} label="Mark of the Witch" info={info("Mark of the Witch")}>
+      <Thumb fill={fill} label="Mark of the Witch" href="/mark-of-the-witch" shadow={MOTW_RED} info={info("Mark of the Witch")}>
         <MotwScene maxWidth={maxWidth} />
       </Thumb>
 
