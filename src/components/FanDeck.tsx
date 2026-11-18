@@ -93,6 +93,9 @@ const PUSH_FALLOFF = 0.6;
 const ROTATION_FALLOFF = 0.2;
 const ROTATION_PUSH_RATIO = 1 / 30;
 
+/** How long the cursor is ignored once the fan starts opening, ms. */
+const HOVER_HOLD_MS = 800;
+
 export default function FanDeck({
   cards,
   count = 7,
@@ -168,6 +171,16 @@ export default function FanDeck({
       io?.disconnect();
     };
   }, [reduced]);
+
+  // The cursor is ignored for the first 0.8s of the fan opening, so a mouse
+  // resting where the cards land can't pull them off course mid-flight.
+  // Hovers start counting again from the first move after that.
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    if (!entered) return;
+    const t = setTimeout(() => setLive(true), reduced ? 0 : HOVER_HOLD_MS);
+    return () => clearTimeout(t);
+  }, [entered, reduced]);
 
   useEffect(() => {
     if (!entered || reduced) return;
@@ -250,7 +263,8 @@ export default function FanDeck({
             tabIndex={0}
             role={card ? "img" : undefined}
             aria-label={card?.alt}
-            onMouseEnter={() => setActive(i)}
+            onMouseEnter={() => live && setActive(i)}
+            onMouseMove={() => live && active !== i && setActive(i)}
             onFocus={() => setActive(i)}
             onBlur={() => setActive(null)}
             style={{

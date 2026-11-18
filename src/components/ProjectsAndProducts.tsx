@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
@@ -9,6 +8,7 @@ import SectionHeading from "@/components/SectionHeading";
 import FortunaThumb from "@/components/FortunaThumb";
 import MintSlideshow from "@/components/MintSlideshow";
 import MotwScene from "@/components/motw/MotwScene";
+import PondScene from "@/components/pond-mage/PondScene";
 
 /** Every box is 2:1 and 1120 wide at most, matching the Framer build. */
 const MAX_WIDTH = 1120;
@@ -173,14 +173,12 @@ export function ProjectThumbs({
       </Thumb>
 
       <Thumb fill={fill} label="Pond Mage" href="/pond-mage" shadow={POND_MAGE_PURPLE} info={info("Pond Mage")}>
-        <Image
-          src="/case-studies/pond-mage.jpg"
-          alt="Pond Mage"
-          fill
-          sizes={sizes}
-          quality={85}
-          style={{ objectFit: "cover" }}
-        />
+        {/* The case study's own scene, title scribble and roses included,
+            cropped the way the old still was: the render's full width, from
+            80px down, so its title lands where the still had it. */}
+        <div style={{ position: "absolute", left: 0, width: "100%", top: `${(-80 / 960) * 100}%`, aspectRatio: "16 / 9" }}>
+          <PondScene />
+        </div>
       </Thumb>
 
       {/* Placeholder for work still to come. */}
