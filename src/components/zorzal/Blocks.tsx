@@ -68,7 +68,8 @@ const DRIFT: Partial<Record<Block["t"], number>> = {
 };
 const GALLERY_DRIFT = [14, 30, 20];
 
-export function SectionBand({ section }: { section: Section }) {
+/** `draft` shows the stand-ins for the chapter icons still being drawn. */
+export function SectionBand({ section, draft = false }: { section: Section; draft?: boolean }) {
   const tone = TONE[section.tone];
   return (
     <section
@@ -83,7 +84,7 @@ export function SectionBand({ section }: { section: Section }) {
     >
       {section.part ? <Part>{section.part}</Part> : null}
       <FadeIn>
-        <ChapterTitle icon={section.icon} dark={section.tone === "forest"}>
+        <ChapterTitle icon={draft ? section.icon : null} dark={section.tone === "forest"}>
           {section.title}
         </ChapterTitle>
       </FadeIn>
@@ -122,7 +123,7 @@ function Part({ children }: { children: ReactNode }) {
  * Kai's hand-drawn stamps arrive: the rough dark square with one coloured
  * dot from his drawings, with the animal named underneath.
  */
-function ChapterTitle({ icon, dark, children }: { icon: string; dark: boolean; children: ReactNode }) {
+function ChapterTitle({ icon, dark, children }: { icon: string | null; dark: boolean; children: ReactNode }) {
   return (
     <div
       style={{
@@ -133,9 +134,11 @@ function ChapterTitle({ icon, dark, children }: { icon: string; dark: boolean; c
         gap: "clamp(14px, 2vw, 20px)",
       }}
     >
-      <Parallax drift={9}>
-        <IconStandIn label={icon} dark={dark} />
-      </Parallax>
+      {icon ? (
+        <Parallax drift={9}>
+          <IconStandIn label={icon} dark={dark} />
+        </Parallax>
+      ) : null}
       {/* Always one line: a title too long for the space is scaled down to
           fit rather than wrapped (OneLineTitle). */}
       <OneLineTitle

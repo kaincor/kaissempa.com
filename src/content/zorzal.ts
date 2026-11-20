@@ -30,7 +30,8 @@ export type Block =
   | { t: "quote"; text: string }
   | { t: "list"; items: string[] }
   | ({ t: "img"; wide?: boolean } & Figure)
-  | { t: "gallery"; items: Figure[]; caption?: string }
+  /** `liveCaption` replaces `caption` on the live page, where the draft's says what is still to come. */
+  | { t: "gallery"; items: Figure[]; caption?: string; liveCaption?: string }
   | { t: "motion"; text: string; label?: string }
   | { t: "placeholder"; text: string; aspect?: string }
   | { t: "chart"; kind: ChartKind; caption?: string };
@@ -365,6 +366,7 @@ export const SECTIONS: Section[] = [
           { src: "/zorzal/final-laptop-screen.webp", alt: "The final Record screen on a laptop, with Spanish labels" },
         ],
         caption: "The shipped Record screen. Stand-in shots, taken off a laptop at the final demo; clean phone screenshots to come.",
+        liveCaption: "The shipped Record screen, at the final demo.",
       },
       { t: "p", text: "It went live, and Zorzal still uses it today. Later teams kept building on top of it. What we could control was the handoff: an operations manual covering the code's structure, the local database workflow and the data model, so the next team got a map instead of an archaeology project, like we had. We also left them a direction. Simi and I sketched the first customer-facing view: scan the code on your chocolate and see the farms it came from and how long it spent at each checkpoint. That's the transparency the whole system was always pointed at." },
       { t: "motion", text: "The \"Start → You!\" journey drawn as one line, a bean travelling along it." },
@@ -394,3 +396,21 @@ export const SECTIONS: Section[] = [
     ],
   },
 ];
+
+/**
+ * The sections as they go live: the draft above without its stand-ins. The
+ * motion slots and the photos still to come are dropped, and captions that
+ * talk about what is to come give way to their live versions. The chapter
+ * icon squares are left off by the renderer (SectionBand's `draft`). The
+ * whole draft, slots and all, is at /zorzal/draft, locally.
+ */
+export function publishedSections(sections: Section[] = SECTIONS): Section[] {
+  return sections.map((s) => ({
+    ...s,
+    blocks: s.blocks.flatMap((b): Block[] => {
+      if (b.t === "motion" || b.t === "placeholder") return [];
+      if (b.t === "gallery" && b.liveCaption) return [{ ...b, caption: b.liveCaption }];
+      return [b];
+    }),
+  }));
+}

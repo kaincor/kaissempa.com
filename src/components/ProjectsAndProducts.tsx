@@ -97,7 +97,7 @@ export default function ProjectsAndProducts({ detailed = false }: { detailed?: b
 }
 
 /**
- * The six thumbnails, in order. Shared by the homepage (one column, each up
+ * The five thumbnails, in order. Shared by the homepage (one column, each up
  * to MAX_WIDTH) and the footer of every case study (`fill`: a grid, each
  * filling its cell). `sizes` and `maxWidth` tell the images how large they
  * end up on screen.
@@ -181,8 +181,6 @@ export function ProjectThumbs({
         </div>
       </Thumb>
 
-      {/* Placeholder for work still to come. */}
-      <Thumb fill={fill} label="More work coming" href={null} background="#8c8c8c" />
     </>
   );
 }

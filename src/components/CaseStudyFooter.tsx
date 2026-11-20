@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 import { ProjectThumbs } from "@/components/ProjectsAndProducts";
 
 /**
- * The close of every case study (Figma: Case Study Footer, 3767:2717): the six
+ * The close of every case study (Figma: Case Study Footer, 3767:2717): the five
  * homepage thumbnails in a grid, then two mountain ranges that rise over the
  * bottom of it, one after the other, as the reader scrolls past the end of
  * the page. First the study's own range, in the navbar's glass, carrying the
@@ -300,13 +300,22 @@ function Footer({ theme }: { theme: Theme }) {
         </motion.div>
 
         <style>{`
+          /* Rows that wrap and centre rather than a grid, so an odd number of
+             thumbnails leaves the last row centred instead of a hole in it.
+             flex-basis outranks each thumbnail's own width: 100%. */
           .csf-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: clamp(6px, 1.4vw, 10px);
+            --csf-gap: clamp(6px, 1.4vw, 10px);
+            --csf-cols: 2;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: var(--csf-gap);
             padding: 0 clamp(10px, 1.4vw, 24px);
           }
-          @media (min-width: 1001px) { .csf-grid { grid-template-columns: repeat(3, 1fr); } }
+          .csf-grid > * {
+            flex: 0 0 calc((100% - (var(--csf-cols) - 1) * var(--csf-gap)) / var(--csf-cols));
+          }
+          @media (min-width: 1001px) { .csf-grid { --csf-cols: 3; } }
 
           /* Both ranges share one box, the study's range's proportion of the
              frame (7000 x 773), so their rows of links line up. */
@@ -402,7 +411,7 @@ function Footer({ theme }: { theme: Theme }) {
              one row on the black, centred 149 up. */
           @media (max-width: 639px) {
             footer { --csf-h: 25.78vw; --csf-fs: 3.6vw; --csf-k: 4.572vw; }
-            .csf-grid { grid-template-columns: 1fr; gap: 2.54vw; padding: 0 2.58vw; }
+            .csf-grid { --csf-cols: 1; --csf-gap: 2.54vw; padding: 0 2.58vw; }
             .csf-room { height: calc(var(--csf-h) - 13.68vw); }
             .csf-room-full { height: var(--csf-h); }
             .csf-shape { mask-image: var(--csf-mask-phone); -webkit-mask-image: var(--csf-mask-phone); }
