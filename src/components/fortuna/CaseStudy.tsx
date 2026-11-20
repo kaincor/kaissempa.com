@@ -1,0 +1,126 @@
+import "@/app/fortuna/theme.css";
+import { HERO, type Section } from "@/content/fortuna";
+import {
+  Band,
+  Display,
+  Figure,
+  renderBlock,
+  toneIsDark,
+} from "@/components/fortuna/Prose";
+import FadeIn from "@/components/fortuna/FadeIn";
+
+/** The Fortuna page, given the sections to render: the live cut or the whole draft. */
+export default function FortunaCaseStudy({ sections }: { sections: Section[] }) {
+  return (
+    <main className="fortuna flex-1">
+      {/* Bare bones on purpose. Kai is rewriting this hero; it exists so the
+          page has a top, not because it is finished. */}
+      <header
+        style={{
+          padding: "clamp(120px, 22vh, 220px) 0 clamp(48px, 8vh, 96px)",
+        }}
+      >
+        <div
+          style={{
+            width: "min(var(--f-measure), 100% - 28px)",
+            margin: "0 auto",
+          }}
+        >
+          {/* The page's own entrance, the same one every section below uses:
+              each piece on the shared queue, so on load they arrive a beat
+              apart from the top down. */}
+          <FadeIn>
+            <h1
+              style={{
+                margin: "0 0 clamp(24px, 3vw, 36px)",
+                fontFamily: "var(--f-display)",
+                fontWeight: 600,
+                fontSize: "clamp(40px, 8vw, 78px)",
+                lineHeight: 1.05,
+                letterSpacing: "-0.015em",
+                textWrap: "balance",
+              }}
+            >
+              {HERO.title}
+              <span style={{ color: "var(--f-green)" }}>.</span>
+            </h1>
+          </FadeIn>
+          <FadeIn>
+            <p
+              style={{
+                margin: 0,
+                maxWidth: "var(--f-measure-body)",
+                fontFamily: "var(--f-body)",
+                fontSize: "var(--f-body-size)",
+                lineHeight: 1.7,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {HERO.intro}
+            </p>
+          </FadeIn>
+        </div>
+      </header>
+
+      {sections.map((section) => {
+        const dark = toneIsDark(section.tone);
+        return (
+          <Band key={section.id} id={section.id} tone={section.tone} rise={section.rise}
+            sky={section.sky}
+            full={section.full}
+            tight={section.tight}
+            ink={section.bodyTone ? `var(--f-${section.bodyTone})` : undefined}
+          >
+            {section.heading ? (() => {
+              const heading = (
+                <Display
+                  align={section.align}
+                  color={
+                    section.headingTone
+                      ? `var(--f-${section.headingTone})`
+                      : undefined
+                  }
+                >
+              {section.heading}
+              {/* The doc says "Title" wherever Kai has not named it yet. Marked
+                  rather than silently rendered, so it cannot slip past. */}
+              {section.headingPending ? (
+                <span
+                  style={{
+                    marginLeft: 12,
+                    fontFamily: "var(--f-grotesk)",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    verticalAlign: "middle",
+                    color: "var(--f-accent)",
+                  }}
+                >
+                  needs a title
+                </span>
+              ) : null}
+                </Display>
+              );
+              return section.reveal ? <FadeIn>{heading}</FadeIn> : heading;
+            })() : null}
+
+            {section.draft ? (
+              section.reveal ? (
+                <FadeIn>
+                  <Figure note={section.draft} dark={dark} />
+                </FadeIn>
+              ) : (
+                <Figure note={section.draft} dark={dark} />
+              )
+            ) : null}
+
+            {section.blocks.map((block, i) =>
+              renderBlock(block, i, dark, section.align, section.reveal),
+            )}
+          </Band>
+        );
+      })}
+    </main>
+  );
+}

@@ -240,18 +240,13 @@ function Thumb({
   return (
     <motion.div
       style={{ width: "100%", maxWidth: fill ? "none" : MAX_WIDTH }}
-      initial={{ opacity: 0, y: 72, scale: 0.9 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, scale: 0.96 }}
+      whileInView={{ opacity: 1, scale: 1 }}
       // once: the animation is a greeting, not a state. Replaying it on every
       // pass makes the page feel like it is reintroducing itself.
       viewport={{ once: true, amount: 0.2 }}
-      // Springs on the movement so it overshoots and settles; a plain tween on
-      // the fade, because a bouncing opacity flickers.
-      transition={{
-        y: { type: "spring", stiffness: 130, damping: 16.5, mass: 1.1 },
-        scale: { type: "spring", stiffness: 130, damping: 16.5, mass: 1.1 },
-        opacity: { duration: 0.45, ease: "easeOut" },
-      }}
+      // A fade and a slight grow, eased out, with no overshoot.
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
     >
       {href ? (
         <Link href={href} aria-label={label} style={{ display: "block" }}>

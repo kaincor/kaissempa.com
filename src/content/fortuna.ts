@@ -151,6 +151,11 @@ export type Section = {
   reveal?: boolean;
   draft?: string;
   /**
+   * Left off the live page until it has what it needs (its pictures, mostly).
+   * Still shown in the draft at /fortuna/draft.
+   */
+  hold?: boolean;
+  /**
    * Sweep this band's colour up over the one above it as the reader arrives,
    * instead of letting the boundary simply scroll past.
    */
@@ -744,6 +749,8 @@ export const SECTIONS: Section[] = [
     // above only shows the result of.
     id: "under-the-hood",
     heading: "Under the hood",
+    // Every paragraph here introduces a picture that does not exist yet.
+    hold: true,
     tone: "cream-deep",
     align: "center",
     reveal: true,
@@ -855,3 +862,26 @@ export const SECTIONS: Section[] = [
     ],
   },
 ];
+
+/**
+ * The sections as they go live: the manuscript above with the notes to self
+ * taken out. Figures that are only a note, stand-in copy, held sections, and
+ * any subheading or section left with nothing under it are dropped, so the
+ * page can ship while the draft keeps every slot for what is still to come.
+ */
+export function publishedSections(sections: Section[] = SECTIONS): Section[] {
+  return sections.flatMap((s) => {
+    if (s.hold) return [];
+    const kept = s.blocks.filter(
+      (b) => b.kind !== "figure" && !("filler" in b && b.filler),
+    );
+    // A subheading with nothing after it before the next one, or the end.
+    const blocks = kept.filter(
+      (b, i) =>
+        b.kind !== "subheading" ||
+        (i + 1 < kept.length && kept[i + 1].kind !== "subheading"),
+    );
+    if (!blocks.some((b) => b.kind !== "subheading")) return [];
+    return [{ ...s, blocks, draft: undefined, headingPending: false }];
+  });
+}
