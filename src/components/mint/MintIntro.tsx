@@ -493,15 +493,16 @@ export default function MintIntro({ cover, onDrop, onReveal, onDone }: Props) {
     <div
       key="counter"
       style={{
+        // No card behind it: the label and number sit straight on the
+        // collage, fully opaque.
         padding: `${U * 0.05}px ${U * 0.08}px`,
-        background: "rgba(246, 239, 226, 0.92)",
         color: MINT_RED,
         fontFamily: "var(--font-sans), system-ui, sans-serif",
         lineHeight: 1,
       }}
     >
       <div
-        style={{ fontSize: U * 0.07, letterSpacing: "0.04em", opacity: 0.8 }}
+        style={{ fontSize: U * 0.07, letterSpacing: "0.04em" }}
       >
         FRAME
       </div>
