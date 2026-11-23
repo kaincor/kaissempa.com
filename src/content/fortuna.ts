@@ -207,7 +207,7 @@ export const SARAH: PersonaSheet = {
     { label: "Name", value: "Sarah Anderson" },
     { label: "Age", value: "31" },
     { label: "Job", value: "Unemployed" },
-    { label: "Located", value: "Chicago, IL" },
+    { label: "Located", value: "Miami, FL" },
   ],
   notes: [
     {
@@ -387,7 +387,7 @@ export const SECTIONS: Section[] = [
     blocks: [
       {
         kind: "text",
-        text: "I partnered with our other product designer Yvonne, to explore how job seekers go about applying for work. We spoke to seven job seekers based in Miami and drew up Sarah, a persona based on our collection of insights.",
+        text: "I partnered with our other product designer Yvonne, to explore how job seekers go about applying for work. We sat down with seven job seekers based in Miami, most of them in person and a few over Zoom, and drew up Sarah, a persona based on our collection of insights.",
       },
       { kind: "persona", persona: SARAH },
       {
@@ -530,6 +530,10 @@ export const SECTIONS: Section[] = [
         text: "The swipe interaction was familiar, but its outcome wasn't. When a job card disappeared, there was no immediate feedback to indicate whether the action had been an application or a dismissal. The interaction looked and felt like something users already understood, but without a perceivable confirmation, it broke the mental model they brought to it.",
       },
       { kind: "swipe-demo", demo: "error", caption: "No interaction confirmation = confused users" },
+      {
+        kind: "text",
+        text: "The fix was small. As a card leaves, it washes green with a check and the word Apply, or red with a cross and the word Dismiss. The colour says what happened at a glance, and the word makes sure nobody has to guess what the colour means.",
+      },
 
       { kind: "subheading", text: "Wait, come back" },
       {
@@ -568,6 +572,17 @@ export const SECTIONS: Section[] = [
       { kind: "figure", note: "Whiteboard photo: the effort / intention spectrum — from a 30-minute application to a one-second swipe" },
       { kind: "figure", note: "New how might we's, relating to swiping issues — add later" },
 
+      // The question Wait, come back raises; What we shipped answers it.
+      { kind: "subheading", text: "A maybe in the middle" },
+      {
+        kind: "text",
+        text: "Swipes on Tinder work because attraction is often immediate, but choosing a job is a little different. It means considering the commute, reading responsibilities, weighing tradeoffs, and imagining your future. These are slower cognitive tasks that don't always lend themselves to an immediate yes or no.",
+      },
+      {
+        kind: "text",
+        text: "Maybe some users wanted to save a job for later, or maybe they wanted to compare it to another listing. Maybe they just wanted a little bit more time to think on it. Maybe we needed a maybe.",
+      },
+
       { kind: "subheading", text: "What we shipped" },
       {
         kind: "text",
@@ -575,7 +590,15 @@ export const SECTIONS: Section[] = [
       },
       {
         kind: "text",
-        text: "The undo interaction became a small counterweight to that speed. It gave users a way to recover from a mistake, but limiting the number of undos available each day meant that reversing a decision still carried some weight. It was a small interaction, but it helped restore something we had accidentally designed away: intentionality.",
+        text: "So the answer wasn't a third option. It was making the two we already had count.",
+      },
+      {
+        kind: "text",
+        text: "We gave the swipe a ceiling: a set number of right swipes a day, reset at midnight. When a swipe might be one of your last for the day, it's worth a second look.",
+      },
+      {
+        kind: "text",
+        text: "The undo button sat alongside it, bringing back the last job you dismissed. Undos were limited too, and topped back up within the day, so reversing a decision was a way to recover from a mistake rather than a habit. They were small interactions, but together they restored something we had accidentally designed away: intentionality.",
       },
       { kind: "figure", note: "Mockup: the undo, and how many are left today" },
     ],
@@ -589,7 +612,6 @@ export const SECTIONS: Section[] = [
     blocks: [
       {
         kind: "text",
-        filler: true,
         text: "With the swipe settled, here's the whole job seeker side, from opening the app to landing an interview. Most of it was built to get out of the way.",
       },
       {
@@ -597,7 +619,6 @@ export const SECTIONS: Section[] = [
         n: 1,
         title: "Getting in",
         flow: "Splash → job seeker or employer → sign up → phone verification → location",
-        filler: true,
         text: [
           "Sign-up asked for only what we needed: a name, a birthday, an email and a password, then a phone number and a quick verification code.",
           "Location did the most work. It decided which jobs you'd see — and, outside Miami, whether you could use Fortuna at all. Being a young pup meant one city, so anyone further afield landed on a waitlist instead of an empty feed.",
@@ -609,7 +630,6 @@ export const SECTIONS: Section[] = [
         n: 2,
         title: "Three screens of setting expectations",
         flow: "Complete your profile → record your video resume → swipe to apply → I'm ready",
-        filler: true,
         text: [
           "Before the first card, three quick screens told job seekers what to expect: fill out a profile, record a short video, then swipe. No surprises later about why we were asking for a video.",
         ],
@@ -620,7 +640,6 @@ export const SECTIONS: Section[] = [
         n: 3,
         title: "The bio",
         flow: "Name, location, max distance → industry, availability, wage → education, about me, attributes",
-        filler: true,
         text: [
           "The bio was the job seeker's side of the match. Distance, industry, full or part time and a minimum wage on a sliding scale decided what showed up in the feed; education, an about me and a handful of attributes — dedicated, loyal, punctual — were what employers saw.",
         ],
@@ -631,7 +650,6 @@ export const SECTIONS: Section[] = [
         n: 4,
         title: "The video resume",
         flow: "Tips → camera and mic → record → play back → confirm and upload → uploaded",
-        filler: true,
         text: [
           "This was the heart of the job seeker side. Instead of a cover letter, a 90-second video introduction: a chance to stand out for people whose best qualities don't fit on a resume.",
           "Most of the design went into making it less intimidating — tips up front (somewhere quiet and well lit, a plain background, no sunglasses or hats), one big record button, a playback before anything is sent, and a clear message while it uploads so no one closes the app halfway through.",
@@ -642,10 +660,10 @@ export const SECTIONS: Section[] = [
         kind: "step",
         n: 5,
         title: "The feed, and hearing back",
-        flow: "Home → swipe → my applications → employer interest",
-        filler: true,
+        flow: "Home → swipe → all caught up → my applications → connected",
         text: [
-          "Then the feed — the swipe chapter above, in a sentence — and the part after it: keeping track of applications and hearing back from employers. To fill in from the next part of the flow.",
+          "Then the feed, swiped until it runs dry: “All Caught Up!” Every right swipe lands in My Applications, marked Submitted.",
+          "When an employer wants to meet, the application turns to Connected, and an email arrives with the times they've suggested for a call or an interview in person.",
         ],
       },
     ],
@@ -678,7 +696,7 @@ export const SECTIONS: Section[] = [
     blocks: [
       {
         kind: "text",
-        text: "On the other side of the marketplace was Jonathan, a 38-year-old grocery store owner in San Francisco. Jonathan didn't need to hire constantly. He needed someone dependable who could step in when the store got busy: running deliveries, picking up supplies, cleaning, or covering whatever needed doing that day. His problem wasn't a lack of applicants. It was that finding the right person required more time than he had. Sorting through candidates, figuring out who was actually a fit, and coordinating interviews all competed with the work of running the store.",
+        text: "On the other side of the marketplace was Jonathan, a 38-year-old grocery store owner in Miami who had been running his family's store for almost 15 years. Jonathan didn't need to hire constantly. He needed someone dependable who could step in when the store got busy: running deliveries, picking up supplies, cleaning, or covering whatever needed doing that day. His problem wasn't a lack of applicants. It was that finding the right person required more time than he had. Sorting through candidates, figuring out who was actually a fit, and coordinating interviews all competed with the work of running the store.",
       },
       {
         kind: "quote",
@@ -775,7 +793,7 @@ export const SECTIONS: Section[] = [
       { kind: "subheading", text: "Assets" },
       {
         kind: "text",
-        text: "The icons, illustrations and imagery that gave Fortuna its personality.",
+        text: "The icons, illustrations and imagery that gave Fortuna its personality. The industry illustrations came from a licensed set, and we tweaked and edited some of them to fit.",
       },
       { kind: "figure", note: "Assets: icons, illustrations and imagery" },
     ],
@@ -790,35 +808,29 @@ export const SECTIONS: Section[] = [
     blocks: [
       {
         kind: "text",
-        filler: true,
-        text: "A line on the sprint docs: not everything we designed made it in, and some of what got cut taught us the most.",
+        text: "Not everything we designed made it into the app, and some of what got cut taught us the most.",
       },
-      { kind: "subheading", text: "Maybe in the middle" },
+      { kind: "subheading", text: "Ideas we designed and didn't ship" },
       {
         kind: "text",
-        text: "Swipes on Tinder work because attraction is often immediate, but choosing a job is a little different. It means considering the commute, reading responsibilities, weighing tradeoffs, and imagining your future. These are slower cognitive tasks that don't always lend themselves to an immediate yes or no.",
+        text: "Run out of swipes, and the plan was to invite friends to earn more: five extra swipes for every friend who joined. We designed the whole thing, from the contact list to “Accepted! 5 swipes added”, and it never shipped.",
       },
       {
         kind: "text",
-        text: "Maybe some users wanted to save a job for later, or maybe they wanted to compare it to another listing. Maybe they just wanted a little bit more time to think on it. Maybe we needed a maybe.",
+        text: "Chat went the same way, and so did rating employers. Ratings raised a question that got written straight onto the canvas: why would a job seeker rate an employer they probably hadn't even met yet?",
       },
-
       {
         kind: "text",
-        filler: true,
-        text: "Whether Maybe shipped or was cut, and why. (If it shipped, this beat moves back into The swipe.)",
+        text: "None of them were bad ideas. We just didn't have the time or the people to chase every good idea at once. Fortuna was riding the strongest current it had, and some of these ideas were rabbit holes we didn't want to go down just yet, so they went on the back burner for another day. In the end it was the CEO's call, and the CEO's bet: a clear vision of where Fortuna was headed, and the most direct route there.",
       },
-      { kind: "subheading", text: "Another idea we killed" },
+      { kind: "subheading", text: "The interview that became a video resume" },
       {
         kind: "text",
-        filler: true,
-        text: "The idea, why it was cut, and what it taught us.",
+        text: "Fortuna started with interviews. An employer picked interview questions for each job from a set list, Fortuna ranked the applicants by fit, the employer chose who to interview, and each of them answered the questions on video. That meant a new set of videos for every job you were picked for, and questions to set before anyone could be interviewed.",
       },
-      { kind: "subheading", text: "One that changed shape" },
       {
         kind: "text",
-        filler: true,
-        text: "What it started as, what it became, and why.",
+        text: "So the interview became a video resume: one 90-second video on your profile, seen by every employer you apply to. Posting a job went from three steps to two, and My Interviews became My Applications.",
       },
     ],
   },
