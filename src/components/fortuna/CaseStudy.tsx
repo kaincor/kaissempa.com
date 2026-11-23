@@ -7,7 +7,7 @@ import {
   renderBlock,
   toneIsDark,
 } from "@/components/fortuna/Prose";
-import FadeIn from "@/components/fortuna/FadeIn";
+import FadeIn from "@/components/fortuna/QuickFade";
 
 /** The Fortuna page, given the sections to render: the live cut or the whole draft. */
 export default function FortunaCaseStudy({ sections }: { sections: Section[] }) {

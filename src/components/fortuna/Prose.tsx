@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import FortunaWordmark from "./FortunaWordmark";
 import BillboardCallout from "./BillboardCallout";
 import { ScrollFillLine } from "./FillText";
-import FadeIn from "./FadeIn";
+import FadeIn from "./QuickFade";
 import MiamiGlobe from "./MiamiGlobe";
 import BandRise from "./BandRise";
 import GoalList from "./GoalList";
@@ -643,9 +643,8 @@ export function renderBlock(
   reveal = false,
 ) {
   const node = blockNode(block, i, dark, align);
-  // Everything else arrives on the page's shared queue: on its own when it
-  // reaches the screen, a beat behind anything that reached it at the same
-  // moment. See FadeIn.
+  // Everything else fades in quickly the moment it reaches the screen, with
+  // no queue to wait in. See QuickFade.
   return reveal && !ownsEntrance(block) ? <FadeIn key={i}>{node}</FadeIn> : node;
 }
 
