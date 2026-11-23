@@ -4,6 +4,7 @@ import { Geist, Hanken_Grotesk, Source_Serif_4 } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CaseStudyFooter from "@/components/CaseStudyFooter";
 import ThemeColor from "@/components/ThemeColor";
+import { Analytics } from "@vercel/analytics/next";
 import { SITE_TOP, mobileThemeColor } from "@/lib/theme-color";
 import "./globals.css";
 
@@ -89,6 +90,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         {/* On the case studies, home, About and Work; nothing elsewhere. */}
         <CaseStudyFooter />
+        {/* Vercel Web Analytics: visitors and page views, cookieless. */}
+        <Analytics />
       </body>
     </html>
   );
