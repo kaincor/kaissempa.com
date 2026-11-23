@@ -67,7 +67,7 @@ const TILT_S = 1.5;
 type SceneProps = {
   /** Start tilting into the resting pose (and take input). */
   play: boolean;
-  /** A phone: lighter page images, and no shadow on the floor below. */
+  /** A phone: lighter page images. */
   phone: boolean;
   /** The closed cover's size on screen, square on, once the pages are loaded. */
   onCover: (r: CoverRect) => void;
@@ -109,41 +109,9 @@ function MagazineScene({ play, phone, onCover, corners }: SceneProps) {
       <Suspense fallback={null}>
         <Magazine play={play} phone={phone} onCover={onCover} corners={corners} />
       </Suspense>
-      {/* A soft shadow on the floor far below, so it reads as floating. */}
-      {phone ? null : <FloorShadow />}
     </Canvas>
   );
 }
-
-/**
- * A soft shadow far below the book, so it reads as floating: one blurred
- * ellipse painted once, in place of a contact shadow that re-renders the
- * whole book from below every frame. The book only bobs a few millimetres,
- * so a shadow that holds still is indistinguishable.
- */
-function FloorShadow() {
-  const tex = useMemo(() => {
-    const c = document.createElement("canvas");
-    c.width = 256;
-    c.height = 128;
-    const g = c.getContext("2d")!;
-    const grad = g.createRadialGradient(128, 64, 0, 128, 64, 128);
-    grad.addColorStop(0, "rgba(0,0,0,0.34)");
-    grad.addColorStop(0.45, "rgba(0,0,0,0.16)");
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-    g.setTransform(1, 0, 0, 0.5, 0, 32);
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 256, 256);
-    return new THREE.CanvasTexture(c);
-  }, []);
-  return (
-    <mesh position={[0, -0.26, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={-1}>
-      <planeGeometry args={[0.75, 0.3]} />
-      <meshBasicMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
-    </mesh>
-  );
-}
-
 
 /** Straight on, at the book's height. */
 function CameraRig() {
