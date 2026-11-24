@@ -9,6 +9,10 @@ import GoalList from "./GoalList";
 import PersonaSheet from "./PersonaSheet";
 import Reel from "./reel/Reel";
 import SwipeDemo from "./swipe/SwipeDemo";
+import VideoResumeDemo from "./swipe/VideoResumeDemo";
+import ScreenGrid from "./screens/ScreenGrid";
+import FlowMap from "./screens/FlowMap";
+import BeforeAfter from "./screens/BeforeAfter";
 import NightSky from "./NightSky";
 import { hasFill } from "@/content/fortuna";
 import type { Align, Block, Rich, Token, Tone } from "@/content/fortuna";
@@ -517,72 +521,32 @@ export function List({
   );
 }
 
-/** One numbered stage of the employer flow: title, arrow chain, prose. */
+/**
+ * One numbered stage of a flow: a plain heading in the page's own subheading
+ * style ("Step 1: Getting in") and the prose under it, nothing else.
+ */
 export function Step({
   n,
   title,
-  flow,
   text,
-  dark,
+  align,
 }: {
   n: number;
   title: string;
-  flow?: string;
   text: string[];
-  dark?: boolean;
+  align?: "left" | "center" | "right";
 }) {
   return (
-    <div
-      style={{
-        margin: "40px 0",
-        borderLeft: `2px solid ${dark ? "var(--f-green)" : "var(--f-orange)"}`,
-        paddingLeft: "clamp(18px, 3vw, 30px)",
-      }}
-    >
-      <p
-        style={{
-          margin: "0 0 6px",
-          fontFamily: "var(--f-grotesk)",
-          fontWeight: 600,
-          fontSize: 12,
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: dark ? "var(--f-green)" : "var(--f-orange)",
-        }}
-      >
-        Step {n}
-      </p>
-      <h4
-        style={{
-          margin: "0 0 10px",
-          fontFamily: "var(--f-serif)",
-          fontWeight: 600,
-          fontSize: "clamp(19px, 2.3vw, 22px)",
-          lineHeight: 1.2,
-          letterSpacing: "-0.04em",
-        }}
-      >
-        {title}
-      </h4>
-      {flow ? (
-        <p
-          style={{
-            margin: "0 0 16px",
-            fontFamily: "var(--f-grotesk)",
-            fontWeight: 500,
-            fontSize: "clamp(13px, 1.6vw, 15px)",
-            lineHeight: 1.55,
-            letterSpacing: "-0.01em",
-            color: dark ? "rgba(247,245,240,0.72)" : "var(--f-muted)",
-          }}
-        >
-          {flow}
-        </p>
-      ) : null}
+    <>
+      <Subheading align={align}>
+        Step {n}: {title}
+      </Subheading>
       {text.map((t) => (
-        <Body key={t}>{t}</Body>
+        <Body key={t} align={align}>
+          {t}
+        </Body>
       ))}
-    </div>
+    </>
   );
 }
 
@@ -716,23 +680,10 @@ function blockNode(
     case "step":
       return block.filler ? (
         <Filler key={i} block>
-          <Step
-            n={block.n}
-            title={block.title}
-            flow={block.flow}
-            text={block.text}
-            dark={dark}
-          />
+          <Step n={block.n} title={block.title} text={block.text} align={align} />
         </Filler>
       ) : (
-        <Step
-          key={i}
-          n={block.n}
-          title={block.title}
-          flow={block.flow}
-          text={block.text}
-          dark={dark}
-        />
+        <Step key={i} n={block.n} title={block.title} text={block.text} align={align} />
       );
     case "figure":
       return <Figure key={i} note={block.note} dark={dark} />;
@@ -744,6 +695,14 @@ function blockNode(
       return <Reel key={i} />;
     case "swipe-demo":
       return <SwipeDemo key={i} demo={block.demo} caption={block.caption} />;
+    case "video-demo":
+      return <VideoResumeDemo key={i} />;
+    case "screens":
+      return <ScreenGrid key={i} items={block.items} title={block.title} dark={dark} />;
+    case "flow-map":
+      return <FlowMap key={i} steps={block.steps} />;
+    case "before-after":
+      return <BeforeAfter key={i} pairs={block.pairs} />;
   }
 }
 

@@ -355,3 +355,23 @@
     display: none;
   }
 }
+
+/* Boards: the screen grids and the flow map run wider than the text column,
+   the way a designer lays screens out, centred on the column without a
+   transform (the entrances use the children's). */
+.fortuna .f-wide {
+  --f-wide: min(1080px, calc(100vw - 32px));
+  width: var(--f-wide);
+  margin-left: calc((100% - var(--f-wide)) / 2);
+  margin-right: 0;
+}
+
+/* A screen in a grid lifts a little under the pointer. */
+.fortuna .f-grid-screen {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  .fortuna .f-grid-screen:hover {
+    transform: translateY(-6px);
+  }
+}

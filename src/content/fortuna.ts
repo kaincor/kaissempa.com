@@ -1,3 +1,7 @@
+import type { GridItem } from "@/components/fortuna/screens/ScreenGrid";
+import type { FlowStep } from "@/components/fortuna/screens/FlowMap";
+import type { Pair } from "@/components/fortuna/screens/BeforeAfter";
+
 /**
  * The Fortuna case study, as written.
  *
@@ -137,6 +141,14 @@ export type Block =
    * screen recording would. One per beat of "How we got there".
    */
   | { kind: "swipe-demo"; demo: "spine" | "error" | "comeback"; caption?: string }
+  /** The video resume, recorded on the phone from the empty slot to the upload. */
+  | { kind: "video-demo" }
+  /** Screens two by two, each with a name and a line on what it's doing. */
+  | { kind: "screens"; title?: string; items: GridItem[] }
+  /** A whole flow as one zoomable board, stepped through with arrows. */
+  | { kind: "flow-map"; steps: FlowStep[] }
+  /** The same moments before and after a decision, behind one switch. */
+  | { kind: "before-after"; pairs: Pair[] }
 
 export type Section = {
   id: string;
@@ -624,7 +636,15 @@ export const SECTIONS: Section[] = [
           "Location did the most work. It decided which jobs you'd see — and, outside Miami, whether you could use Fortuna at all. Being a young pup meant one city, so anyone further afield landed on a waitlist instead of an empty feed.",
         ],
       },
-      { kind: "figure", note: "Mockup: sign-up to location, with the waitlist screen for anywhere outside Miami" },
+      {
+        kind: "screens",
+        items: [
+          { screen: "welcome", label: "Welcome", caption: "One app, two doors. Businesses Fortuna had already emailed got a third: Activate Account." },
+          { screen: "phone", label: "Phone number", caption: "After the basics, a phone number and a six-digit code to confirm it." },
+          { screen: "location", label: "Location", caption: "Where you are decides what's in the feed: jobs within reach of home." },
+          { screen: "waitlist", label: "Waitlist", caption: "Anywhere outside Miami, a waitlist instead of an empty feed." },
+        ],
+      },
       {
         kind: "step",
         n: 2,
@@ -634,7 +654,15 @@ export const SECTIONS: Section[] = [
           "Before the first card, three quick screens told job seekers what to expect: fill out a profile, record a short video, then swipe. No surprises later about why we were asking for a video.",
         ],
       },
-      { kind: "figure", note: "Mockup: the three onboarding screens, swiped through" },
+      {
+        kind: "screens",
+        items: [
+          { screen: "onboard1", label: "Complete your profile", caption: "First, the profile: the kinds of jobs you're after." },
+          { screen: "onboard2", label: "Record your video resume", caption: "Then the video, explained before anyone is asked to make one." },
+          { screen: "onboard3", label: "Swipe to apply", caption: "Then the one gesture the whole app runs on." },
+          { screen: "homeNudge", label: "The nudge", caption: "Skip ahead, and the feed keeps a reminder above the first card until the profile is done." },
+        ],
+      },
       {
         kind: "step",
         n: 3,
@@ -644,7 +672,15 @@ export const SECTIONS: Section[] = [
           "The bio was the job seeker's side of the match. Distance, industry, full or part time and a minimum wage on a sliding scale decided what showed up in the feed; education, an about me and a handful of attributes — dedicated, loyal, punctual — were what employers saw.",
         ],
       },
-      { kind: "figure", note: "Screens: the bio, with the wage slider and attributes" },
+      {
+        kind: "screens",
+        items: [
+          { screen: "bioProfile", label: "Profile", caption: "What employers see: education, the video resume, a few lines about you, your attributes." },
+          { screen: "bioPrefs", label: "Job preferences", caption: "What shapes the feed: location, how far you'll go, industries, when you can work, a minimum wage." },
+          { screen: "bioPrefsAny", label: "The wage slider", caption: "Drag the wage all the way down and it reads No Preference, not $0." },
+          { screen: "attributes", label: "Attributes", caption: "A handful of words, picked rather than written." },
+        ],
+      },
       {
         kind: "step",
         n: 4,
@@ -655,7 +691,7 @@ export const SECTIONS: Section[] = [
           "Most of the design went into making it less intimidating — tips up front (somewhere quiet and well lit, a plain background, no sunglasses or hats), one big record button, a playback before anything is sent, and a clear message while it uploads so no one closes the app halfway through.",
         ],
       },
-      { kind: "figure", note: "Mockup: recording a video resume, from the tips screen to \"Video resume uploaded\"" },
+      { kind: "video-demo" },
       {
         kind: "step",
         n: 5,
@@ -664,6 +700,15 @@ export const SECTIONS: Section[] = [
         text: [
           "Then the feed, swiped until it runs dry: “All Caught Up!” Every right swipe lands in My Applications, marked Submitted.",
           "When an employer wants to meet, the application turns to Connected, and an email arrives with the times they've suggested for a call or an interview in person.",
+        ],
+      },
+      {
+        kind: "screens",
+        items: [
+          { screen: "home", label: "The feed", caption: "One card at a time: the job, the pay, the hours and how far away it is." },
+          { screen: "swipeLimit", label: "The daily limit", caption: "Out of right swipes for today. They come back at midnight." },
+          { screen: "myApplications", label: "My Applications", caption: "Every right swipe lands here as Submitted, and turns to Connected when an employer wants to meet." },
+          { screen: "connectedEmail", label: "Hearing back", caption: "The connection arrives by email too: the interview type and the times the employer suggested." },
         ],
       },
     ],
@@ -713,53 +758,55 @@ export const SECTIONS: Section[] = [
     tone: "cream",
     blocks: [
       {
-        kind: "step",
-        n: 1,
-        title: "Post a job",
-        flow: "Post a job → define candidate preferences",
-        text: [
-          "We separated the job from the candidate. Employers described the role first, then told Fortuna what a good candidate looked like.",
-        ],
+        kind: "text",
+        text: "Jonathan's side of Fortuna had one job: get him from an open position to a conversation with the right person, without hiring turning into a second job on top of running the store.",
       },
       {
-        kind: "step",
-        n: 2,
-        title: "Surface the signal",
-        flow: "Candidate list → profile → video → interview response",
-        text: [
-          "Instead of asking employers to work through a stack of applications, Fortuna surfaced progressively more information about each candidate, from fit and experience to video and interview responses.",
-          "Once the job was posted, the challenge became one of information density. An employer shouldn't have to open a dozen full applications just to figure out where to start. The candidate list gave Jonathan an initial signal about fit; opening a candidate revealed their experience and attributes; and the video resume gave him a more personal sense of the person behind the application.",
-          "Rather than presenting everything at once, the flow let Jonathan decide how much information he needed before moving to the next step.",
+        kind: "flow-map",
+        steps: [
+          { focus: [], title: "The employer side, end to end", text: "Thirteen screens from an empty job board to a conversation, plus the email that brought some businesses in before they'd signed up. Step through it with the arrows." },
+          { focus: ["jobsEmpty", "post1"], title: "Post a job", text: "Jonathan starts on an empty board. Step one is the job itself: a title, an hourly wage checked against the minimum, a description, when the work happens, and how long the post stays up." },
+          { focus: ["post2"], title: "Then, the person", text: "Step two describes the candidate instead: how many he wants to choose from, education, industry experience, years of experience and attributes. That's the whole post, in two steps." },
+          { focus: ["posted", "picking"], title: "Then, nothing to do", text: "“Sit back while we pick the best ones for you.” Until the applicants arrive, the job's own page says the same." },
+          { focus: ["applicants"], title: "A shortlist, ranked", text: "The applicants arrive ranked: Best Fit, Good Fit or Questionable. Three of three, the number he asked for, instead of a stack to sort." },
+          { focus: ["candidate", "video"], title: "More signal, one tap at a time", text: "A candidate opens on the essentials: education, availability, attributes, work history. Under them, the video resume, for the person behind the application." },
+          { focus: ["schedule", "scheduleFilled"], title: "Contact means scheduling", text: "Contact doesn't open a chat. It opens the interview: in person or a phone call, and at least one date and time, with room to offer more." },
+          { focus: ["connected"], title: "Connected", text: "Fortuna sends Sarah's details to Jonathan by email, and the app's part is done." },
+          { focus: ["candidates"], title: "Pinned", text: "Everyone he's connected with stays pinned under Candidates, with their fit and a way to email or call." },
+          { focus: ["connectedEmail"], title: "Sarah hears back", text: "On her side, the same moment arrives as an email: the job, the interview type, and the times he suggested." },
+          { focus: ["ghostEmail"], title: "Another way in", text: "Fortuna also designed a way in for businesses that hadn't signed up yet. It made accounts for local businesses it saw hiring, then emailed them a shortlist and a code to activate: “We have great candidates for you.” The team settled on four candidates, because four looked better than five." },
         ],
       },
+      { kind: "subheading", text: "The job, then the person" },
       {
-        kind: "step",
-        n: 3,
-        title: "Interest into action",
-        flow: "Contact → interview type → available times → confirmation",
-        text: [
-          "Expressing interest shouldn't create another administrative task. Once Jonathan found someone he was interested in, the next source of friction was coordination. Contacting a candidate could easily become another round of messages, phone calls, and back-and-forth scheduling.",
-          "Fortuna kept that process inside the same flow. Jonathan could choose an interview type, provide one or more possible times, and confirm, without leaving the candidate experience. Finding the right candidate shouldn't create a new administrative task just to get an interview on the calendar.",
-        ],
+        kind: "text",
+        text: "We separated the job from the candidate. Employers described the role first, then told Fortuna what a good candidate looked like.",
       },
       {
-        kind: "figure",
-        note: "Show this visually: Contact → Phone/In Person → Date → Time → Add another option → Confirm → Connected",
+        kind: "text",
+        text: "Asking how many candidates he needed, up front, changed what came back. Not everyone who applied, but a ranked shortlist the size he asked for.",
+      },
+      { kind: "subheading", text: "Information, in layers" },
+      {
+        kind: "text",
+        text: "Once the job was posted, the challenge became one of information density. An employer shouldn't have to open a dozen full applications just to figure out where to start. The shortlist gave Jonathan an initial signal about fit; opening a candidate revealed their experience and attributes; and the video resume gave him a more personal sense of the person behind the application.",
       },
       {
-        kind: "step",
-        n: 4,
-        title: "Keep it moving",
-        flow: "Interviews → connect → contact information",
-        text: [
-          "Once both sides were interested, Fortuna made the connection explicit and handed the relationship off to the employer and candidate.",
-          "The product's job wasn't to manage the entire employment relationship. It was to remove enough friction to get two people who wanted to talk to each other into the same room, or onto the same call.",
-        ],
+        kind: "text",
+        text: "Rather than presenting everything at once, the flow let Jonathan decide how much information he needed before moving to the next step.",
+      },
+      { kind: "subheading", text: "Interest into action" },
+      {
+        kind: "text",
+        text: "Expressing interest shouldn't create another administrative task. Once Jonathan found someone he was interested in, the next source of friction was coordination: another round of messages, phone calls, and back-and-forth scheduling.",
+      },
+      {
+        kind: "text",
+        text: "So Contact was the scheduling. He chose an interview type, offered a time or two, and Fortuna sent both sides each other's details. The product's job wasn't to manage the entire employment relationship. It was to remove enough friction to get two people who wanted to talk to each other into the same room, or onto the same call.",
       },
       { kind: "figure", note: "Intentions surrounding the employer flow — add later" },
       { kind: "figure", note: "Design challenges that ensued — add later" },
       { kind: "figure", note: "Whiteboard photo: the employer flow, sketched — add later" },
-      { kind: "figure", note: "Employer flow pictures — add later" },
     ],
   },
   {
@@ -831,6 +878,15 @@ export const SECTIONS: Section[] = [
       {
         kind: "text",
         text: "So the interview became a video resume: one 90-second video on your profile, seen by every employer you apply to. Posting a job went from three steps to two, and My Interviews became My Applications.",
+      },
+      {
+        kind: "before-after",
+        pairs: [
+          { before: "wireCreateInterview", after: "post2", label: "Posting a job", beforeCaption: "Step 3 of 3: pick the questions every applicant would answer on video.", afterCaption: "Two steps. The questions are gone, and the post ends on who you're looking for." },
+          { before: "wireMyInterviews", after: "bioProfileVideo", label: "Applying", beforeCaption: "A new recording for every job you were picked for: Send your response!", afterCaption: "One 90-second video on the profile, seen by every employer you apply to." },
+          { before: "wirePlayAnswer", after: "candidate", label: "Reviewing", beforeCaption: "The employer played back an answer per question, per candidate.", afterCaption: "The video resume sits on the profile, under everything else, and Contact moves things forward." },
+          { before: "wireInterviewSent", after: "scheduleFilled", label: "Choosing", beforeCaption: "Three interviews per job, and a warning to spend them carefully: Pick wisely!", afterCaption: "Contact goes straight to setting up the real interview." },
+        ],
       },
     ],
   },
