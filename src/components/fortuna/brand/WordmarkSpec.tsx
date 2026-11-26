@@ -1,7 +1,7 @@
 "use client";
 
-import { useInView, useReducedMotion } from "motion/react";
-import { useRef } from "react";
+import { motion, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { DOT, GLYPHS } from "../reel/wordmark";
 
 /**
@@ -17,8 +17,15 @@ import { DOT, GLYPHS } from "../reel/wordmark";
  *   the u's and n's counters: 6.0 = 0.58Z; the a's: 5.04 = 0.49Z
  *   the full stop: 10.71 across = 1.03Z, about one stem
  *
- * It draws itself in once, the frame first and the numbers last, when it
- * comes on screen.
+ * It draws itself in once when it comes on screen, the way it would be drawn
+ * by hand: the frame and the band are ruled, the guides dropped through
+ * them, the letters traced in outline one after another and then hatched,
+ * the measurements laid over them, and the numbers written in last.
+ *
+ * While it scrolls it comes apart into three depths, the way a drawing on
+ * tracing paper does: the frame and the guides behind, the wordmark in the
+ * middle, and the measurements in front. They line up exactly when the
+ * sheet is in the middle of the screen.
  */
 
 const GREEN = "#69BD45";
@@ -75,17 +82,20 @@ const BRACKETS = [
   vbracket(X_TOP, Y, -40, 1),
   bracket(3.11, 13.5, BOX.y + BOX.h + 10, -1),
   bracket(195.29, 206, BOX.y + BOX.h + 10, -1),
-].join(" ");
-
-/** Labels, placed over the sheet in its own units. */
-const LABELS: { x: number; y: number; text: string[]; align?: "start" | "end"; hang?: boolean }[] = [
-  { x: MARK_W / 2, y: -52, text: ["5.16Y"] },
-  { x: MARK_W + 46, y: Y / 2, text: ["Y"], align: "start" },
-  { x: -46, y: (X_TOP + Y) / 2, text: ["0.69Y"], align: "end" },
-  ...BARS.map(([a, b, text]) => ({ x: (a + b) / 2, y: BAR_TOP - 4.5, text: [text] })),
-  { x: 8.3, y: BOX.y + BOX.h + 13, text: ["Stem", "Z = 0.26Y"], hang: true },
-  { x: 200.65, y: BOX.y + BOX.h + 13, text: ["Full stop", "1.03Z"], hang: true },
 ];
+
+/** Labels, placed over the sheet in its own units. Bar labels move with the bars. */
+const LABELS: { x: number; y: number; text: string[]; align?: "start" | "end"; hang?: boolean; at: number }[] = [
+  { x: MARK_W / 2, y: -52, text: ["5.16Y"], at: 3.05 },
+  { x: MARK_W + 46, y: Y / 2, text: ["Y"], align: "start", at: 3.15 },
+  { x: -46, y: (X_TOP + Y) / 2, text: ["0.69Y"], align: "end", at: 3.2 },
+  ...BARS.map(([a, b, text], i) => ({ x: (a + b) / 2, y: BAR_TOP - 4.5, text: [text], at: 2.75 + i * 0.1 })),
+  { x: 8.3, y: BOX.y + BOX.h + 13, text: ["Stem", "Z = 0.26Y"], hang: true, at: 3.3 },
+  { x: 200.65, y: BOX.y + BOX.h + 13, text: ["Full stop", "1.03Z"], hang: true, at: 3.4 },
+];
+
+/** How far each depth travels across the scroll, in the sheet's units. */
+const DEPTH = { back: 11, front: 15 };
 
 export default function WordmarkSpec() {
   const reduced = useReducedMotion();
@@ -93,15 +103,40 @@ export default function WordmarkSpec() {
   const seen = useInView(host, { once: true, amount: 0.35 });
   const on = reduced || seen;
 
-  // Each layer comes in after the one under it.
-  const layer = (delay: number): React.CSSProperties => ({
-    opacity: on ? 1 : 0,
-    transition: reduced ? "none" : `opacity 0.7s ease ${delay}s`,
+  // The parallax: 0 when the sheet is centred on the screen.
+  const { scrollYProgress } = useScroll({ target: host, offset: ["start end", "end start"] });
+  const back = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [-DEPTH.back, DEPTH.back]);
+  const front = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [DEPTH.front, -DEPTH.front]);
+  // The HTML labels ride with the front layer, in the same units.
+  const frontCq = useTransform(front, (v) => `${((v / VW) * 100).toFixed(3)}cqw`);
+
+  const ease = "cubic-bezier(0.65, 0, 0.35, 1)";
+  /** A line ruled in: its stroke drawn from one end to the other. */
+  const ruled = (delay: number, dur = 0.9): React.CSSProperties => ({
+    strokeDasharray: 1,
+    strokeDashoffset: on ? 0 : 1,
+    transition: reduced ? "none" : `stroke-dashoffset ${dur}s ${ease} ${delay}s`,
   });
-  const line = { vectorEffect: "non-scaling-stroke" as const, fill: "none", stroke: GREEN };
+  const fade = (delay: number, dur = 0.6): React.CSSProperties => ({
+    opacity: on ? 1 : 0,
+    transition: reduced ? "none" : `opacity ${dur}s ease ${delay}s`,
+  });
+  const line = { fill: "none", stroke: GREEN, pathLength: 1 } as const;
+  // One screen pixel, in the sheet's units. The lines are drawn in by their
+  // dash, which only measures right in the sheet's own units, so they can't
+  // be non-scaling hairlines; this keeps them a pixel wide at any size.
+  const [px, setPx] = useState(VW / 1080);
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => el.clientWidth && setPx(VW / el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const hair = { strokeWidth: px };
 
   return (
-    <figure className="f-wide" style={{ marginTop: "clamp(28px, 5vw, 56px)", marginBottom: "clamp(28px, 5vw, 56px)" }}>
+    <figure className="f-wide" style={{ marginTop: "clamp(4px, 1.5vw, 20px)", marginBottom: "clamp(28px, 5vw, 56px)" }}>
       <div
         ref={host}
         style={{
@@ -126,34 +161,55 @@ export default function WordmarkSpec() {
             </pattern>
           </defs>
           <g transform={`translate(${OX} ${OY})`}>
-            {/* The frame, the band, and the lines across them. */}
-            <g style={layer(0)}>
-              <rect x={BOX.x} y={BOX.y} width={BOX.w} height={BOX.h} rx={BOX_R} {...line} strokeOpacity={0.55} />
-              <rect x={BAND.x} y={BAND.y} width={BAND.w} height={BAND.h} rx={3} {...line} strokeOpacity={0.55} />
-            </g>
-            <g style={layer(0.2)}>
-              <path d={GUIDES.map((x) => `M${x} ${BOX.y + inset(x)} V${BOX.y + BOX.h - inset(x)}`).join(" ")} {...line} strokeOpacity={0.45} />
-              <path d={`M${BAND.x} ${X_TOP} H${BAND.x + BAND.w}`} {...line} strokeOpacity={0.45} />
-            </g>
-            {/* The wordmark itself. */}
-            <g style={layer(0.4)}>
-              {GLYPHS.map((g) => (
-                <path key={g.key} d={g.d} fill="url(#wm-hatch)" stroke={GREEN} strokeWidth={1} style={{ vectorEffect: "non-scaling-stroke" }} />
+            {/* Behind: the frame, the band, and the lines across them. */}
+            <motion.g style={{ y: back }}>
+              <rect x={BOX.x} y={BOX.y} width={BOX.w} height={BOX.h} rx={BOX_R} {...line} strokeOpacity={0.55} style={{ ...hair, ...ruled(0, 1.1) }} />
+              <rect x={BAND.x} y={BAND.y} width={BAND.w} height={BAND.h} rx={3} {...line} strokeOpacity={0.55} style={{ ...hair, ...ruled(0.25, 1.1) }} />
+              {GUIDES.map((x, i) => (
+                <path key={x} d={`M${x} ${BOX.y + inset(x)} V${BOX.y + BOX.h - inset(x)}`} {...line} strokeOpacity={0.45} style={{ ...hair, ...ruled(0.7 + i * 0.08, 0.7) }} />
               ))}
-              <path d={DOT} fill="url(#wm-hatch-dot)" stroke={ORANGE} strokeWidth={1} style={{ vectorEffect: "non-scaling-stroke" }} />
+              <path d={`M${BAND.x} ${X_TOP} H${BAND.x + BAND.w}`} {...line} strokeOpacity={0.45} style={{ ...hair, ...ruled(0.85, 0.9) }} />
+            </motion.g>
+            {/* The wordmark: each letter traced, then hatched. */}
+            <g>
+              {GLYPHS.map((g, i) => {
+                const at = 1.1 + i * 0.12;
+                return (
+                  <g key={g.key}>
+                    <path d={g.d} fill="url(#wm-hatch)" stroke="none" style={fade(at + 0.55, 0.5)} />
+                    <path d={g.d} {...line} style={{ ...hair, ...ruled(at, 0.8) }} />
+                  </g>
+                );
+              })}
+              <path d={DOT} fill="url(#wm-hatch-dot)" style={fade(2.35, 0.5)} />
+              <path d={DOT} {...line} stroke={ORANGE} style={{ ...hair, ...ruled(1.95, 0.6) }} />
             </g>
-            {/* The measurements. */}
-            <g style={layer(0.65)}>
-              {BARS.map(([a, b]) => (
-                <rect key={a} x={a} y={BAR_TOP} width={b - a} height={BAR_BOTTOM - BAR_TOP} fill={GREEN} fillOpacity={0.26} />
+            {/* In front: the measurements. */}
+            <motion.g style={{ y: front }}>
+              {BARS.map(([a, b], i) => (
+                <rect
+                  key={a}
+                  x={a}
+                  y={BAR_TOP}
+                  width={b - a}
+                  height={BAR_BOTTOM - BAR_TOP}
+                  fill={GREEN}
+                  fillOpacity={0.26}
+                  style={{
+                    transformBox: "fill-box",
+                    transformOrigin: "50% 0%",
+                    transform: on ? "scaleY(1)" : "scaleY(0)",
+                    transition: reduced ? "none" : `transform 0.7s ${ease} ${2.45 + i * 0.1}s`,
+                  }}
+                />
               ))}
-            </g>
-            <g style={layer(0.85)}>
-              <path d={BRACKETS} {...line} strokeOpacity={0.8} strokeLinejoin="round" strokeLinecap="round" />
-            </g>
+              {BRACKETS.map((d, i) => (
+                <path key={i} d={d} {...line} strokeOpacity={0.8} strokeLinejoin="round" strokeLinecap="round" style={{ ...hair, ...ruled(2.65 + i * 0.1, 0.7) }} />
+              ))}
+            </motion.g>
           </g>
         </svg>
-        <div aria-hidden style={{ position: "absolute", inset: 0, ...layer(0.95) }}>
+        <motion.div aria-hidden style={{ position: "absolute", inset: 0, y: frontCq }}>
           {LABELS.map((l) => (
             <span
               key={l.text.join() + l.x}
@@ -169,6 +225,7 @@ export default function WordmarkSpec() {
                 fontWeight: 500,
                 lineHeight: 1.3,
                 color: GREEN,
+                ...fade(l.at, 0.5),
               }}
             >
               {l.text.map((t) => (
@@ -178,7 +235,7 @@ export default function WordmarkSpec() {
               ))}
             </span>
           ))}
-        </div>
+        </motion.div>
       </div>
     </figure>
   );
