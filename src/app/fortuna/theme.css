@@ -375,3 +375,13 @@
     transform: translateY(-6px);
   }
 }
+
+/* The App Store strip scrolls sideways without showing a scrollbar. */
+.fortuna .f-strip::-webkit-scrollbar {
+  display: none;
+}
+.fortuna .f-strip:focus-visible {
+  outline: 2px solid var(--f-green);
+  outline-offset: 4px;
+  border-radius: 14px;
+}

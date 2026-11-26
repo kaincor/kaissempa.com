@@ -12,6 +12,13 @@ import SwipeDemo from "./swipe/SwipeDemo";
 import VideoResumeDemo from "./swipe/VideoResumeDemo";
 import ScreenGrid from "./screens/ScreenGrid";
 import FlowMap from "./screens/FlowMap";
+import BrandMark from "./brand/BrandMark";
+import FMarkReel from "./brand/FMarkReel";
+import WordmarkSpec from "./brand/WordmarkSpec";
+import PaletteReel from "./brand/PaletteReel";
+import StoreStrip from "./brand/StoreStrip";
+import SiteSwitch from "./brand/SiteSwitch";
+import FlyerFlip from "./brand/FlyerFlip";
 import BeforeAfter from "./screens/BeforeAfter";
 import NightSky from "./NightSky";
 import { hasFill } from "@/content/fortuna";
@@ -594,6 +601,9 @@ function ownsEntrance(block: Block) {
     block.kind === "globe" ||
     block.kind === "persona" ||
     block.kind === "reveal" ||
+    block.kind === "f-mark-reel" ||
+    block.kind === "wordmark-spec" ||
+    block.kind === "palette-reel" ||
     (block.kind === "list" && block.emphasis === true) ||
     (block.kind === "callout" && block.reveal === true)
   );
@@ -703,6 +713,20 @@ function blockNode(
       return <FlowMap key={i} steps={block.steps} />;
     case "before-after":
       return <BeforeAfter key={i} pairs={block.pairs} />;
+    case "brand-mark":
+      return <BrandMark key={i} />;
+    case "f-mark-reel":
+      return <FMarkReel key={i} />;
+    case "wordmark-spec":
+      return <WordmarkSpec key={i} />;
+    case "palette-reel":
+      return <PaletteReel key={i} />;
+    case "store-strip":
+      return <StoreStrip key={i} />;
+    case "site-switch":
+      return <SiteSwitch key={i} />;
+    case "flyer-flip":
+      return <FlyerFlip key={i} />;
   }
 }
 

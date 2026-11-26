@@ -3,65 +3,37 @@
 import Image from "next/image";
 import { useInView, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import {
-  AppChrome,
-  AppliedFace,
-  BigCard,
-  CREAM,
-  DINER,
-  FOREST,
-  GREEN,
-  JOBS,
-  MiniCard,
-  ORANGE,
-} from "./cards";
-import { PROMO_DOTS, SPLASH_DOTS } from "./dots";
-import {
-  at,
-  between,
-  clamp01,
-  easeIn,
-  easeInOut,
-  easeOut,
-  fall,
-  glide,
-  hop,
-  lerp,
-  mix,
-  place,
-  seg,
-  spring,
-  zoom,
-  type Box,
-} from "./motion";
+import { AppChrome, BigCard, CREAM, FOREST, GREEN, JOBS, MiniCard, ORANGE } from "./cards";
+import { SPLASH_DOTS } from "./dots";
+import { at, between, clamp01, easeIn, easeOut, fall, glide, hop, lerp, mix, place, seg, spring, zoom, type Box } from "./motion";
 import { PHONE_BODY } from "./phone-shape";
-import { DOT, DOT_BESIDE_F, GLYPHS, ICON_SCALE } from "./wordmark";
+import { DOT, DOT_BESIDE_F, GLYPHS } from "./wordmark";
 
 /**
- * The first time Fortuna is shown: a looping reel, after the Kindred one.
+ * The first time Fortuna is shown: a looping reel of the website, the app's
+ * three steps, and the splash screen, and round again.
  *
- * Five frames from the Motion Vectors page, one after another on a stage
- * whose colour changes with each: the splash on green, the swipe promo on
- * forest, the app icon on cream, the flow promo on orange, the website on
- * petrol, and round again. The layout changes shape between them — tall, a
- * poster, a small square, wide, large — the way the reference does.
+ *   0.0   The splash's phone moves into the website and the page opens out
+ *         of its screen; everything on the page bounces into place.
+ *   1.5   "Swipe right to find your next job in" types four kinds of work,
+ *         one after another, and the job cards step along with each.
+ *   9.35  The page falls away and closes into the orange flow promo, the
+ *         wordmark dropping "ortuna" and walking its full stop over to sit
+ *         beside the f in the corner.
+ *  10.3   Job search made easy: create your bio, swipe through jobs, get hired.
+ *  14.7   The promo's panel closes, with everything on it, into the phone's screen,
+ *         on green: the splash. The f. comes to the middle, hops, and the
+ *         full stop rolls right; each letter jumps up as it makes room, the
+ *         way the logo's own reel does it.
+ *  18.6   Round again, from the splash into the website.
  *
- * The thread is the wordmark, and it is one element the whole way round. It
- * slides up on the splash, lifts out of the phone to head the swipe promo,
- * sheds "ortuna" and walks its full stop over to become the app icon's f.,
- * lands in the flow promo's corner, and grows its letters back to head the
- * website. That works because the icon is the wordmark's own f and dot at
- * 7.94 times the size: nothing is swapped for a lookalike at any point.
- *
- * The other things that carry across are carried, not cut: the phone runs
- * from the splash into the promo and out of the website back into the
- * splash; the camera rushes into the applied card until its green is the
- * whole stage, and that green closes into the app icon's square; the square
- * then opens into the flow promo's panel and on into the website's page.
+ * The thread is the wordmark, and it is one element the whole way round,
+ * as the phone is and as the page behind it is: a card that is the phone's
+ * screen, then the website's page, then the flow promo's panel, then the
+ * phone's screen again. Nothing is swapped for a lookalike.
  *
  * Bouncy throughout. Every arrival is a spring that overshoots and settles;
- * the only things that are not are the things falling away, and the icon's
- * full stop, which is set down gently.
+ * the only things that are not are the things falling away.
  *
  * All of it is drawn from a single clock by one function, writing styles
  * straight to the elements rather than through React state, because there
@@ -71,10 +43,10 @@ import { DOT, DOT_BESIDE_F, GLYPHS, ICON_SCALE } from "./wordmark";
  */
 
 /** One time round, in seconds. */
-const LOOP = 22;
+const LOOP = 18.6;
 
 /** The stage's colour for each scene. */
-const STAGE = { splash: GREEN, promo: FOREST, icon: CREAM, flow: ORANGE, web: "#6f8b81" };
+const STAGE = { splash: GREEN, flow: ORANGE, web: "#6f8b81" };
 
 /** The flow promo's panel, and the website's page. */
 const FLOW_PAPER = "#f2f0eb";
@@ -93,9 +65,9 @@ function turn(deg: number, dash: number, r: number) {
 }
 
 /**
- * The splash's dashed rings, and the swipe promo's. Radii and opacities are
- * the frames' own; each turns at its own pace, the inner ones fastest, so
- * they visibly slide against one another.
+ * The splash's dashed rings. Radii and opacities are the frame's own; each
+ * turns at its own pace, the inner ones fastest, so they visibly slide
+ * against one another.
  */
 const SPLASH_RINGS = [
   { r: 250.754, o: 1, deg: 210 },
@@ -104,13 +76,6 @@ const SPLASH_RINGS = [
   { r: 492.439, o: 0.5, deg: 120 },
   { r: 573, o: 0.3, deg: 95 },
 ].map((ring) => ({ ...ring, deg: turn(ring.deg, 8, ring.r) }));
-const PROMO_RINGS = [
-  { r: 771.745, o: 1, deg: 150 },
-  { r: 1020.86, o: 0.8, deg: 120 },
-  { r: 1269.97, o: 0.6, deg: 100 },
-  { r: 1519.09, o: 0.5, deg: 80 },
-  { r: 1768.2, o: 0.3, deg: 64 },
-].map((ring) => ({ ...ring, deg: turn(ring.deg, 53.89, ring.r) }));
 
 /** A number in [0, 1) that is the same every time for the same inputs. */
 function rand(i: number, salt: number) {
@@ -143,7 +108,6 @@ const drift = (w: Wander, t: number) => ({
   y: w.ay * Math.cos((2 * Math.PI * w.ky * t) / LOOP + w.py),
 });
 const SPLASH_WANDER = SPLASH_DOTS.map((_, i) => wander(i, 1, 8));
-const PROMO_WANDER = PROMO_DOTS.map((_, i) => wander(i, 2, 54));
 
 /**
  * When everything happens, in seconds round the loop.
@@ -152,84 +116,63 @@ const PROMO_WANDER = PROMO_DOTS.map((_, i) => wander(i, 2, 54));
  * here rather than hunted through the drawing code below.
  */
 const T = {
-  // The splash. Each dot fades in somewhere in `dotsIn`.
-  markUp: [0.15, 1.0],
-  dotsIn: [0.2, 1.5],
-  // Splash into the swipe promo: the promo grows up around the phone.
-  toPromo: [2.8, 3.95],
-  promoOpen: [2.9, 3.9],
-  promoRings: [3.3, 4.1],
-  promoDots: [3.4, 4.6],
-  man: [3.85, 4.75],
-  cardIn: [4.2, 4.8],
-  words: 3.7,
-  your: 4.1,
-  type: [4.5, 5.2],
-  underline: [5.25, 5.65],
-  swipe: [6.0, 6.9],
-  face: [6.1, 6.55],
-  tick: [6.35, 6.9],
-  stamp: [6.5, 7.05],
-  // Into the applied card's green, which closes into the app icon.
-  zoomIn: [7.35, 8.2],
-  toIcon: [7.45, 8.3],
-  drop: 7.65,
-  whiten: [7.85, 8.2],
-  square: [8.4, 9.3],
-  dotOver: [8.6, 9.85],
-  // The icon opening into the flow promo, and its three steps in turn.
-  toFlow: [10.4, 11.4],
-  markToFlow: [10.45, 11.35],
-  greenAgain: [10.7, 11.1],
-  flowTitle: 11.2,
-  parts: [11.45, 12.55, 13.65],
-  bioName: [11.8, 12.2],
-  bioEdu: [12.25, 12.65],
-  bioPills: [12.65, 13.05],
-  swipeOut: [13.05, 13.5],
-  swipeBack: [13.6, 14.2],
-  hirePills: [14.0, 14.35],
-  hired: [14.35, 14.85],
-  confetti: [14.42, 15.3],
-  // The flow promo growing into the website.
-  flowDrop: 15.5,
-  toWeb: [15.5, 16.4],
-  markToWeb: [15.9, 16.7],
-  dotBack: [16.0, 16.6],
-  lettersBack: 16.25,
-  darken: [16.0, 16.5],
-  webIn: 16.4,
-  slots: [17.7, 18.9, 20.1],
-  // The website's phone back into the splash.
-  toSplash: [21.0, 22.0],
-  webOut: [21.0, 21.55],
-  ringsBack: [21.4, 22.0],
+  // The splash into the website: the phone moves into the page, and the
+  // page opens out of its screen.
+  toWeb: [0, 1.0],
+  screenSwap: [0.15, 0.55],
+  markToWeb: [0.05, 0.95],
+  darken: [0.1, 0.6],
+  webIn: 0.25,
+  // The website away, into the flow promo.
+  webDrop: 9.35,
+  toFlow: [9.45, 10.45],
+  letterDrop: 9.4,
+  dotOver: [9.6, 10.3],
+  markToFlow: [9.55, 10.45],
+  greenAgain: [9.6, 10.1],
+  // The flow promo and its three steps in turn.
+  flowTitle: 10.3,
+  parts: [10.55, 11.65, 12.75],
+  bioName: [10.9, 11.3],
+  bioEdu: [11.35, 11.75],
+  bioPills: [11.75, 12.15],
+  swipeOut: [12.15, 12.6],
+  swipeBack: [12.7, 13.3],
+  hirePills: [13.1, 13.45],
+  hired: [13.45, 13.95],
+  confetti: [13.52, 14.4],
+  // The flow promo closing into the phone's screen: the splash.
+  toSplash: [14.7, 15.6],
+  phoneIn: [15.15, 15.6],
+  ringsIn: [15.3, 16.0],
+  markToSplash: [14.75, 15.6],
+  // The wordmark spelling itself out: the f hops, the full stop rolls.
+  hop: 15.62,
+  roll: [15.68, 16.04],
+  dotsIn: [15.8, 17.2],
 } as const;
 
 /**
- * The website's headline types the kind of work rather than the city — the
- * live site cycles through seven. Each word is typed, underlined, and
- * deleted again: `under` is when its underline shows, `del` when it goes.
+ * The website's headline types the kind of work, four of them. Each word is
+ * typed and underlined; all but the last are deleted again. The job cards
+ * step along with each new word. `under` is when its underline shows,
+ * `del` when it goes.
  */
 const SECTORS = [
-  { word: "Hospitality", type: [17.2, 17.9], under: [17.95, 18.75], del: [18.9, 19.3] },
-  { word: "Retail", type: [19.4, 19.8], under: [19.85, 20.55], del: [20.7, 20.95] },
+  { word: "Hospitality", type: [1.5, 2.2], under: [2.25, 3.0], del: [3.15, 3.5] },
+  { word: "Retail", type: [3.6, 4.0], under: [4.05, 4.8], del: [4.95, 5.2] },
+  { word: "Food Service", type: [5.3, 6.0], under: [6.05, 6.8], del: [6.95, 7.35] },
+  { word: "Healthcare", type: [7.45, 8.1], under: [8.15, 99], del: [99, 99] },
 ] as const;
+const SLOTS = SECTORS.map((s) => s.under[0]);
 
 /** Stage colour changes, each [from, to, start, end]. */
 const STAGE_CHANGES: [string, string, number, number][] = [
-  [STAGE.splash, STAGE.promo, 2.8, 3.3],
-  // Green as the camera reaches the applied card, and cream under the green
-  // before it closes, so the icon's ground is waiting round it.
-  [STAGE.promo, GREEN, 7.6, 8.05],
-  [GREEN, STAGE.icon, 8.3, 8.32],
-  [STAGE.icon, STAGE.flow, 10.5, 11.0],
-  [STAGE.flow, STAGE.web, 15.6, 16.1],
-  [STAGE.web, STAGE.splash, 21.1, 21.6],
+  [STAGE.splash, STAGE.web, 0.02, 0.55],
+  [STAGE.web, STAGE.flow, 9.45, 10.0],
+  [STAGE.flow, STAGE.splash, 14.75, 15.3],
 ];
 
-const PROMO_WORDS = ["Swipe", "right", "to", "find"];
-const TYPED = "next job";
 const FLOW_WORDS = ["Job", "search", "made", "easy"];
 const STEPS = ["Create your bio", "Swipe through jobs", "Get hired"];
 const STEP_X = [64, 496, 928];
@@ -287,8 +230,68 @@ function slotX(q: number) {
 
 /** How far the reel has stepped along at a moment: each step is a spring. */
 function slotsMoved(t: number) {
-  return T.slots.reduce((n, s) => n + spring(seg(t, s, s + 0.8), 0.3), 0);
+  return SLOTS.reduce((n, s) => n + spring(seg(t, s, s + 0.8), 0.3), 0);
 }
+
+/**
+ * The wordmark's jump, off the logo reference: [seconds since the letter
+ * appeared, height below the baseline in x-heights]. It comes in low, rises
+ * fast and slows, hangs a fifth of an x-height up, then drops onto the line
+ * with no bounce back.
+ */
+const LIFT: [number, number][] = [
+  [0, 0.31],
+  [0.067, 0.31],
+  [0.1, 0.157],
+  [0.133, 0.056],
+  [0.167, -0.034],
+  [0.2, -0.09],
+  [0.233, -0.135],
+  [0.267, -0.169],
+  [0.3, -0.19],
+  [0.333, -0.2],
+  [0.4, -0.2],
+  [0.433, -0.18],
+  [0.467, -0.124],
+  [0.5, -0.022],
+  [0.533, 0],
+];
+const X_HEIGHT = 28.3;
+const BASE = 40.8;
+/**
+ * The f is already standing when it hops, so it joins the jump where the
+ * curve crosses the baseline, rather than coming up from below it.
+ */
+const HOP_FROM = 0.15;
+
+/** How far below the baseline, in wordmark units, `s` seconds into a jump. */
+function lift(s: number) {
+  if (s <= 0) return LIFT[0][1] * X_HEIGHT;
+  for (let i = 1; i < LIFT.length; i++) {
+    const [t1, y1] = LIFT[i];
+    if (s <= t1) {
+      const [t0, y0] = LIFT[i - 1];
+      const u = (s - t0) / (t1 - t0);
+      return lerp(y0, y1, u * u * (3 - 2 * u)) * X_HEIGHT;
+    }
+  }
+  return 0;
+}
+
+/** The full stop's roll from beside the f to after the a: 1 beside, 0 after. */
+function besideF(t: number) {
+  const u = seg(t, ...T.roll);
+  return Math.pow(1 - u, 1.6);
+}
+
+/** The moment each of "ortuna" appears: the full stop has just made room. */
+const POPS = GLYPHS.slice(1).map((g) => {
+  for (let t: number = T.roll[0]; t <= T.roll[1]; t += 0.002) {
+    const left = 200.645 + DOT_BESIDE_F * besideF(t) - 5.37;
+    if (left > g.x1 - 6) return t;
+  }
+  return T.roll[1];
+});
 
 function fit(dw: number, dh: number, maxW: number, maxH: number, W: number, H: number): Box {
   const s = Math.min(maxW / dw, maxH / dh);
@@ -305,6 +308,7 @@ function stageColour(t: number) {
 
 type El = HTMLElement | SVGElement;
 type Reg = (key: string) => (el: El | null) => void;
+type Rect = { x: number; y: number; w: number; h: number; r: number };
 
 export default function Reel() {
   const reduced = useReducedMotion();
@@ -366,77 +370,63 @@ export default function Reel() {
       };
       const show = (key: string, o: number) => css(key, "opacity", clamp01(o).toFixed(3));
 
-      // ── The five layouts, fitted to the stage ──────────────────────────
+      // ── The three layouts, fitted to the stage ─────────────────────────
       const splash = fit(415, 838, W * 0.86, H * 0.74, W, H);
-      const promo = fit(2526, 3006, W * 0.92, H * 0.9, W, H);
-      const icon = fit(401, 401, W * 0.5, H * 0.34, W, H);
       const flow = fit(1360, 695, W * 0.92, H * 0.72, W, H);
       const web = fit(1525, 1487, W * 0.94, H * 0.9, W, H);
 
-      css("stage", "background", stageColour(t));
-
-      // ── The camera rushing into the applied card, and into the web's phone
-      // It closes on the card's lower half, below the tick and the stamp, so
-      // what fills the stage is nothing but its green; and it brings that
-      // spot to the middle as it goes, so the green fills the stage evenly.
-      const promoMarkBox: Box = { ...at(promo, 119, 192), s: (promo.s * 555) / 206 };
-      const zu = seg(t, ...T.zoomIn);
-      const greenSpot = at(promo, 1306.65, 2210);
-      const closeIn = zoom(promo, greenSpot.x, greenSpot.y, Math.pow(14, easeIn(zu)));
-      const pan = easeInOut(zu);
-      const promoCam: Box = {
-        x: closeIn.x + (W / 2 - greenSpot.x) * pan,
-        y: closeIn.y + (H / 2 - greenSpot.y) * pan,
-        s: closeIn.s,
-      };
-
-      const webPhone0: Box = { ...at(web, 558, 592), s: web.s };
-      const webPhoneMid = { x: webPhone0.x + 207.5 * web.s, y: webPhone0.y + 419 * web.s };
-      const webZ = 1 + 1.6 * easeIn(seg(t, ...T.webOut));
-      const webCam = zoom(web, webPhoneMid.x, webPhoneMid.y, webZ);
+      // Each new stage colour opens as a circle from the middle, rather than
+      // mixing through the muddy colours between two brand colours.
+      {
+        const c = STAGE_CHANGES.find(([, , s0, e0]) => t >= s0 && t < e0);
+        const R = Math.hypot(W, H) / 2;
+        css("stage", "background", c ? c[0] : stageColour(t));
+        css("wipe", "background", c ? c[1] : "transparent");
+        css("wipe", "clipPath", `circle(${c ? (easeIn(seg(t, c[2], c[3])) * R).toFixed(1) : 0}px at 50% 50%)`);
+      }
 
       // ── The phone ──────────────────────────────────────────────────────
-      const promoPhone = (b: Box): Box => ({ ...at(b, 118, 886), s: (b.s * 1005.31) / 415 });
-      const webPhone = (b: Box): Box => ({ ...at(b, 558, 592), s: b.s });
+      // From the splash into the website; it falls away with the page, and
+      // comes back round the flow promo's panel as that closes into its
+      // screen.
+      const webPhone: Box = { ...at(web, 558, 592), s: web.s };
       let phone: Box = splash;
+      let phoneRot = 0;
       let phoneO = 1;
-      if (t < T.toPromo[0]) phone = splash;
-      else if (t < T.toPromo[1]) phone = between(splash, promoPhone(promo), spring(seg(t, ...T.toPromo), 0.28));
-      else if (t < T.zoomIn[0]) phone = promoPhone(promo);
-      else if (t < T.zoomIn[1] + 0.05) {
-        phone = promoPhone(promoCam);
-        phoneO = 1 - seg(t, T.zoomIn[0] + 0.2, T.zoomIn[1] - 0.1);
-      } else if (t < T.webIn + 0.3) phoneO = 0;
+      if (t < T.toWeb[1]) phone = between(splash, webPhone, spring(seg(t, ...T.toWeb), 0.24));
+      else if (t < T.webDrop + 0.2) phone = webPhone;
       else if (t < T.toSplash[0]) {
-        const drop = 1 - spring(seg(t, T.webIn + 0.3, T.webIn + 1.25), 0.32);
-        phone = { ...webPhone(web), y: webPhone(web).y - drop * H * 1.1 };
-      } else phone = between(webPhone(web), splash, spring(seg(t, ...T.toSplash), 0.24));
-      css("phone", "transform", place(phone));
+        const f = fall((t - T.webDrop - 0.2) / 0.8, 8);
+        phone = { ...webPhone, y: webPhone.y + f.dy * web.s };
+        phoneRot = f.rot;
+        phoneO = f.opacity;
+      } else {
+        const u = spring(seg(t, ...T.phoneIn), 0.35);
+        const mid = at(splash, 207.5, 419);
+        phone = zoom(splash, mid.x, mid.y, lerp(1.07, 1, u));
+        phoneO = seg(t, T.phoneIn[0], T.phoneIn[0] + 0.2);
+      }
+      css("phone", "transform", place(phone, phoneRot));
       show("phone", phoneO);
 
-      // What the phone's screen shows.
-      show("ph-rings", t >= T.webIn ? seg(t, ...T.ringsBack) : 1);
+      // What the phone's screen shows: the splash's rings and dots, or the
+      // website's swipe card.
+      const splashScreen = t < T.toWeb[1] ? 1 - seg(t, ...T.screenSwap) : t >= T.toSplash[0] ? 1 : 0;
+      show("ph-rings", t >= T.toSplash[0] ? seg(t, ...T.ringsIn) : splashScreen);
       SPLASH_RINGS.forEach((ring, i) => {
         attr(`ph-ring-${i}`, "transform", `rotate(${((t / LOOP) * ring.deg).toFixed(3)} 187 364)`);
       });
       // The dots fade up where they stand, each at its own moment, and each
       // wanders its own small orbit.
-      const dotsOn = t < T.webIn;
       SPLASH_WANDER.forEach((w, i) => {
         const d = drift(w, t);
         attr(`ph-dot-${i}`, "transform", `translate(${d.x.toFixed(2)} ${d.y.toFixed(2)})`);
         const s0 = lerp(T.dotsIn[0], T.dotsIn[1] - 0.5, w.start);
-        show(`ph-dot-${i}`, dotsOn ? seg(t, s0, s0 + 0.5) : 0);
+        show(`ph-dot-${i}`, t >= T.toSplash[0] ? seg(t, s0, s0 + 0.5) : splashScreen);
       });
 
-      // The waiter card the promo's phone develops.
-      const cardPop = spring(seg(t, ...T.cardIn), 0.55);
-      css("ph-card", "transform", `translate(35.1px, ${(123.1 + (1 - cardPop) * 40).toFixed(2)}px) scale(${(0.9703 * lerp(0.7, 1, cardPop)).toFixed(4)})`);
-      show("ph-card", t >= T.cardIn[0] && t < T.webIn ? seg(t, T.cardIn[0], T.cardIn[0] + 0.15) : 0);
-
       // The website's screen, with the slot machine running through it.
-      const webScreenO = t >= T.webIn && t < T.toSplash[0] ? 1 : t >= T.toSplash[0] ? 1 - seg(t, T.toSplash[0], T.toSplash[0] + 0.45) : 0;
-      show("ph-web", webScreenO);
+      show("ph-web", t < T.toSplash[0] ? seg(t, ...T.screenSwap) : 0);
       const moved = slotsMoved(t);
       for (let j = 0; j < 5; j++) {
         const q = ((((j - moved + 1) % 5) + 5) % 5) - 1;
@@ -445,136 +435,52 @@ export default function Reel() {
         show(`ph-big-${j}`, Math.abs(q - 2) < 1.2 ? 1 : 0);
       }
 
-      // ── The swipe promo ────────────────────────────────────────────────
-      const promoOn = t >= T.toPromo[0] && t < T.zoomIn[1];
-      css("promo", "transform", place(promoCam));
-      show("promo", promoOn ? 1 - seg(t, T.zoomIn[0] + 0.35, T.zoomIn[1]) : 0);
-      // It grows out from where the phone stood.
+      // ── The card that morphs: phone screen, web page, flow panel ───────
+      let card: Rect = { x: 0, y: 0, w: 0, h: 0, r: 0 };
       {
-        const open = spring(seg(t, ...T.promoOpen), 0.18);
-        const from = {
-          l: (splash.x - promo.x) / promo.s,
-          t: (splash.y - promo.y) / promo.s,
-          r: (splash.x + 415 * splash.s - promo.x) / promo.s,
-          b: (splash.y + 838 * splash.s - promo.y) / promo.s,
-        };
-        const l = lerp(from.l, 0, open);
-        const tp = lerp(from.t, 0, open);
-        const r = lerp(from.r, 2526, open);
-        const b = lerp(from.b, 3006, open);
-        css("promo", "clipPath", `inset(${tp.toFixed(1)}px ${(2526 - r).toFixed(1)}px ${(3006 - b).toFixed(1)}px ${l.toFixed(1)}px round ${lerp(150, 70, open).toFixed(1)}px)`);
-      }
-      show("promo-rings", seg(t, ...T.promoRings));
-      PROMO_RINGS.forEach((ring, i) => {
-        attr(`promo-ring-${i}`, "transform", `rotate(${((t / LOOP) * ring.deg).toFixed(3)} 2448.55 1693.77)`);
-      });
-      PROMO_WANDER.forEach((w, i) => {
-        const d = drift(w, t);
-        attr(`pd-${i}`, "transform", `translate(${d.x.toFixed(1)} ${d.y.toFixed(1)})`);
-        const s0 = lerp(T.promoDots[0], T.promoDots[1] - 0.5, w.start);
-        show(`pd-${i}`, seg(t, s0, s0 + 0.5));
-      });
-      {
-        const u = spring(seg(t, ...T.man), 0.35);
-        const bob = 18 * Math.sin((2 * Math.PI * t) / 4);
-        css("man", "transform", `translate(${(956.51 + (1 - u) * 1100).toFixed(1)}px, ${(2 + bob).toFixed(1)}px) rotate(${(Math.sin((2 * Math.PI * t) / 5) * 1.2).toFixed(2)}deg)`);
-        show("man", seg(t, T.man[0], T.man[0] + 0.2));
-      }
-      PROMO_WORDS.forEach((_, i) => {
-        const s0 = T.words + i * 0.09;
-        const u = spring(seg(t, s0, s0 + 0.6), 0.55);
-        css(`pw-${i}`, "transform", `translateY(${((1 - u) * 90).toFixed(1)}px)`);
-        show(`pw-${i}`, seg(t, s0, s0 + 0.12));
-      });
-      {
-        const u = spring(seg(t, T.your, T.your + 0.6), 0.55);
-        css("p-your", "transform", `translateY(${((1 - u) * 90).toFixed(1)}px)`);
-        show("p-your", seg(t, T.your, T.your + 0.12));
-      }
-      const typed = Math.floor(seg(t, ...T.type) * TYPED.length + 1e-6);
-      for (let i = 0; i < TYPED.length; i++) {
-        const on = i < typed;
-        css(`p-ch-${i}`, "display", on ? "inline-block" : "none");
-        if (on) {
-          const s0 = T.type[0] + (i / TYPED.length) * (T.type[1] - T.type[0]);
-          css(`p-ch-${i}`, "transform", `scale(${lerp(1.5, 1, spring(seg(t, s0, s0 + 0.3), 0.6)).toFixed(3)})`);
-        }
-      }
-      show("p-caret", t >= T.type[0] - 0.2 && t < T.underline[0] ? (Math.floor(t * 4) % 2 === 0 ? 1 : 0.2) : 0);
-      show("p-under", seg(t, ...T.underline));
-
-      // The applied card, swiped out of the phone; then the camera dives
-      // into it, its green going solid on the way.
-      {
-        const u = spring(seg(t, ...T.swipe), 0.35);
-        const cx = lerp(622.3, 1394.55, u);
-        const cy = lerp(1829.5, 1882, u) - Math.sin(Math.PI * clamp01(seg(t, ...T.swipe))) * 60;
-        const rot = lerp(0, 15, u);
-        const c = at(promoCam, cx, cy);
-        const s = promoCam.s * 2.3504;
-        css("green", "transform", `translate(${c.x.toFixed(1)}px, ${c.y.toFixed(1)}px) rotate(${rot.toFixed(2)}deg) scale(${s.toFixed(4)}) translate(-157.5px, -255.5px)`);
-        show("green", t >= T.swipe[0] && promoOn ? 1 : 0);
-        show("apply-green", 0.88 * seg(t, ...T.face) + 0.12 * seg(t, T.zoomIn[0], T.zoomIn[0] + 0.3));
-        const tick = spring(seg(t, ...T.tick), 0.6);
-        css("apply-tick", "transform", `scale(${tick.toFixed(3)})`);
-        show("apply-tick", seg(t, T.tick[0], T.tick[0] + 0.1));
-        const stamp = spring(seg(t, ...T.stamp), 0.55);
-        css("apply-stamp", "transform", `scale(${lerp(1.7, 1, stamp).toFixed(3)}) rotate(${lerp(-10, 0, stamp).toFixed(2)}deg)`);
-        show("apply-stamp", seg(t, T.stamp[0], T.stamp[0] + 0.12));
-      }
-
-      // ── The card that morphs: the green, the icon, flow panel, web page ─
-      {
-        const fullRect = { x: 0, y: 0, w: W, h: H, r: 0 };
-        const iconRect = { x: icon.x, y: icon.y, w: 401 * icon.s, h: 401 * icon.s, r: 90 * icon.s };
-        const flowRect = { x: flow.x, y: flow.y, w: 1360 * flow.s, h: 695 * flow.s, r: 36 * flow.s };
-        const cam = t >= T.webOut[0] ? webCam : web;
-        const webRect = { x: cam.x + 43 * cam.s, y: cam.y, w: 1440 * cam.s, h: 1369 * cam.s, r: 30 * cam.s };
-        const blend = (a: typeof iconRect, b: typeof iconRect, u: number) => ({
+        const screen: Rect = { x: splash.x + 20 * splash.s, y: splash.y + 18 * splash.s, w: 375 * splash.s, h: 801 * splash.s, r: 44 * splash.s };
+        const flowRect: Rect = { x: flow.x, y: flow.y, w: 1360 * flow.s, h: 695 * flow.s, r: 36 * flow.s };
+        const webRect: Rect = { x: web.x + 43 * web.s, y: web.y, w: 1440 * web.s, h: 1369 * web.s, r: 30 * web.s };
+        const blend = (a: Rect, b: Rect, u: number): Rect => ({
           x: lerp(a.x, b.x, u),
           y: lerp(a.y, b.y, u),
           w: lerp(a.w, b.w, u),
           h: lerp(a.h, b.h, u),
           r: lerp(a.r, b.r, clamp01(u)),
         });
-        let rect = iconRect;
-        let colour = GREEN;
-        let o = 1;
-        if (t < T.zoomIn[1] - 0.1 || t >= T.webOut[1]) o = 0;
-        else if (t < T.toFlow[0]) {
-          // The whole stage of green, closing into the icon's square: eased
-          // rather than sprung, so it draws in rather than snaps.
-          rect = blend(fullRect, iconRect, 1 - (1 - seg(t, ...T.square)) ** 3);
-          o = seg(t, T.zoomIn[1] - 0.1, T.zoomIn[1]);
-        } else if (t < T.toWeb[0]) {
-          rect = blend(iconRect, flowRect, spring(seg(t, ...T.toFlow), 0.28));
-          colour = mix(GREEN, FLOW_PAPER, seg(t, T.toFlow[0] + 0.05, T.toFlow[0] + 0.5));
+        let rect = screen;
+        let colour = WEB_PAPER;
+        if (t < T.toWeb[1]) rect = blend(screen, webRect, spring(seg(t, ...T.toWeb), 0.28));
+        else if (t < T.toFlow[0]) rect = webRect;
+        else if (t < T.toSplash[0]) {
+          rect = blend(webRect, flowRect, spring(seg(t, ...T.toFlow), 0.28));
+          colour = mix(WEB_PAPER, FLOW_PAPER, seg(t, T.toFlow[0], T.toFlow[0] + 0.5));
         } else {
-          rect = blend(flowRect, webRect, spring(seg(t, ...T.toWeb), 0.28));
-          colour = mix(FLOW_PAPER, WEB_PAPER, seg(t, ...T.toWeb));
-          if (t >= T.webOut[0]) o = 1 - seg(t, T.webOut[0] + 0.05, T.webOut[1]);
+          rect = blend(flowRect, screen, spring(seg(t, ...T.toSplash), 0.2));
+          colour = mix(FLOW_PAPER, CREAM, seg(t, ...T.toSplash));
         }
+        card = rect;
         css("card", "transform", `translate(${rect.x.toFixed(1)}px, ${rect.y.toFixed(1)}px)`);
         css("card", "width", `${Math.max(0, rect.w).toFixed(1)}px`);
         css("card", "height", `${Math.max(0, rect.h).toFixed(1)}px`);
         css("card", "borderRadius", `${Math.max(0, rect.r).toFixed(1)}px`);
         css("card", "background", colour);
-        show("card", o);
       }
 
       // ── The flow promo ─────────────────────────────────────────────────
       {
-        const on = t >= T.flowTitle - 0.2 && t < T.toWeb[1];
-        css("flow", "transform", place(flow));
-        show("flow", on ? 1 : 0);
-        let n = 0;
-        const out = (extra = "") => {
-          const u = (t - (T.flowDrop + n * 0.045)) / 0.8;
-          n++;
-          if (u <= 0) return { tr: extra, o: 1 };
-          const f = fall(u, (n % 2 ? 1 : -1) * 22);
-          return { tr: `translateY(${f.dy.toFixed(1)}px) rotate(${f.rot.toFixed(2)}deg) ${extra}`, o: f.opacity };
-        };
+        // It closes with its panel into the phone's screen, fading as it
+        // goes, rather than leaving anything outside the phone.
+        const on = t >= T.flowTitle - 0.2 && t < T.toSplash[1];
+        let box = flow;
+        if (t >= T.toSplash[0]) {
+          const mid = { x: card.x + card.w / 2, y: card.y + card.h / 2 };
+          const s = card.w / 1360;
+          box = { x: mid.x - 680 * s, y: mid.y - 347.5 * s, s };
+        }
+        css("flow", "transform", place(box));
+        show("flow", on ? 1 - seg(t, T.toSplash[0], T.toSplash[0] + 0.35) : 0);
+        const out = (extra = "") => ({ tr: extra, o: 1 });
         FLOW_WORDS.forEach((_, i) => {
           const s0 = T.flowTitle + i * 0.08;
           const u = spring(seg(t, s0, s0 + 0.6), 0.55);
@@ -668,14 +574,25 @@ export default function Reel() {
 
       // ── The website ────────────────────────────────────────────────────
       {
-        const on = t >= T.webIn - 0.1 && t < T.webOut[1];
-        css("web", "transform", place(t >= T.webOut[0] ? webCam : web));
-        show("web", on ? 1 - seg(t, T.webOut[0] + 0.05, T.webOut[1]) : 0);
+        const on = t < T.toFlow[1];
+        css("web", "transform", place(web));
+        show("web", on ? 1 : 0);
+        // Everything drops in from above, bouncing, and falls away at the
+        // end, one after another.
+        let n = 0;
+        const away = () => {
+          const u = (t - (T.webDrop + n * 0.04)) / 0.8;
+          n++;
+          if (u <= 0) return { tr: "", o: 1 };
+          const f = fall(u, (n % 2 ? 1 : -1) * 14);
+          return { tr: ` translateY(${f.dy.toFixed(1)}px) rotate(${f.rot.toFixed(2)}deg)`, o: f.opacity };
+        };
         const drop = (key: string, d: number, from = -520, bounce = 0.4) => {
           const s0 = T.webIn + d;
           const u = spring(seg(t, s0, s0 + 0.75), bounce);
-          css(key, "transform", `translateY(${((1 - u) * from).toFixed(1)}px)`);
-          show(key, seg(t, s0, s0 + 0.12));
+          const f = away();
+          css(key, "transform", `translateY(${((1 - u) * from).toFixed(1)}px)${f.tr}`);
+          show(key, seg(t, s0, s0 + 0.12) * f.o);
         };
         drop("w-nav", 0.05);
         drop("w-dl", 0.1);
@@ -709,103 +626,86 @@ export default function Reel() {
           }
           show(`w-under-${w}`, seg(t, s.under[0], s.under[0] + 0.25) * (1 - seg(t, s.under[1], s.under[1] + 0.15)));
         });
-        const caretOn = t >= SECTORS[0].type[0] - 0.3 && t < T.webOut[1];
+        const caretOn = t >= SECTORS[0].type[0] - 0.3 && t < T.webDrop;
         show("w-caret", caretOn ? (busy || Math.floor(t * 2.6) % 2 === 0 ? 1 : 0.15) : 0);
         PEOPLE.forEach((p, i) => {
           const s0 = T.webIn + 0.3 + i * 0.1;
           const u = spring(seg(t, s0, s0 + 0.8), 0.5);
           const bounce = -22 * hop(t / 1.6 + p.phase) * seg(t, s0 + 0.6, s0 + 1.0);
-          css(`w-p-${i}`, "transform", `translateY(${((1 - u) * -560 + bounce).toFixed(1)}px)`);
-          show(`w-p-${i}`, seg(t, s0, s0 + 0.12));
+          const f = away();
+          css(`w-p-${i}`, "transform", `translateY(${((1 - u) * -560 + bounce).toFixed(1)}px)${f.tr}`);
+          show(`w-p-${i}`, seg(t, s0, s0 + 0.12) * f.o);
         });
+        const f = away();
         for (let j = 0; j < 10; j++) {
           const q = ((((j - moved + 1) % 10) + 10) % 10) - 1;
           const s0 = T.webIn + 0.55 + Math.max(0, Math.min(5, q + 1)) * 0.06;
           const u = spring(seg(t, s0, s0 + 0.8), 0.4);
-          css(`w-c-${j}`, "transform", `translate(${slotX(q).toFixed(1)}px, ${(15 + (1 - u) * -700).toFixed(1)}px)`);
-          show(`w-c-${j}`, q < 5.2 ? seg(t, s0, s0 + 0.12) : 0);
+          css(`w-c-${j}`, "transform", `translate(${slotX(q).toFixed(1)}px, ${(15 + (1 - u) * -700).toFixed(1)}px)${f.tr}`);
+          show(`w-c-${j}`, q < 5.2 ? seg(t, s0, s0 + 0.12) * f.o : 0);
         }
       }
 
-      // ── The wordmark: the thread through all five ──────────────────────
+      // ── The wordmark: the thread through all three ─────────────────────
       {
         const splashMark: Box = { ...at(splash, 104, 364), s: splash.s };
-        const iconMark: Box = { ...at(icon, 70.49, 37.59), s: icon.s * ICON_SCALE };
         const flowMark: Box = { ...at(flow, 1280, 32), s: flow.s * 0.9768 };
         const webMark: Box = { ...at(web, 107, 49), s: (web.s * 131.22) / 206 };
         let box = splashMark;
         let colour = GREEN;
-        let o = 1;
         let dot = 0;
-        let lift = 0;
-        if (t < T.markUp[0]) o = 0;
-        else if (t < T.toPromo[0]) {
-          const u = spring(seg(t, ...T.markUp), 0.45);
-          box = { ...splashMark, y: splashMark.y + (1 - u) * 70 * splash.s };
-          o = seg(t, T.markUp[0], T.markUp[0] + 0.25);
-        } else if (t < T.toPromo[1]) box = between(splashMark, promoMarkBox, spring(seg(t, ...T.toPromo), 0.28));
-        else if (t < T.toIcon[0]) box = promoMarkBox;
-        else if (t < T.markToFlow[0]) {
-          // It stays out of the camera's dive: it comes forward on its own,
-          // white against the green, to be the icon's f.
-          // It grows at the camera's pace, evenly in scale rather than in
-          // size, so it reaches the icon's f as the green reaches the edges.
-          const u = easeInOut(seg(t, ...T.toIcon));
-          box = {
-            x: lerp(promoMarkBox.x, iconMark.x, u),
-            y: lerp(promoMarkBox.y, iconMark.y, u),
-            s: promoMarkBox.s * (iconMark.s / promoMarkBox.s) ** u,
-          };
-          colour = mix(GREEN, "#ffffff", seg(t, ...T.whiten));
-          // The full stop is set down beside the f rather than dropped: it
-          // leaves slowly, drifts over in a low arc, and slows to a stop.
-          // At icon size its place after the a is far off the stage, so it is
-          // held just inside the edge while the mark grows, and leaves from
-          // there.
-          const inside = (b: Box) => clamp01((206 - (W - Math.max(20, W * 0.06) - b.x) / b.s) / -DOT_BESIDE_F);
-          const v = seg(t, ...T.dotOver);
-          dot = t < T.dotOver[0] ? inside(box) : lerp(inside(iconMark), 1, glide(v));
-          lift = -6 * Math.sin(Math.PI * v);
-        } else if (t < T.markToWeb[0]) {
-          box = between(iconMark, flowMark, spring(seg(t, ...T.markToFlow), 0.3));
-          colour = mix("#ffffff", GREEN, seg(t, ...T.greenAgain));
-          dot = 1;
-        } else if (t < T.webOut[0]) {
-          box = between(flowMark, webMark, spring(seg(t, ...T.markToWeb), 0.3));
+        let dotLift = 0;
+        let fLift = 0;
+        const letters = GLYPHS.map(() => ({ tr: "translate(0 0)", o: 1 }));
+        if (t < T.letterDrop) {
+          box = between(splashMark, webMark, spring(seg(t, ...T.markToWeb), 0.3));
           colour = mix(GREEN, MARK_DARK, seg(t, ...T.darken));
-          dot = 1 - spring(seg(t, ...T.dotBack), 0.05);
-          lift = -14 * Math.sin(Math.PI * seg(t, ...T.dotBack));
+        } else if (t < T.markToSplash[0]) {
+          // "ortuna" falls off, and the full stop walks over to the f.
+          box = between(webMark, flowMark, spring(seg(t, ...T.markToFlow), 0.3));
+          colour = mix(MARK_DARK, GREEN, seg(t, ...T.greenAgain));
+          const v = seg(t, ...T.dotOver);
+          dot = glide(v);
+          dotLift = -10 * Math.sin(Math.PI * v);
+          GLYPHS.forEach((g, i) => {
+            if (i === 0) return;
+            const u = (t - (T.letterDrop + (i - 1) * 0.05)) / 0.9;
+            if (u <= 0) return;
+            const f = fall(u, (i % 2 ? 1 : -1) * (30 + i * 6));
+            const cx = (g.x0 + g.x1) / 2;
+            letters[i] = { tr: `translate(0 ${(f.dy / 6).toFixed(2)}) rotate(${f.rot.toFixed(2)} ${cx} 20)`, o: f.opacity };
+          });
         } else {
-          box = zoom(webMark, webPhoneMid.x, webPhoneMid.y, webZ);
-          colour = MARK_DARK;
-          o = 1 - seg(t, T.webOut[0], T.webOut[0] + 0.35);
+          // The f. comes to the middle of the splash, hops, and spells the
+          // rest of the word out as the full stop rolls away from it.
+          box = between(flowMark, splashMark, spring(seg(t, ...T.markToSplash), 0.3));
+          dot = besideF(t);
+          if (t >= T.hop) fLift = lift(t - T.hop + HOP_FROM);
+          dotLift = fLift;
+          GLYPHS.forEach((g, i) => {
+            if (i === 0) return;
+            const since = t - POPS[i - 1];
+            if (since < 0) {
+              letters[i] = { tr: "scale(0)", o: 0 };
+              return;
+            }
+            // It widens into being over two frames, as the reference's do.
+            const w = easeOut(clamp01(since / 0.07));
+            const h = lerp(0.72, 1, w);
+            const cx = (g.x0 + g.x1) / 2;
+            letters[i] = {
+              tr: `translate(${cx.toFixed(2)} ${(BASE + lift(since)).toFixed(3)}) scale(${w.toFixed(4)} ${h.toFixed(4)}) translate(${(-cx).toFixed(2)} ${-BASE})`,
+              o: 1,
+            };
+          });
+          letters[0] = { tr: `translate(0 ${fLift.toFixed(3)})`, o: 1 };
         }
         css("mark", "transform", place(box));
-        show("mark", o);
         attr("mark", "fill", colour);
-        attr("mk-dot", "transform", `translate(${(DOT_BESIDE_F * dot).toFixed(2)} ${lift.toFixed(2)})`);
-
-        // "ortuna": dropped off the f, and back again.
-        GLYPHS.forEach((g, i) => {
-          if (i === 0) return;
-          const cx = (g.x0 + g.x1) / 2;
-          let tr = "";
-          let go = 1;
-          if (t >= T.drop && t < T.lettersBack) {
-            const u = (t - (T.drop + (i - 1) * 0.05)) / 0.9;
-            if (u > 0) {
-              const f = fall(u, (i % 2 ? 1 : -1) * (30 + i * 6));
-              tr = `translate(0 ${(f.dy / 6).toFixed(2)}) rotate(${f.rot.toFixed(2)} ${cx} 20)`;
-              go = f.opacity;
-            }
-          } else if (t >= T.lettersBack && t < T.webOut[0]) {
-            const s0 = T.lettersBack + (i - 1) * 0.045;
-            const u = spring(seg(t, s0, s0 + 0.55), 0.55);
-            tr = `translate(0 ${((1 - u) * -26).toFixed(2)})`;
-            go = seg(t, s0, s0 + 0.1);
-          }
-          attr(`mk-g-${i}`, "transform", tr || "translate(0 0)");
-          attr(`mk-g-${i}`, "opacity", clamp01(go).toFixed(3));
+        attr("mk-dot", "transform", `translate(${(DOT_BESIDE_F * dot).toFixed(2)} ${dotLift.toFixed(2)})`);
+        letters.forEach((l, i) => {
+          attr(`mk-g-${i}`, "transform", l.tr);
+          attr(`mk-g-${i}`, "opacity", clamp01(l.o).toFixed(3));
         });
       }
     },
@@ -816,7 +716,7 @@ export default function Reel() {
   // is capped so returning to the tab does not skip whole scenes.
   useEffect(() => {
     if (reduced) {
-      draw(7.2);
+      draw(2.6);
       return;
     }
     draw(clock.current);
@@ -839,7 +739,7 @@ export default function Reel() {
   return (
     <div
       ref={stage}
-      aria-label="Fortuna, from its splash screen to its website"
+      aria-label="Fortuna's website, its three steps, and its splash screen, round and round"
       role="img"
       style={{
         position: "relative",
@@ -860,62 +760,10 @@ export default function Reel() {
       }}
     >
       <div ref={reg("stage")} style={{ position: "absolute", inset: 0 }} />
-
-      {/* ── The swipe promo, 2526 x 3006 ── */}
-      <div ref={reg("promo")} style={{ ...abs, width: 2526, height: 3006, opacity: 0 }}>
-        <div style={{ position: "absolute", inset: 0, background: CREAM, borderRadius: 70 }} />
-        <svg ref={reg("promo-rings")} width="2526" height="3006" viewBox="0 0 2526 3006" fill="none" style={{ position: "absolute", left: 0, top: 0 }} aria-hidden="true">
-          {PROMO_RINGS.map((ring, i) => (
-            <circle key={i} ref={reg(`promo-ring-${i}`)} cx="2448.55" cy="1693.77" r={ring.r} opacity={ring.o} stroke="#32443E" strokeOpacity="0.12" strokeWidth="13.472" strokeDasharray="53.89 53.89" />
-          ))}
-        </svg>
-        <svg width="2526" height="3006" viewBox="0 0 2526 3006" style={{ position: "absolute", left: 0, top: 0 }} aria-hidden="true">
-          {PROMO_DOTS.map(([x, y, r, fill, o], i) => (
-            <circle key={i} ref={reg(`pd-${i}`)} cx={x} cy={y} r={r} fill={fill} fillOpacity={o} style={{ opacity: 0 }} />
-          ))}
-        </svg>
-        <div ref={reg("man")} style={{ position: "absolute", left: 0, top: 0, width: 1569.49, height: 1556.02, transformOrigin: "50% 60%" }}>
-          <Image src="/fortuna/reel/man.webp" alt="" width={1569} height={1556} unoptimized draggable={false} style={{ width: "100%", height: "auto" }} />
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            left: 119,
-            top: 520,
-            width: 1100,
-            fontFamily: "var(--f-display)",
-            fontWeight: 600,
-            fontSize: 105.4,
-            lineHeight: "128px",
-            letterSpacing: "-0.02em",
-            color: FOREST,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <div>
-            {PROMO_WORDS.map((w, i) => (
-              <span key={w} ref={reg(`pw-${i}`)} style={{ display: "inline-block", marginRight: i < PROMO_WORDS.length - 1 ? "0.24em" : 0, opacity: 0 }}>
-                {w}
-              </span>
-            ))}
-          </div>
-          <div>
-            <span ref={reg("p-your")} style={{ display: "inline-block", marginRight: "0.24em", opacity: 0 }}>your</span>
-            <span style={{ color: ORANGE }}>
-              {TYPED.split("").map((c, i) => (
-                <span key={i} ref={reg(`p-ch-${i}`)} style={{ display: "none", whiteSpace: "pre", transformOrigin: "50% 80%" }}>
-                  {c}
-                </span>
-              ))}
-            </span>
-            <span ref={reg("p-caret")} style={{ display: "inline-block", width: 8, height: 96, marginLeft: 6, background: ORANGE, verticalAlign: "-12px", opacity: 0 }} />
-          </div>
-        </div>
-        <div ref={reg("p-under")} style={{ position: "absolute", left: 350.69, top: 778, width: 381.49, height: 9, borderRadius: 5, background: GREEN, opacity: 0 }} />
-      </div>
+      <div ref={reg("wipe")} style={{ position: "absolute", inset: 0 }} />
 
       {/* ── The morphing card ── */}
-      <div ref={reg("card")} style={{ ...abs, opacity: 0, boxShadow: "0 24px 60px rgba(20, 30, 27, 0.18)" }} />
+      <div ref={reg("card")} style={{ ...abs, boxShadow: "0 24px 60px rgba(20, 30, 27, 0.18)" }} />
 
       {/* ── The flow promo, 1360 x 695 ── */}
       <div ref={reg("flow")} style={{ ...abs, width: 1360, height: 695, opacity: 0 }}>
@@ -1021,21 +869,21 @@ export default function Reel() {
 
       {/* ── The website, 1525 x 1487 ── */}
       <div ref={reg("web")} style={{ ...abs, width: 1525, height: 1487, opacity: 0 }}>
-        <div ref={reg("w-nav")} style={{ position: "absolute", left: 620, top: 34, width: 287, height: 56, borderRadius: 28, background: "#fff", boxShadow: "0 4px 14px rgba(40,40,30,0.06)", fontFamily: "var(--f-body)", fontSize: 15.5, fontWeight: 500, color: FOREST }}>
+        <div ref={reg("w-nav")} style={{ position: "absolute", left: 620, top: 34, width: 287, height: 56, borderRadius: 28, background: "#fff", boxShadow: "0 4px 14px rgba(40,40,30,0.06)", fontFamily: "var(--f-body)", fontSize: 15.5, fontWeight: 500, color: FOREST, opacity: 0 }}>
           <div style={{ position: "absolute", left: 8, top: 8, width: 141, height: 40, borderRadius: 20, border: `2px solid ${FOREST}`, display: "grid", placeItems: "center" }}>Job Seekers</div>
           <div style={{ position: "absolute", left: 149, top: 8, width: 130, height: 40, display: "grid", placeItems: "center" }}>Employers</div>
         </div>
-        <div ref={reg("w-dl")} style={{ position: "absolute", left: 1293, top: 42, width: 126, height: 44, borderRadius: 22, background: FOREST, color: "#fff", fontFamily: "var(--f-body)", fontSize: 15.5, fontWeight: 500, display: "grid", placeItems: "center" }}>
+        <div ref={reg("w-dl")} style={{ position: "absolute", left: 1293, top: 42, width: 126, height: 44, borderRadius: 22, background: FOREST, color: "#fff", fontFamily: "var(--f-body)", fontSize: 15.5, fontWeight: 500, display: "grid", placeItems: "center", opacity: 0 }}>
           Download
         </div>
         <div style={{ position: "absolute", left: 383, top: 128, width: 760, textAlign: "center", fontFamily: "var(--f-display)", fontWeight: 600, fontSize: 63, lineHeight: "77px", letterSpacing: "-0.02em", color: FOREST }}>
-          <div ref={reg("w-h1")}>Swipe right to find</div>
-          <div ref={reg("w-h2")}>your next job in</div>
-          <div ref={reg("w-h3")} style={{ color: ORANGE, height: 77 }}>
+          <div ref={reg("w-h1")} style={{ opacity: 0 }}>Swipe right to find</div>
+          <div ref={reg("w-h2")} style={{ opacity: 0 }}>your next job in</div>
+          <div ref={reg("w-h3")} style={{ color: ORANGE, height: 77, opacity: 0 }}>
             {SECTORS.map((s, w) => (
               <span key={s.word} ref={reg(`w-word-${w}`)} style={{ position: "relative", display: "none", height: 77, verticalAlign: "top" }}>
                 {s.word.split("").map((c, i) => (
-                  <span key={i} ref={reg(`w-s-${w}-${i}`)} style={{ display: "none" }}>
+                  <span key={i} ref={reg(`w-s-${w}-${i}`)} style={{ display: "none", whiteSpace: "pre" }}>
                     {c}
                   </span>
                 ))}
@@ -1046,10 +894,10 @@ export default function Reel() {
             <span ref={reg("w-caret")} style={{ display: "inline-block", width: 5, height: 56, marginLeft: 4, background: ORANGE, verticalAlign: "-6px", opacity: 0 }} />
           </div>
         </div>
-        <div ref={reg("w-sub")} style={{ position: "absolute", left: 493, top: 391, width: 540, textAlign: "center", fontFamily: "var(--f-body)", fontSize: 20, lineHeight: "32px", color: "#6b6b6b" }}>
+        <div ref={reg("w-sub")} style={{ position: "absolute", left: 493, top: 391, width: 540, textAlign: "center", fontFamily: "var(--f-body)", fontSize: 20, lineHeight: "32px", color: "#6b6b6b", opacity: 0 }}>
           Fortuna is the fastest and most stress free way for you to discover job opportunities in your community.
         </div>
-        <div ref={reg("w-cta")} style={{ position: "absolute", left: 654, top: 495, width: 224, height: 52, borderRadius: 26, background: GREEN, color: "#fff", fontFamily: "var(--f-body)", fontSize: 17, fontWeight: 600, display: "grid", placeItems: "center" }}>
+        <div ref={reg("w-cta")} style={{ position: "absolute", left: 654, top: 495, width: 224, height: 52, borderRadius: 26, background: GREEN, color: "#fff", fontFamily: "var(--f-body)", fontSize: 17, fontWeight: 600, display: "grid", placeItems: "center", opacity: 0 }}>
           Download the App
         </div>
         {PEOPLE.map((p, i) => (
@@ -1087,12 +935,9 @@ export default function Reel() {
           </svg>
           <svg width="375" height="801" viewBox="0 0 375 801" style={{ position: "absolute", left: 0, top: 0 }} aria-hidden="true">
             {SPLASH_DOTS.map(([x, y, r, fill, o], i) => (
-              <circle key={i} ref={reg(`ph-dot-${i}`)} cx={x} cy={y} r={r} fill={fill} fillOpacity={o} style={{ opacity: 0 }} />
+              <circle key={i} ref={reg(`ph-dot-${i}`)} cx={x} cy={y} r={r} fill={fill} fillOpacity={o} />
             ))}
           </svg>
-          <div ref={reg("ph-card")} style={{ position: "absolute", left: 0, top: 0, transformOrigin: "157px 255px", opacity: 0 }}>
-            <BigCard job={DINER} />
-          </div>
           <div ref={reg("ph-web")} style={{ position: "absolute", inset: 0, opacity: 0 }}>
             {JOBS.map((job, j) => (
               <div key={job.title} ref={reg(`ph-big-${j}`)} style={{ position: "absolute", left: 0, top: 0, opacity: 0 }}>
@@ -1108,21 +953,13 @@ export default function Reel() {
         </div>
       </div>
 
-      {/* ── The applied card, swiped out of the phone ── */}
-      <div ref={reg("green")} style={{ ...abs, opacity: 0 }}>
-        <BigCard job={DINER}>
-          <AppliedFace refs={reg as (key: string) => (el: HTMLElement | null) => void} />
-        </BigCard>
-      </div>
-
       {/* ── The wordmark ── */}
-      <svg ref={reg("mark")} width="206" height="41" viewBox="0 0 206 41" overflow="visible" style={{ ...abs, opacity: 0 }} fill={GREEN} aria-hidden="true">
+      <svg ref={reg("mark")} width="206" height="41" viewBox="0 0 206 41" overflow="visible" style={{ ...abs }} fill={GREEN} aria-hidden="true">
         {GLYPHS.map((g, i) => (
           <path key={g.key} ref={reg(`mk-g-${i}`)} d={g.d} />
         ))}
         <path ref={reg("mk-dot")} d={DOT} fill={ORANGE} />
       </svg>
-
     </div>
   );
 }

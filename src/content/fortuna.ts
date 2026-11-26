@@ -127,6 +127,16 @@ export type Block =
   | { kind: "step"; n: number; title: string; flow?: string; text: string[]; filler?: boolean }
   /** A note to self in the doc about a visual that does not exist yet. */
   | { kind: "figure"; note: string }
+  | { kind: "brand-mark" }
+  /** The f, drawn in outline and refined, then filled in with its dot. */
+  | { kind: "f-mark-reel" }
+  /** The wordmark as a construction sheet, its proportions measured off. */
+  | { kind: "wordmark-spec" }
+  /** The three primary colours, a card whose edges keep sliding. */
+  | { kind: "palette-reel" }
+  | { kind: "store-strip" }
+  | { kind: "site-switch" }
+  | { kind: "flyer-flip" }
   /**
    * The Miami globe. Its caption belongs to it rather than sitting above it
    * as its own paragraph, because the globe's animation is what lights it.
@@ -283,6 +293,7 @@ export const SECTIONS: Section[] = [
     reveal: true,
     blocks: [
       { kind: "reveal" },
+      { kind: "wordmark-spec" },
     ],
   },
   {
@@ -894,24 +905,50 @@ export const SECTIONS: Section[] = [
     // The full brand chapter: the overview teased it, this pays it off.
     id: "brand",
     heading: "Brand in the world",
-    headingPending: true,
     tone: "cream-deep",
     align: "center",
     reveal: true,
     blocks: [
       {
         kind: "text",
-        filler: true,
-        text: "A line on the brand: what it needed to say to job seekers and to employers, and where it showed up.",
+        text: "Fortuna spoke to two people at once, so the brand had to as well, without turning into two brands. Job seekers got orange, employers got green, and wherever the two sides met, the same serif and the same orange full stop held them together.",
       },
-      { kind: "subheading", text: "Website" },
-      { kind: "figure", note: "Website — add later" },
+      { kind: "subheading", text: "The mark" },
+      {
+        kind: "text",
+        text: "The first app icon was a four-leaf clover: three white leaves, and an orange dot for the fourth. Luck, for a company named after the goddess of it. Then the clover gave way to the f from the wordmark, and the orange dot came along with it.",
+      },
+      { kind: "brand-mark" },
+      { kind: "f-mark-reel" },
+      { kind: "palette-reel" },
       { kind: "subheading", text: "App Store screens" },
-      { kind: "figure", note: "App Store screens, with the A/B test — add later" },
-      { kind: "subheading", text: "Video resume" },
-      { kind: "figure", note: "Video resume — add later" },
-      { kind: "subheading", text: "Promotional shoots and flyers" },
-      { kind: "figure", note: "Promotional video shoots + flyers — add later" },
+      {
+        kind: "text",
+        text: "For most people, the store listing would be the first Fortuna they ever saw, and it had ten slides to sell both sides. Every slide says who it's for before it says anything else: Job Seekers in orange, Employers in green, and both at once for the one moment they share, getting matched.",
+      },
+      {
+        kind: "text",
+        text: "It took three sets to get there. The first was retired along with the video interview it described. The last one brought in the cream, the serif headlines and the illustrations.",
+      },
+      { kind: "store-strip" },
+      { kind: "subheading", text: "The website" },
+      {
+        kind: "text",
+        text: "The website gave each side a page of its own, with a switch in the header to cross over. Job seekers were promised their next job in Miami, a swipe away. Employers were promised the fastest way to hire the right people in their community.",
+      },
+      { kind: "site-switch" },
+      { kind: "subheading", text: "Flyers" },
+      {
+        kind: "text",
+        text: "On paper, the switch became a flip. Each 4×6 card had employers on the front and job seekers on the back, with a tab in the corner, “Need a job?” or “Need to hire?”, telling you to turn it over. Each side carried its own QR code to its own page.",
+      },
+      {
+        kind: "text",
+        text: "The headlines got shorter with every round. “Need a job fast?” became “Looking for a job?”, and then just “Need a job?”",
+      },
+      { kind: "flyer-flip" },
+      { kind: "subheading", text: "Promotional shoots" },
+      { kind: "figure", note: "Promotional video shoots — add later" },
     ],
   },
   {
