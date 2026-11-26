@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { DOT, GLYPHS } from "../reel/wordmark";
 
@@ -21,11 +21,6 @@ import { DOT, GLYPHS } from "../reel/wordmark";
  * by hand: the frame and the band are ruled, the guides dropped through
  * them, the letters traced in outline one after another and then hatched,
  * the measurements laid over them, and the numbers written in last.
- *
- * While it scrolls it comes apart into three depths, the way a drawing on
- * tracing paper does: the frame and the guides behind, the wordmark in the
- * middle, and the measurements in front. They line up exactly when the
- * sheet is in the middle of the screen.
  */
 
 const GREEN = "#69BD45";
@@ -84,7 +79,7 @@ const BRACKETS = [
   bracket(195.29, 206, BOX.y + BOX.h + 10, -1),
 ];
 
-/** Labels, placed over the sheet in its own units. Bar labels move with the bars. */
+/** Labels, placed over the sheet in its own units, and when each is written in. */
 const LABELS: { x: number; y: number; text: string[]; align?: "start" | "end"; hang?: boolean; at: number }[] = [
   { x: MARK_W / 2, y: -52, text: ["5.16Y"], at: 3.05 },
   { x: MARK_W + 46, y: Y / 2, text: ["Y"], align: "start", at: 3.15 },
@@ -94,8 +89,11 @@ const LABELS: { x: number; y: number; text: string[]; align?: "start" | "end"; h
   { x: 200.65, y: BOX.y + BOX.h + 13, text: ["Full stop", "1.03Z"], hang: true, at: 3.4 },
 ];
 
-/** How far each depth travels across the scroll, in the sheet's units. */
-const DEPTH = { back: 11, front: 15 };
+/**
+ * How fast it draws itself in. The times below are the drawing's own order
+ * and spacing; this scales the whole of it, so it takes about two seconds.
+ */
+const PACE = 0.55;
 
 export default function WordmarkSpec() {
   const reduced = useReducedMotion();
@@ -103,23 +101,16 @@ export default function WordmarkSpec() {
   const seen = useInView(host, { once: true, amount: 0.35 });
   const on = reduced || seen;
 
-  // The parallax: 0 when the sheet is centred on the screen.
-  const { scrollYProgress } = useScroll({ target: host, offset: ["start end", "end start"] });
-  const back = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [-DEPTH.back, DEPTH.back]);
-  const front = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [DEPTH.front, -DEPTH.front]);
-  // The HTML labels ride with the front layer, in the same units.
-  const frontCq = useTransform(front, (v) => `${((v / VW) * 100).toFixed(3)}cqw`);
-
   const ease = "cubic-bezier(0.65, 0, 0.35, 1)";
   /** A line ruled in: its stroke drawn from one end to the other. */
   const ruled = (delay: number, dur = 0.9): React.CSSProperties => ({
     strokeDasharray: 1,
     strokeDashoffset: on ? 0 : 1,
-    transition: reduced ? "none" : `stroke-dashoffset ${dur}s ${ease} ${delay}s`,
+    transition: reduced ? "none" : `stroke-dashoffset ${dur * PACE}s ${ease} ${delay * PACE}s`,
   });
   const fade = (delay: number, dur = 0.6): React.CSSProperties => ({
     opacity: on ? 1 : 0,
-    transition: reduced ? "none" : `opacity ${dur}s ease ${delay}s`,
+    transition: reduced ? "none" : `opacity ${dur * PACE}s ease ${delay * PACE}s`,
   });
   const line = { fill: "none", stroke: GREEN, pathLength: 1 } as const;
   // One screen pixel, in the sheet's units. The lines are drawn in by their
@@ -161,15 +152,15 @@ export default function WordmarkSpec() {
             </pattern>
           </defs>
           <g transform={`translate(${OX} ${OY})`}>
-            {/* Behind: the frame, the band, and the lines across them. */}
-            <motion.g style={{ y: back }}>
+            {/* The frame, the band, and the lines across them. */}
+            <g>
               <rect x={BOX.x} y={BOX.y} width={BOX.w} height={BOX.h} rx={BOX_R} {...line} strokeOpacity={0.55} style={{ ...hair, ...ruled(0, 1.1) }} />
               <rect x={BAND.x} y={BAND.y} width={BAND.w} height={BAND.h} rx={3} {...line} strokeOpacity={0.55} style={{ ...hair, ...ruled(0.25, 1.1) }} />
               {GUIDES.map((x, i) => (
                 <path key={x} d={`M${x} ${BOX.y + inset(x)} V${BOX.y + BOX.h - inset(x)}`} {...line} strokeOpacity={0.45} style={{ ...hair, ...ruled(0.7 + i * 0.08, 0.7) }} />
               ))}
               <path d={`M${BAND.x} ${X_TOP} H${BAND.x + BAND.w}`} {...line} strokeOpacity={0.45} style={{ ...hair, ...ruled(0.85, 0.9) }} />
-            </motion.g>
+            </g>
             {/* The wordmark: each letter traced, then hatched. */}
             <g>
               {GLYPHS.map((g, i) => {
@@ -184,8 +175,8 @@ export default function WordmarkSpec() {
               <path d={DOT} fill="url(#wm-hatch-dot)" style={fade(2.35, 0.5)} />
               <path d={DOT} {...line} stroke={ORANGE} style={{ ...hair, ...ruled(1.95, 0.6) }} />
             </g>
-            {/* In front: the measurements. */}
-            <motion.g style={{ y: front }}>
+            {/* The measurements. */}
+            <g>
               {BARS.map(([a, b], i) => (
                 <rect
                   key={a}
@@ -199,17 +190,17 @@ export default function WordmarkSpec() {
                     transformBox: "fill-box",
                     transformOrigin: "50% 0%",
                     transform: on ? "scaleY(1)" : "scaleY(0)",
-                    transition: reduced ? "none" : `transform 0.7s ${ease} ${2.45 + i * 0.1}s`,
+                    transition: reduced ? "none" : `transform ${0.7 * PACE}s ${ease} ${(2.45 + i * 0.1) * PACE}s`,
                   }}
                 />
               ))}
               {BRACKETS.map((d, i) => (
                 <path key={i} d={d} {...line} strokeOpacity={0.8} strokeLinejoin="round" strokeLinecap="round" style={{ ...hair, ...ruled(2.65 + i * 0.1, 0.7) }} />
               ))}
-            </motion.g>
+            </g>
           </g>
         </svg>
-        <motion.div aria-hidden style={{ position: "absolute", inset: 0, y: frontCq }}>
+        <div aria-hidden style={{ position: "absolute", inset: 0 }}>
           {LABELS.map((l) => (
             <span
               key={l.text.join() + l.x}
@@ -235,7 +226,7 @@ export default function WordmarkSpec() {
               ))}
             </span>
           ))}
-        </motion.div>
+        </div>
       </div>
     </figure>
   );
