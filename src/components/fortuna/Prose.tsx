@@ -14,7 +14,7 @@ import ScreenGrid from "./screens/ScreenGrid";
 import FlowMap from "./screens/FlowMap";
 import BrandMark from "./brand/BrandMark";
 import FMarkReel from "./brand/FMarkReel";
-import Image from "next/image";
+import WideImage from "./WideImage";
 import WordmarkSpec from "./brand/WordmarkSpec";
 import PaletteReel from "./brand/PaletteReel";
 import MarkAndPalette from "./brand/MarkAndPalette";
@@ -607,6 +607,7 @@ function ownsEntrance(block: Block) {
     block.kind === "wordmark-spec" ||
     block.kind === "palette-reel" ||
     block.kind === "mark-and-palette" ||
+    block.kind === "image" ||
     (block.kind === "list" && block.emphasis === true) ||
     (block.kind === "callout" && block.reveal === true)
   );
@@ -721,19 +722,7 @@ function blockNode(
     case "f-mark-reel":
       return <FMarkReel key={i} />;
     case "image":
-      // Edge to edge, the way the reel is.
-      return (
-        <figure key={i} style={{ width: "100vw", marginLeft: "calc(50% - 50vw)", marginTop: 0, marginBottom: "clamp(28px, 5vw, 56px)" }}>
-          <Image
-            src={block.src}
-            alt={block.alt}
-            width={block.width}
-            height={block.height}
-            sizes="100vw"
-            style={{ display: "block", width: "100%", height: "auto" }}
-          />
-        </figure>
-      );
+      return <WideImage key={i} src={block.src} alt={block.alt} width={block.width} height={block.height} />;
     case "mark-and-palette":
       return <MarkAndPalette key={i} />;
     case "wordmark-spec":

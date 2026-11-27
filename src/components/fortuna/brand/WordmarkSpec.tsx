@@ -130,7 +130,10 @@ export default function WordmarkSpec() {
     <figure
       className="f-wide"
       style={{
-        marginTop: "clamp(4px, 1.5vw, 20px)",
+        // Half the room it used to leave under the reel: half the margin,
+        // less half the empty sheet above its top label (24.4 of its 360
+        // units across).
+        marginTop: "calc(clamp(2px, 0.75vw, 10px) - var(--f-wide) * 0.0339)",
         // Half the room it used to leave under its lowest labels: half the
         // margin, less half the empty sheet beneath them (24.2 of its 360
         // units across, so it scales with the sheet).
