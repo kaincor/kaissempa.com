@@ -127,7 +127,16 @@ export default function WordmarkSpec() {
   const hair = { strokeWidth: px };
 
   return (
-    <figure className="f-wide" style={{ marginTop: "clamp(4px, 1.5vw, 20px)", marginBottom: "clamp(28px, 5vw, 56px)" }}>
+    <figure
+      className="f-wide"
+      style={{
+        marginTop: "clamp(4px, 1.5vw, 20px)",
+        // Half the room it used to leave under its lowest labels: half the
+        // margin, less half the empty sheet beneath them (24.2 of its 360
+        // units across, so it scales with the sheet).
+        marginBottom: "calc(clamp(14px, 2.5vw, 28px) - var(--f-wide) * 0.0336)",
+      }}
+    >
       <div
         ref={host}
         style={{

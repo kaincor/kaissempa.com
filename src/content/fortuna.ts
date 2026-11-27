@@ -134,6 +134,8 @@ export type Block =
   | { kind: "wordmark-spec" }
   /** The three primary colours, a card whose edges keep sliding. */
   | { kind: "palette-reel" }
+  /** A still, wide, with its pixel size so the page saves its room. */
+  | { kind: "image"; src: string; alt: string; width: number; height: number }
   | { kind: "store-strip" }
   | { kind: "site-switch" }
   | { kind: "flyer-flip" }
@@ -294,6 +296,13 @@ export const SECTIONS: Section[] = [
     blocks: [
       { kind: "reveal" },
       { kind: "wordmark-spec" },
+      {
+        kind: "image",
+        src: "/fortuna/brand/billboard-hired-couch.webp",
+        alt: "A Fortuna billboard by a field of tall grass: on cream, a woman sits cross-legged in a green chair beside the line Get hired from your couch, with your couch in green over an orange rule, and the fortuna wordmark in the corner.",
+        width: 2400,
+        height: 1121,
+      },
     ],
   },
   {

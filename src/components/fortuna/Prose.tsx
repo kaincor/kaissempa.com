@@ -14,6 +14,7 @@ import ScreenGrid from "./screens/ScreenGrid";
 import FlowMap from "./screens/FlowMap";
 import BrandMark from "./brand/BrandMark";
 import FMarkReel from "./brand/FMarkReel";
+import Image from "next/image";
 import WordmarkSpec from "./brand/WordmarkSpec";
 import PaletteReel from "./brand/PaletteReel";
 import StoreStrip from "./brand/StoreStrip";
@@ -717,6 +718,20 @@ function blockNode(
       return <BrandMark key={i} />;
     case "f-mark-reel":
       return <FMarkReel key={i} />;
+    case "image":
+      // Edge to edge, the way the reel is.
+      return (
+        <figure key={i} style={{ width: "100vw", marginLeft: "calc(50% - 50vw)", marginTop: 0, marginBottom: "clamp(28px, 5vw, 56px)" }}>
+          <Image
+            src={block.src}
+            alt={block.alt}
+            width={block.width}
+            height={block.height}
+            sizes="100vw"
+            style={{ display: "block", width: "100%", height: "auto" }}
+          />
+        </figure>
+      );
     case "wordmark-spec":
       return <WordmarkSpec key={i} />;
     case "palette-reel":
