@@ -17,6 +17,7 @@ import FMarkReel from "./brand/FMarkReel";
 import Image from "next/image";
 import WordmarkSpec from "./brand/WordmarkSpec";
 import PaletteReel from "./brand/PaletteReel";
+import MarkAndPalette from "./brand/MarkAndPalette";
 import StoreStrip from "./brand/StoreStrip";
 import SiteSwitch from "./brand/SiteSwitch";
 import FlyerFlip from "./brand/FlyerFlip";
@@ -605,6 +606,7 @@ function ownsEntrance(block: Block) {
     block.kind === "f-mark-reel" ||
     block.kind === "wordmark-spec" ||
     block.kind === "palette-reel" ||
+    block.kind === "mark-and-palette" ||
     (block.kind === "list" && block.emphasis === true) ||
     (block.kind === "callout" && block.reveal === true)
   );
@@ -732,6 +734,8 @@ function blockNode(
           />
         </figure>
       );
+    case "mark-and-palette":
+      return <MarkAndPalette key={i} />;
     case "wordmark-spec":
       return <WordmarkSpec key={i} />;
     case "palette-reel":

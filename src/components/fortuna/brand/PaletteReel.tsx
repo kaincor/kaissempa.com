@@ -54,7 +54,7 @@ const SWATCHES = {
   cream: { name: ["Common", "Cream"], hex: "#F7F5F0", bg: CREAM, ink: GREEN },
 };
 
-export default function PaletteReel() {
+export default function PaletteReel({ bare = false }: { bare?: boolean } = {}) {
   const reduced = useReducedMotion();
   const host = useRef<HTMLDivElement>(null);
 
@@ -152,38 +152,41 @@ export default function PaletteReel() {
     </div>
   );
 
-  return (
-    <figure className="f-wide" style={{ marginTop: "clamp(28px, 5vw, 56px)", marginBottom: "clamp(28px, 5vw, 56px)" }}>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <div
-          ref={host}
-          role="img"
-          aria-label="The Fortuna palette as a card that keeps re-dividing itself: Lucky Green, #69BD45, across the top; Sunset Drive orange, #F58120, and Common Cream, #F7F5F0, underneath. The edges between them slide so each colour takes its turn being the biggest."
-          style={{
-            position: "relative",
-            containerType: "inline-size",
-            width: "min(100%, 440px)",
-            aspectRatio: "4 / 5",
-            borderRadius: "clamp(16px, 2.2vw, 24px)",
-            overflow: "hidden",
-            background: CREAM,
-            boxShadow: "0 1px 2px rgba(40,40,30,0.08), 0 22px 48px rgba(40,40,30,0.16)",
-          }}
-        >
-          <div data-k="green" style={{ ...panel, left: 0, top: 0, width: "100%", height: "50%", background: SWATCHES.green.bg }}>
-            {name(SWATCHES.green)}
-            {hex(SWATCHES.green, "green-hex")}
-          </div>
-          <div data-k="orange" style={{ ...panel, left: 0, top: "50%", bottom: 0, width: "50%", background: SWATCHES.orange.bg }}>
-            {name(SWATCHES.orange, "orange-name")}
-            {hex(SWATCHES.orange)}
-          </div>
-          <div data-k="cream" style={{ ...panel, left: "50%", top: "50%", right: 0, bottom: 0, background: SWATCHES.cream.bg }}>
-            {name(SWATCHES.cream, "cream-name")}
-            {hex(SWATCHES.cream, "cream-hex")}
-          </div>
+  const card = (
+      <div
+        ref={host}
+        role="img"
+        aria-label="The Fortuna palette as a card that keeps re-dividing itself: Lucky Green, #69BD45, across the top; Sunset Drive orange, #F58120, and Common Cream, #F7F5F0, underneath. The edges between them slide so each colour takes its turn being the biggest."
+        style={{
+          position: "relative",
+          containerType: "inline-size",
+          width: bare ? "100%" : "min(100%, 440px)",
+          aspectRatio: "4 / 5",
+          borderRadius: "clamp(16px, 2.2vw, 24px)",
+          overflow: "hidden",
+          background: CREAM,
+          boxShadow: "0 1px 2px rgba(40,40,30,0.08), 0 22px 48px rgba(40,40,30,0.16)",
+        }}
+      >
+        <div data-k="green" style={{ ...panel, left: 0, top: 0, width: "100%", height: "50%", background: SWATCHES.green.bg }}>
+          {name(SWATCHES.green)}
+          {hex(SWATCHES.green, "green-hex")}
+        </div>
+        <div data-k="orange" style={{ ...panel, left: 0, top: "50%", bottom: 0, width: "50%", background: SWATCHES.orange.bg }}>
+          {name(SWATCHES.orange, "orange-name")}
+          {hex(SWATCHES.orange)}
+        </div>
+        <div data-k="cream" style={{ ...panel, left: "50%", top: "50%", right: 0, bottom: 0, background: SWATCHES.cream.bg }}>
+          {name(SWATCHES.cream, "cream-name")}
+          {hex(SWATCHES.cream, "cream-hex")}
         </div>
       </div>
+  );
+  return bare ? (
+    card
+  ) : (
+    <figure className="f-wide" style={{ marginTop: "clamp(28px, 5vw, 56px)", marginBottom: "clamp(28px, 5vw, 56px)" }}>
+      <div style={{ display: "flex", justifyContent: "center" }}>{card}</div>
     </figure>
   );
 }

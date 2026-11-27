@@ -134,6 +134,8 @@ export type Block =
   | { kind: "wordmark-spec" }
   /** The three primary colours, a card whose edges keep sliding. */
   | { kind: "palette-reel" }
+  /** The f reel and the palette side by side. */
+  | { kind: "mark-and-palette" }
   /** A still, wide, with its pixel size so the page saves its room. */
   | { kind: "image"; src: string; alt: string; width: number; height: number }
   | { kind: "store-strip" }
@@ -303,6 +305,7 @@ export const SECTIONS: Section[] = [
         width: 2400,
         height: 1121,
       },
+      { kind: "mark-and-palette" },
     ],
   },
   {
@@ -928,8 +931,6 @@ export const SECTIONS: Section[] = [
         text: "The first app icon was a four-leaf clover: three white leaves, and an orange dot for the fourth. Luck, for a company named after the goddess of it. Then the clover gave way to the f from the wordmark, and the orange dot came along with it.",
       },
       { kind: "brand-mark" },
-      { kind: "f-mark-reel" },
-      { kind: "palette-reel" },
       { kind: "subheading", text: "App Store screens" },
       {
         kind: "text",

@@ -175,7 +175,7 @@ function draftAt(t: number): Draft {
  */
 const DOT = { x: 27.43, y: 39.94 - 5.37, r: 5.37 };
 
-export default function FMarkReel() {
+export default function FMarkReel({ bare = false }: { bare?: boolean } = {}) {
   const reduced = useReducedMotion();
   const host = useRef<HTMLDivElement>(null);
 
@@ -288,7 +288,7 @@ export default function FMarkReel() {
 
   const hair = { vectorEffect: "non-scaling-stroke" } as const;
   return (
-    <figure className="f-wide" style={{ marginTop: "clamp(28px, 5vw, 56px)", marginBottom: "clamp(28px, 5vw, 56px)" }}>
+    <Wrap bare={bare}>
       <div
         ref={host}
         style={{
@@ -317,6 +317,17 @@ export default function FMarkReel() {
           </g>
         </svg>
       </div>
+    </Wrap>
+  );
+}
+
+/** On its own it's a wide figure; paired with the palette, just the card. */
+function Wrap({ bare, children }: { bare: boolean; children: React.ReactNode }) {
+  return bare ? (
+    <>{children}</>
+  ) : (
+    <figure className="f-wide" style={{ marginTop: "clamp(28px, 5vw, 56px)", marginBottom: "clamp(28px, 5vw, 56px)" }}>
+      {children}
     </figure>
   );
 }

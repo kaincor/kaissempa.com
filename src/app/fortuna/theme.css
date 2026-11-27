@@ -385,3 +385,18 @@
   outline-offset: 4px;
   border-radius: 14px;
 }
+
+/* The f reel and the palette, side by side under the billboard. */
+.fortuna .f-mark-palette {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(12px, 2vw, 24px);
+}
+@media (max-width: 640px) {
+  .fortuna .f-mark-palette {
+    flex-direction: column;
+  }
+  .fortuna .f-mark-palette > div {
+    width: 100%;
+  }
+}
